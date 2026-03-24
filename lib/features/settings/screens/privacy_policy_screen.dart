@@ -127,7 +127,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
           _BodyText(
             'To exercise any right not available directly in the app, contact '
-            'us at privacy@flightpath.app. We will respond within 30 days.',
+            'us at privacy@getflightpath.app. We will respond within 30 days.',
             cs: cs,
           ),
 
@@ -147,7 +147,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             'Flight Path is not directed at children under 13. We do not '
             'knowingly collect personal data from children under 13. '
             'If you believe a child has provided us with personal data, '
-            'please contact privacy@flightpath.app.',
+            'please contact privacy@getflightpath.app.',
             cs: cs,
           ),
 
@@ -164,7 +164,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _SectionHeader(label: '10. Contact', cs: cs),
           _BodyText(
             'Data controller: Ed Ward\n'
-            'Email: privacy@flightpath.app\n\n'
+            'Email: privacy@getflightpath.app\n\n'
             'If you have concerns about how we handle your data, you may also '
             'lodge a complaint with the Information Commissioner\'s Office (ICO) '
             'at ico.org.uk.',
