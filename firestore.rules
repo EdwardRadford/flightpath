@@ -1,0 +1,330 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper functions
+    // -------------------------------------------------------------------------
+
+    /// Returns true if the request comes from an authenticated user.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /// Returns the authenticated user's UID.
+    function uid() {
+      return request.auth.uid;
+    }
+
+    /// Returns true if the incoming data's user_id field matches the auth UID.
+    function incomingUserIdMatchesAuth() {
+      return request.resource.data.user_id == uid();
+    }
+
+    /// Returns true if the existing document's user_id field matches the auth UID.
+    function existingUserIdMatchesAuth() {
+      return resource.data.user_id == uid();
+    }
+
+    /// Returns true if the caller's user_role is 'instructor'.
+    function isInstructor() {
+      return isSignedIn()
+          && get(/databases/$(database)/documents/users/$(uid())).data.user_role == 'instructor';
+    }
+
+    /// Valid aircraft types for validation.
+    function isValidAircraftType(value) {
+      return value in ['cessna_152', 'cessna_172', 'pa28', 'da40'];
+    }
+
+    /// Valid lesson statuses (matches Dart enum + Firestore string values).
+    function isValidLessonStatus(value) {
+      return value in ['scheduled', 'prepared', 'completed', 'cancelled', 'manual_entry'];
+    }
+
+    /// Validates lesson status transitions against the state machine:
+    ///   scheduled -> prepared -> completed
+    ///   scheduled -> cancelled
+    ///   prepared -> completed | cancelled
+    ///   manual_entry -> completed
+    /// completed and cancelled are terminal states.
+    function isValidStatusTransition(oldStatus, newStatus) {
+      return (oldStatus == 'scheduled' && newStatus in ['prepared', 'cancelled'])
+          || (oldStatus == 'prepared' && newStatus in ['completed', 'cancelled'])
+          || (oldStatus == 'manual_entry' && newStatus == 'completed')
+          // Allow same-status updates (e.g. updating fields without changing status)
+          || (oldStatus == newStatus);
+    }
+
+    /// Valid exercise statuses.
+    function isValidExerciseStatus(value) {
+      return value in ['not_started', 'in_progress', 'complete'];
+    }
+
+    // -------------------------------------------------------------------------
+    // Helper: returns true if an instructor_links doc exists linking the
+    // caller (instructor) to the given student UID.
+    // -------------------------------------------------------------------------
+    function isLinkedInstructor(studentUid) {
+      return isInstructor()
+          && exists(/databases/$(database)/documents/instructor_links/$(uid() + '_' + studentUid));
+    }
+
+    // -------------------------------------------------------------------------
+    // 1. users — User profiles
+    //    Doc ID = Firebase Auth UID
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      // Users can read their own profile.
+      // Instructors can read profiles of their linked students only.
+      // NOTE: instructor_links doc IDs must follow the format
+      //   "{instructorUid}_{studentUid}" for this check to work.
+      allow read: if isSignedIn()
+                  && (uid() == userId || isLinkedInstructor(userId));
+
+      allow create: if isSignedIn()
+                    && uid() == userId
+                    && (!('aircraft_type' in request.resource.data) || isValidAircraftType(request.resource.data.aircraft_type))
+                    && (!('hours_flown' in request.resource.data) || request.resource.data.hours_flown >= 0);
+
+      allow update: if isSignedIn()
+                    && uid() == userId
+                    && (!('aircraft_type' in request.resource.data) || isValidAircraftType(request.resource.data.aircraft_type))
+                    && (!('hours_flown' in request.resource.data) || request.resource.data.hours_flown >= 0)
+                    // Prevent clients from escalating their own subscription.
+                    // subscription_status can only be changed by the Admin SDK
+                    // or Cloud Functions (e.g. after a RevenueCat webhook).
+                    && (!('subscription_status' in request.resource.data) || request.resource.data.subscription_status == resource.data.subscription_status)
+                    && (!('purchase_date' in request.resource.data) || request.resource.data.purchase_date == resource.data.purchase_date)
+                    // Prevent clients from escalating their role (student → instructor).
+                    // user_role can only be changed by the Admin SDK / Cloud Functions.
+                    && (!('user_role' in request.resource.data) || request.resource.data.user_role == resource.data.user_role)
+                    // Prevent clients from changing their own invite_code.
+                    && (!('invite_code' in request.resource.data) || request.resource.data.invite_code == resource.data.invite_code);
+
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. lessons — Lesson logs
+    //    Doc ID = auto-generated
+    //    Each doc has a user_id field linking to the owning user.
+    // -------------------------------------------------------------------------
+    match /lessons/{lessonId} {
+      // Owners can read their own lessons. Instructors can only read lessons
+      // belonging to their linked students (enforced via instructor_links doc).
+      allow read: if isSignedIn()
+                  && (existingUserIdMatchesAuth()
+                      || isLinkedInstructor(resource.data.user_id));
+
+      allow create: if isSignedIn()
+                    && incomingUserIdMatchesAuth()
+                    && (!('student_rating' in request.resource.data) || (request.resource.data.student_rating >= 1 && request.resource.data.student_rating <= 5))
+                    && (!('instructor_rating' in request.resource.data) || (request.resource.data.instructor_rating >= 1 && request.resource.data.instructor_rating <= 5))
+                    && ('status' in request.resource.data && isValidLessonStatus(request.resource.data.status));
+
+      allow update: if isSignedIn()
+                    && existingUserIdMatchesAuth()
+                    && (!('student_rating' in request.resource.data) || (request.resource.data.student_rating >= 1 && request.resource.data.student_rating <= 5))
+                    && (!('instructor_rating' in request.resource.data) || (request.resource.data.instructor_rating >= 1 && request.resource.data.instructor_rating <= 5))
+                    && ('status' in request.resource.data && isValidLessonStatus(request.resource.data.status))
+                    // Enforce valid status transitions (state machine)
+                    && isValidStatusTransition(resource.data.status, request.resource.data.status)
+                    // Prevent changing ownership
+                    && request.resource.data.user_id == resource.data.user_id;
+
+      // Lesson owners can delete their own lessons
+      allow delete: if request.auth != null && request.auth.uid == resource.data.user_id;
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. user_exercises — Per-user exercise progress
+    //    Doc ID = deterministic: "{uid}_{exerciseId}" or "{uid}_{exerciseId}_{subExerciseId}"
+    //    Each doc has a user_id field.
+    // -------------------------------------------------------------------------
+    match /user_exercises/{docId} {
+      // Owners can read their own exercises. Instructors can only read
+      // exercises belonging to their linked students (enforced via link doc).
+      allow read: if isSignedIn()
+                  && (existingUserIdMatchesAuth()
+                      || isLinkedInstructor(resource.data.user_id));
+
+      allow create: if isSignedIn()
+                    && incomingUserIdMatchesAuth()
+                    && (!('best_rating' in request.resource.data) || request.resource.data.best_rating == null || (request.resource.data.best_rating >= 1 && request.resource.data.best_rating <= 5))
+                    && ('times_attempted' in request.resource.data && request.resource.data.times_attempted >= 0)
+                    && ('status' in request.resource.data && isValidExerciseStatus(request.resource.data.status));
+
+      allow update: if isSignedIn()
+                    && existingUserIdMatchesAuth()
+                    && incomingUserIdMatchesAuth()
+                    && (!('best_rating' in request.resource.data) || request.resource.data.best_rating == null || (request.resource.data.best_rating >= 1 && request.resource.data.best_rating <= 5))
+                    && ('times_attempted' in request.resource.data && request.resource.data.times_attempted >= 0)
+                    && ('status' in request.resource.data && isValidExerciseStatus(request.resource.data.status))
+                    // Prevent changing ownership
+                    && request.resource.data.user_id == resource.data.user_id;
+
+      // Progress records are never deleted
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. exercise_content — Read-only exercise content
+    //    Seeded via admin SDK / Firebase Console. No client writes.
+    // -------------------------------------------------------------------------
+    match /exercise_content/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. quiz_questions — Read-only quiz questions
+    //    Seeded via admin SDK / Firebase Console. No client writes.
+    // -------------------------------------------------------------------------
+    match /quiz_questions/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. share_links — Shareable progress links
+    //    Doc ID = randomly generated token
+    //    Each doc has a user_id field linking to the owning user.
+    // -------------------------------------------------------------------------
+    match /share_links/{tokenId} {
+      // Anyone can read a share link (that's the point — instructors use it)
+      allow read: if true;
+
+      // Only the owning user can create a share link
+      allow create: if isSignedIn()
+                    && incomingUserIdMatchesAuth()
+                    && request.resource.data.is_active == true
+                    && request.resource.data.share_token is string
+                    && request.resource.data.share_token.size() >= 16;
+
+      // Only the owning user can update (revoke) their own share link
+      allow update: if isSignedIn()
+                    && existingUserIdMatchesAuth()
+                    // Can only set is_active to false (revoke), not change other fields
+                    && request.resource.data.user_id == resource.data.user_id
+                    && request.resource.data.share_token == resource.data.share_token;
+
+      // Share links can be deleted by the owning user (for account deletion)
+      allow delete: if isSignedIn() && existingUserIdMatchesAuth();
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. instructor_links — Links between instructors and students
+    //    Doc ID = auto-generated
+    //    Fields: instructor_id, student_id, linked_at
+    // -------------------------------------------------------------------------
+    match /instructor_links/{linkId} {
+      // Instructors can read links where they are the instructor.
+      // Students can read links where they are the student.
+      allow read: if isSignedIn()
+                  && (resource.data.instructor_id == uid()
+                      || resource.data.student_id == uid());
+
+      // Any authenticated user can create a link (student linking to instructor).
+      // The student_id must match the authenticated user.
+      // The doc ID MUST be "{instructorId}_{studentId}" — this deterministic
+      // format is required by the isLinkedInstructor() helper above.
+      // The target instructor_id must actually have user_role == 'instructor'.
+      allow create: if isSignedIn()
+                    && request.resource.data.student_id == uid()
+                    && request.resource.data.instructor_id is string
+                    && request.resource.data.student_id is string
+                    && linkId == (request.resource.data.instructor_id + '_' + request.resource.data.student_id)
+                    && get(/databases/$(database)/documents/users/$(request.resource.data.instructor_id)).data.user_role == 'instructor';
+
+      // Links can be deleted by either the student or the instructor.
+      allow delete: if isSignedIn()
+                    && (resource.data.instructor_id == uid()
+                        || resource.data.student_id == uid());
+
+      // No updates — delete and re-create if needed.
+      allow update: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. instructor_notes — Notes left by instructors for students
+    //    Doc ID = auto-generated
+    //    Fields: instructor_id, student_id, exercise_id, note, created_at
+    // -------------------------------------------------------------------------
+    match /instructor_notes/{noteId} {
+      // Instructors can read notes they created.
+      // Students can read notes addressed to them.
+      allow read: if isSignedIn()
+                  && (resource.data.instructor_id == uid()
+                      || resource.data.student_id == uid());
+
+      // Only instructors can create notes, and the instructor_id must match.
+      // The instructor must be linked to the student.
+      // Note text must be non-empty and capped at 1000 chars.
+      allow create: if isSignedIn()
+                    && isInstructor()
+                    && request.resource.data.instructor_id == uid()
+                    && request.resource.data.student_id is string
+                    && request.resource.data.exercise_id is string
+                    && request.resource.data.note is string
+                    && request.resource.data.note.size() > 0
+                    && request.resource.data.note.size() <= 1000
+                    && exists(/databases/$(database)/documents/instructor_links/$(uid() + '_' + request.resource.data.student_id));
+
+      // Only the instructor who created the note can update it.
+      allow update: if isSignedIn()
+                    && resource.data.instructor_id == uid()
+                    && request.resource.data.instructor_id == resource.data.instructor_id
+                    && request.resource.data.student_id == resource.data.student_id;
+
+      // Only the instructor who created the note can delete it.
+      allow delete: if isSignedIn()
+                    && resource.data.instructor_id == uid();
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. messages — Instructor-student messaging
+    //    Doc ID = auto-generated
+    //    Fields: sender_id, recipient_id, sender_name, message, created_at,
+    //            read, exercise_id (optional), lesson_id (optional)
+    // -------------------------------------------------------------------------
+    match /messages/{messageId} {
+      // Users can read messages they sent or received.
+      allow read: if isSignedIn()
+                  && (resource.data.sender_id == uid()
+                      || resource.data.recipient_id == uid());
+
+      // Users can create messages if they are the sender.
+      // Message text must be a string capped at 1000 characters.
+      allow create: if isSignedIn()
+                    && request.resource.data.sender_id == uid()
+                    && request.resource.data.message is string
+                    && request.resource.data.message.size() > 0
+                    && request.resource.data.message.size() <= 1000;
+
+      // Only the recipient can mark a message as read.
+      // Only the 'read' field can be changed.
+      allow update: if isSignedIn()
+                    && resource.data.recipient_id == uid()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+
+      // Messages cannot be deleted.
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 10. user goals — sub-collection under users/{uid}/goals
+    //     Doc ID = 'first_solo' | 'full_ppl'
+    // -------------------------------------------------------------------------
+    match /users/{userId}/goals/{goalId} {
+      allow read: if isSignedIn() && uid() == userId;
+      allow create: if isSignedIn() && uid() == userId;
+      allow update: if isSignedIn() && uid() == userId;
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Default deny — any collection not listed above is inaccessible.
+    // -------------------------------------------------------------------------
+  }
+}
