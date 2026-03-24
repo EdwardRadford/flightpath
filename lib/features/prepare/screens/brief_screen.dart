@@ -116,6 +116,8 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
       briefViewed: true,
       flashcardsCompleted: existing?.flashcardsCompleted ?? false,
       weatherChecked: existing?.weatherChecked ?? false,
+      quizPassed: existing?.quizPassed ?? false,
+      visualisationViewed: existing?.visualisationViewed ?? false,
       spacedRepDue: existing?.spacedRepDue,
     );
     await firestore.upsertUserExercise(updated);

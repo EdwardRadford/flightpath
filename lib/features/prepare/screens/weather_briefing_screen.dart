@@ -147,6 +147,8 @@ class _WeatherBriefingScreenState extends ConsumerState<WeatherBriefingScreen> {
       briefViewed: existing?.briefViewed ?? false,
       flashcardsCompleted: existing?.flashcardsCompleted ?? false,
       weatherChecked: true,
+      quizPassed: existing?.quizPassed ?? false,
+      visualisationViewed: existing?.visualisationViewed ?? false,
       spacedRepDue: existing?.spacedRepDue,
     ));
   }

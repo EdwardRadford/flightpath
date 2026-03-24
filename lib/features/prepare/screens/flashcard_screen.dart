@@ -119,6 +119,8 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
       briefViewed: existing?.briefViewed ?? false,
       flashcardsCompleted: true,
       weatherChecked: existing?.weatherChecked ?? false,
+      quizPassed: existing?.quizPassed ?? false,
+      visualisationViewed: existing?.visualisationViewed ?? false,
       spacedRepDue: existing?.spacedRepDue,
     ));
   }

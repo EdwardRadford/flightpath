@@ -314,7 +314,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     });
 
     if (!_saved) {
-      _saveResult(questions);
+      _saveResult(questions, passed: passed);
     }
 
     // Update question mastery data
@@ -333,7 +333,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     });
   }
 
-  Future<void> _saveResult(List<QuizQuestion> questions) async {
+  Future<void> _saveResult(List<QuizQuestion> questions, {bool passed = false}) async {
     if (_saved || _saving) return;
     setState(() => _saving = true);
     _saved = true;
@@ -370,6 +370,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         briefViewed: existing?.briefViewed ?? false,
         flashcardsCompleted: existing?.flashcardsCompleted ?? false,
         weatherChecked: existing?.weatherChecked ?? false,
+        quizPassed: (existing?.quizPassed ?? false) || passed,
+        visualisationViewed: existing?.visualisationViewed ?? false,
         spacedRepDue: existing?.spacedRepDue,
       );
 

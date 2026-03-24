@@ -526,6 +526,8 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
       briefViewed: existingUE?.briefViewed ?? false,
       flashcardsCompleted: existingUE?.flashcardsCompleted ?? false,
       weatherChecked: existingUE?.weatherChecked ?? false,
+      quizPassed: existingUE?.quizPassed ?? false,
+      visualisationViewed: existingUE?.visualisationViewed ?? false,
     ));
   }
 

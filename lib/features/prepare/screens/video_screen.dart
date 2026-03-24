@@ -114,6 +114,8 @@ class _VideoScreenState extends ConsumerState<VideoScreen> {
         briefViewed: existing?.briefViewed ?? false,
         flashcardsCompleted: existing?.flashcardsCompleted ?? false,
         weatherChecked: existing?.weatherChecked ?? false,
+        quizPassed: existing?.quizPassed ?? false,
+        visualisationViewed: existing?.visualisationViewed ?? false,
       ));
 
       FirebaseAnalytics.instance.logEvent(

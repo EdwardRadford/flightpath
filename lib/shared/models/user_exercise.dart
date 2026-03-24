@@ -22,6 +22,8 @@ class UserExercise {
   final bool briefViewed;
   final bool flashcardsCompleted;
   final bool weatherChecked;
+  final bool quizPassed;
+  final bool visualisationViewed;
   final DateTime? spacedRepDue;
 
   const UserExercise({
@@ -39,6 +41,8 @@ class UserExercise {
     required this.briefViewed,
     required this.flashcardsCompleted,
     required this.weatherChecked,
+    required this.quizPassed,
+    required this.visualisationViewed,
     this.spacedRepDue,
   });
 
@@ -60,6 +64,8 @@ class UserExercise {
       briefViewed: data['brief_viewed'] ?? false,
       flashcardsCompleted: data['flashcards_completed'] ?? false,
       weatherChecked: data['weather_checked'] ?? false,
+      quizPassed: data['quiz_passed'] ?? false,
+      visualisationViewed: data['visualisation_viewed'] ?? false,
       spacedRepDue: (data['spaced_rep_due'] as Timestamp?)?.toDate(),
     );
   }
@@ -91,6 +97,8 @@ class UserExercise {
     'brief_viewed': briefViewed,
     'flashcards_completed': flashcardsCompleted,
     'weather_checked': weatherChecked,
+    'quiz_passed': quizPassed,
+    'visualisation_viewed': visualisationViewed,
     if (spacedRepDue != null) 'spaced_rep_due': Timestamp.fromDate(spacedRepDue!),
   };
 
@@ -110,6 +118,8 @@ class UserExercise {
     bool? briefViewed,
     bool? flashcardsCompleted,
     bool? weatherChecked,
+    bool? quizPassed,
+    bool? visualisationViewed,
     DateTime? spacedRepDue,
   }) {
     return UserExercise(
@@ -127,6 +137,8 @@ class UserExercise {
       briefViewed: briefViewed ?? this.briefViewed,
       flashcardsCompleted: flashcardsCompleted ?? this.flashcardsCompleted,
       weatherChecked: weatherChecked ?? this.weatherChecked,
+      quizPassed: quizPassed ?? this.quizPassed,
+      visualisationViewed: visualisationViewed ?? this.visualisationViewed,
       spacedRepDue: spacedRepDue ?? this.spacedRepDue,
     );
   }

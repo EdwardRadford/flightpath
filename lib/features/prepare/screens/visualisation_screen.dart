@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/features/auth/providers/auth_provider.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/utils/exercise_helpers.dart';
 import 'package:flight_path/shared/widgets/micro_animations.dart';
 
@@ -47,6 +49,38 @@ class _VisualisationScreenState extends ConsumerState<VisualisationScreen> {
     _timer.cancel();
     _stopwatch.stop();
     super.dispose();
+  }
+
+  Future<void> _markVisualisationViewed() async {
+    final uid = ref.read(currentUserIdProvider);
+    if (uid == null) return;
+    final (exerciseId, subExerciseId) =
+        parseExerciseId(widget.compositeExerciseId);
+    final exercises = ref.read(userExercisesProvider).valueOrNull ?? [];
+    final existing = exercises
+        .where((ue) =>
+            ue.exerciseId == exerciseId && ue.subExercise == subExerciseId)
+        .firstOrNull;
+    final firestore = ref.read(firestoreServiceProvider);
+    await firestore.upsertUserExercise(UserExercise(
+      id: existing?.id ?? '',
+      userId: uid,
+      exerciseId: exerciseId,
+      subExercise: subExerciseId,
+      exerciseNumber: existing?.exerciseNumber ?? 0,
+      status: existing?.status ?? ExerciseStatus.notStarted,
+      bestRating: existing?.bestRating,
+      timesAttempted: existing?.timesAttempted ?? 0,
+      ratingHistory: existing?.ratingHistory ?? [],
+      lastAttempted: existing?.lastAttempted,
+      videoWatched: existing?.videoWatched ?? false,
+      briefViewed: existing?.briefViewed ?? false,
+      flashcardsCompleted: existing?.flashcardsCompleted ?? false,
+      weatherChecked: existing?.weatherChecked ?? false,
+      quizPassed: existing?.quizPassed ?? false,
+      visualisationViewed: true,
+      spacedRepDue: existing?.spacedRepDue,
+    ));
   }
 
   String _formatElapsed(Duration d) {
@@ -249,6 +283,7 @@ class _VisualisationScreenState extends ConsumerState<VisualisationScreen> {
                   label: 'Mark as Complete',
                   icon: Icons.check_rounded,
                   onComplete: () {
+                    _markVisualisationViewed();
                     FirebaseAnalytics.instance.logEvent(
                       name: 'visualisation_completed',
                       parameters: {
