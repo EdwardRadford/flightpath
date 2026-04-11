@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/Ed/Desktop -type f -name .cursorrules -o -name .gitignore -o -name *.config.js -o -name *.config.json)",
+      "Bash(pandoc \"C:/Users/Ed/Desktop/Flight Path 2/FlightPath_MasterBuildDocument.docx\" -o /tmp/flightpath_content.md)",
+      "Bash(python -c \":*)",
+      "Bash(flutter doctor:*)",
+      "Bash(cmd /c \"flutter doctor\")",
+      "Bash(cmd /c \"where flutter && flutter doctor\")",
+      "Bash(cmd /c \"echo %PATH%\")",
+      "Bash(powershell.exe -NoProfile -Command \"Set-Location ''C:\\\\Users\\\\Ed\\\\Desktop\\\\Flight Path 2''; & ''C:\\\\Users\\\\Ed\\\\.vscode\\\\flutter\\\\bin\\\\flutter.bat'' pub get 2>&1\")",
+      "Bash(powershell.exe -NoProfile -Command \"Set-Location ''C:\\\\Users\\\\Ed\\\\Desktop\\\\Flight Path 2''; & ''C:\\\\Users\\\\Ed\\\\.vscode\\\\flutter\\\\bin\\\\flutter.bat'' analyze 2>&1\")",
+      "Bash(ls \"C:\\\\Users\\\\Ed\\\\Desktop\\\\Flight Path 2\\\\lib\\\\features\\\\exercises\"\" 2>/dev/null || echo \"no exercises providers dir\":*)",
+      "Bash(ls \"C:\\\\Users\\\\Ed\\\\Desktop\\\\Flight Path 2\\\\lib\\\\features\\\\lesson_log\"\" 2>/dev/null || echo \"no lesson_log dir \")",
+      "Bash(flutter analyze:*)",
+      "Bash(/c/flutter/bin/flutter.bat analyze:*)",
+      "Read(//c/Users/Ed/.vscode/flutter/bin/**)",
+      "Bash(\"/c/Users/Ed/.vscode/flutter/bin/flutter.bat\" analyze:*)",
+      "Bash(xargs wc:*)",
+      "Bash(find '/c/Users/Ed/Desktop/Flight Path 2' -name *.md -o -name *.txt)",
+      "Bash(\"C:\\\\Users\\\\Ed\\\\.vscode\\\\flutter\\\\bin\\\\flutter\" analyze:*)",
+      "Bash(\"C:\\\\Users\\\\Ed\\\\.vscode\\\\flutter\\\\bin\\\\flutter\" pub:*)",
+      "Bash(dart analyze:*)",
+      "Bash(\"C:\\\\Users\\\\Ed\\\\.vscode\\\\flutter\\\\bin\\\\dart.bat\" analyze:*)",
+      "Bash(python \"C:\\\\Users\\\\Ed\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\49728565-e8fc-4ca6-91a4-eb28eee025f7\\\\5fb14821-e0af-47cc-87fa-38fb384a4333\\\\skills\\\\docx\\\\scripts\\\\office\\\\unpack.py\" \"C:\\\\Users\\\\Ed\\\\Desktop\\\\Flight Path 2\\\\FlightPath_MasterBuildDocument.docx\" \"C:\\\\Users\\\\Ed\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\49728565-e8fc-4ca6-91a4-eb28eee025f7\\\\5fb14821-e0af-47cc-87fa-38fb384a4333\\\\skills\\\\docx\\\\unpacked\")",
+      "Bash(python scripts/office/unpack.py \"C:\\\\Users\\\\Ed\\\\Desktop\\\\Flight Path 2\\\\FlightPath_MasterBuildDocument.docx\" unpacked/)",
+      "Bash(pip install:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(flutter pub:*)"
+    ]
+  }
+}
