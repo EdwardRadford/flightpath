@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "91239460645",
+    "project_id": "flight-path-fed56",
+    "storage_bucket": "flight-path-fed56.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91239460645:android:2cfc53520e77366d2bf4cc",
+        "android_client_info": {
+          "package_name": "com.flightpath.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "91239460645-tniiajqlpm0q7r6jbikljpu8igj4vs1d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.flightpath.app",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "91239460645-bm1ojsu6og9i339st5oibi7tchkbj6pf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMzAoWqQubu4k018n8Snl4KtdT_CuaS8Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "91239460645-bm1ojsu6og9i339st5oibi7tchkbj6pf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "91239460645-1v6jlbtadmnnhcvajkiquo7llllld16b.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.flightpath.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91239460645:android:95d48b1c5bf130b12bf4cc",
+        "android_client_info": {
+          "package_name": "uk.co.flightpath.flight_path"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "91239460645-75e249ij97jc0v0es2b2t208m90tg22v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "uk.co.flightpath.flight_path",
+            "certificate_hash": "2f6e13bc7597f7a6be825179d46e55abf269d374"
+          }
+        },
+        {
+          "client_id": "91239460645-bm1ojsu6og9i339st5oibi7tchkbj6pf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMzAoWqQubu4k018n8Snl4KtdT_CuaS8Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "91239460645-bm1ojsu6og9i339st5oibi7tchkbj6pf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "91239460645-1v6jlbtadmnnhcvajkiquo7llllld16b.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.flightpath.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

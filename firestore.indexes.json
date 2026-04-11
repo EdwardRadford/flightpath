@@ -1,0 +1,64 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "conversations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participants", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "share_links",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_id", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" },
+        { "fieldPath": "expires_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "quiz_questions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "exercise_id", "order": "ASCENDING" },
+        { "fieldPath": "sub_exercise", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "instructor_links",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "instructor_id", "order": "ASCENDING" },
+        { "fieldPath": "linked_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "instructor_links",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "instructor_id", "order": "ASCENDING" },
+        { "fieldPath": "student_id", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "instructor_notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "instructor_id", "order": "ASCENDING" },
+        { "fieldPath": "student_id", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "instructor_notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "student_id", "order": "ASCENDING" },
+        { "fieldPath": "exercise_id", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

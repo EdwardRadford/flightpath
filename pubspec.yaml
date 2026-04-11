@@ -1,0 +1,94 @@
+name: flight_path
+description: "UK PPL(A) student pilot lesson companion app."
+publish_to: 'none'
+version: 1.0.5+10
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^4.0.0
+  firebase_auth: ^6.0.0
+  cloud_firestore: ^6.0.0
+  firebase_messaging: ^16.0.0
+  firebase_analytics: ^12.0.0
+  firebase_crashlytics: ^5.0.0
+  firebase_app_check: ^0.4.1+5
+  cloud_functions: ^6.0.7
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navigation
+  go_router: ^14.8.1
+
+  # Subscriptions
+  purchases_flutter: ^9.14.0
+
+  # Local storage / offline cache
+  hive_flutter: ^1.1.0
+
+  # Video
+  youtube_player_flutter: ^9.1.1
+
+  # Local notifications (quiet hours logic)
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
+
+  # Google Sign-In
+  google_sign_in: ^6.3.0
+
+  # Deep linking
+  app_links: ^6.4.0
+
+  # Utilities
+  intl: ^0.20.2
+  shared_preferences: ^2.5.3
+  connectivity_plus: ^6.1.4
+  cupertino_icons: ^1.0.8
+  url_launcher: ^6.3.2
+  share_plus: ^12.0.1
+  path_provider: ^2.1.5
+  in_app_review: ^2.0.10
+  package_info_plus: ^8.3.0
+  pdf: ^3.12.0
+  printing: ^5.14.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.15
+  riverpod_generator: ^2.6.3
+  custom_lint: ^0.7.5
+  riverpod_lint: ^2.6.3
+  flutter_native_splash: ^2.4.4
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#0A0E1A"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#0A0E1A"
+  image: assets/icon/app_icon.png
+  android: true
+  ios: true
+  android_12:
+    color: "#0A0E1A"
+    image: assets/icon/app_icon.png
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/
