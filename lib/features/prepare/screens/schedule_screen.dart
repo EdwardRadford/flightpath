@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import 'package:flight_path/core/services/notification_service.dart';
-import 'package:flight_path/core/services/offline_lesson_service.dart';
+import 'package:flight_path/shared/services/notification_service.dart';
+import 'package:flight_path/shared/services/offline_lesson_service.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/auth/providers/auth_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
@@ -117,9 +117,8 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
 
       final lesson = Lesson(
         id: '',
-        userId: uid,
         exerciseId: exerciseId,
-        subExercise: subExerciseId,
+        subExercise: subExerciseId ?? '',
         scheduledDate: combined,
         scheduledTime: _selectedTime!.format(context),
         status: LessonStatus.scheduled,
@@ -127,7 +126,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
         quizAttempts: 0,
       );
 
-      final lessonId = await offlineLessons.createLesson(lesson);
+      final lessonId = await offlineLessons.createLesson(uid, lesson);
 
       // Schedule a check-in notification ~90 mins after the lesson
       final exerciseName = exerciseFullName(widget.compositeExerciseId);
@@ -137,11 +136,11 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
         lessonTime: combined,
       );
 
-      // Schedule a reminder at 6pm the evening before the lesson
-      await NotificationService.scheduleLessonReminder(
-        id: 'reminder_$lessonId'.hashCode.abs() % 0x7FFFFFFF,
-        exerciseName: exerciseName,
-        lessonDate: combined,
+      // Schedule a reminder at 7pm Europe/London the evening before the lesson.
+      await NotificationService.scheduleEveningReminder(
+        widget.compositeExerciseId,
+        combined,
+        exerciseName,
       );
 
       FirebaseAnalytics.instance.logEvent(

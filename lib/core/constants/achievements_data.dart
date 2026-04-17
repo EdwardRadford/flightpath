@@ -78,7 +78,7 @@ const List<Achievement> allAchievements = [
   Achievement(
     id: 'all_exercises',
     title: 'Syllabus Complete',
-    description: 'Complete all 19 exercises',
+    description: 'Complete all exercises in the PPL syllabus',
     iconName: 'emoji_events',
     category: AchievementCategory.milestone,
   ),

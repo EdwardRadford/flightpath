@@ -28,26 +28,15 @@ service cloud.firestore {
     /// fields. These fields must only be written by Cloud Functions (webhook,
     /// purchase validation) — never by the client directly.
     function doesNotWritePremiumFields() {
-      return request.resource.data.has_purchased == resource.data.has_purchased
-          && request.resource.data.subscription_status == resource.data.subscription_status
-          && request.resource.data.granted_access == resource.data.granted_access
-          && request.resource.data.get('purchase_date', null) == resource.data.get('purchase_date', null);
-    }
-
-    /// Returns true when the caller is an instructor linked to the given student.
-    function isLinkedInstructor(studentUid) {
-      let linkId = request.auth.uid + '_' + studentUid;
-      return isAuthenticated()
-          && exists(/databases/$(database)/documents/instructor_links/$(linkId));
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['has_purchased', 'subscription_status', 'granted_access', 'purchase_date']);
     }
 
     // -------------------------------------------------------------------------
     // users/{uid}
     // -------------------------------------------------------------------------
     match /users/{uid} {
-      // Any owner can read their own document.
-      // An instructor linked to this student can also read their profile.
-      allow read: if isOwner(uid) || isLinkedInstructor(uid);
+      allow read: if isOwner(uid);
 
       // Owners may create their own document freely (first-time onboarding).
       allow create: if isOwner(uid);
@@ -64,16 +53,21 @@ service cloud.firestore {
       // users/{uid}/lessons/{lessonId}
       // -----------------------------------------------------------------------
       match /lessons/{lessonId} {
-        allow read: if isOwner(uid) || isLinkedInstructor(uid);
-        allow write: if isOwner(uid);
+        allow read, write: if isOwner(uid);
       }
 
       // -----------------------------------------------------------------------
       // users/{uid}/exercises/{exerciseId}
       // -----------------------------------------------------------------------
       match /exercises/{exerciseId} {
-        allow read: if isOwner(uid) || isLinkedInstructor(uid);
-        allow write: if isOwner(uid);
+        allow read, write: if isOwner(uid);
+      }
+
+      // -----------------------------------------------------------------------
+      // users/{uid}/goals/{goalId}
+      // -----------------------------------------------------------------------
+      match /goals/{goalId} {
+        allow read, write: if isOwner(uid);
       }
     }
 
@@ -133,76 +127,17 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
-    // instructor_links/{inviteCode}
+    // instructor_links — server-only via Admin SDK
     // -------------------------------------------------------------------------
-    match /instructor_links/{linkId} {
-      // Any authenticated user can read links they are part of.
-      allow read: if isAuthenticated();
-
-      // Either the student or the instructor can create the link.
-      allow create: if isAuthenticated()
-          && (request.auth.uid == request.resource.data.instructor_id
-              || request.auth.uid == request.resource.data.student_id);
-
-      allow update, delete: if isAuthenticated()
-          && (request.auth.uid == resource.data.instructor_id
-              || request.auth.uid == resource.data.student_id);
+    match /instructor_links/{doc} {
+      allow read, write: if false; // Server-only via Admin SDK
     }
 
     // -------------------------------------------------------------------------
-    // invite_codes/{inviteCode}
-    // Maps an instructor's 6-char invite code to their UID.
-    // Any authenticated user can look up a code for the linking flow.
-    // Only the instructor who owns the code can create or delete it.
+    // instructor_notes — server-only via Admin SDK
     // -------------------------------------------------------------------------
-    match /invite_codes/{inviteCode} {
-      allow read: if isAuthenticated();
-
-      allow create: if isAuthenticated()
-          && request.auth.uid == request.resource.data.instructor_id;
-
-      // Codes are immutable once created — delete and recreate to change.
-      allow update: if false;
-
-      allow delete: if isAuthenticated()
-          && request.auth.uid == resource.data.instructor_id;
-    }
-
-    // -------------------------------------------------------------------------
-    // exercise_assessments/{assessmentId}
-    // Instructor exercise criteria assessments for students.
-    // Doc ID format: {instructorId}_{studentId}_{exerciseId}
-    // -------------------------------------------------------------------------
-    match /exercise_assessments/{assessmentId} {
-      // The instructor who created the assessment and the assessed student can read.
-      allow read: if isAuthenticated()
-          && (request.auth.uid == resource.data.instructor_id
-              || request.auth.uid == resource.data.student_id);
-
-      // Only the instructor can create assessments.
-      allow create: if isAuthenticated()
-          && request.auth.uid == request.resource.data.instructor_id;
-
-      // Only the instructor can update or delete their assessments.
-      allow update, delete: if isAuthenticated()
-          && request.auth.uid == resource.data.instructor_id;
-    }
-
-    // -------------------------------------------------------------------------
-    // instructor_notes/{noteId}
-    // -------------------------------------------------------------------------
-    match /instructor_notes/{noteId} {
-      // The instructor who created the note and the referenced student can read.
-      allow read: if isAuthenticated()
-          && (request.auth.uid == resource.data.instructor_id
-              || request.auth.uid == resource.data.student_id);
-
-      // Only the instructor can create, update, or delete their notes.
-      allow create: if isAuthenticated()
-          && request.auth.uid == request.resource.data.instructor_id;
-
-      allow update, delete: if isAuthenticated()
-          && request.auth.uid == resource.data.instructor_id;
+    match /instructor_notes/{doc} {
+      allow read, write: if false; // Server-only via Admin SDK
     }
 
   }

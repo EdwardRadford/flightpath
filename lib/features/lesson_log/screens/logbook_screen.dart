@@ -7,80 +7,22 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
-import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/features/auth/providers/auth_provider.dart';
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
+import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/utils/exercise_helpers.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-String _exerciseDisplayNameForLesson(Lesson lesson) {
-  final key = compositeExerciseId(lesson.exerciseId, lesson.subExercise);
-  return exerciseLongName(key);
-}
-
-String _formatMinutesAsHours(int minutes) {
-  final hrs = minutes ~/ 60;
-  final mins = minutes % 60;
-  return '${hrs}h ${mins.toString().padLeft(2, '0')}m';
-}
-
-String _routeString(Lesson lesson) {
-  final dep = lesson.departureAirfield ?? '';
-  final arr = lesson.arrivalAirfield ?? '';
-  if (dep.isEmpty && arr.isEmpty) return '';
-  if (dep == arr || arr.isEmpty) return dep;
-  if (dep.isEmpty) return arr;
-  return '$dep \u2192 $arr';
-}
+import 'package:flight_path/features/lesson_log/widgets/logbook_entry_card.dart';
+import 'package:flight_path/features/lesson_log/widgets/logbook_filter_bar.dart';
+import 'package:flight_path/features/lesson_log/widgets/logbook_sort_option.dart';
+import 'package:flight_path/features/lesson_log/widgets/logbook_totals_card.dart';
 
 // ---------------------------------------------------------------------------
 // Sort mode
 // ---------------------------------------------------------------------------
 
 enum _SortMode { newestFirst, oldestFirst, exerciseNumber }
-
-
-// ---------------------------------------------------------------------------
-// Running totals model
-// ---------------------------------------------------------------------------
-
-class _LogbookTotals {
-  final int totalMinutes;
-  final int dualMinutes;
-  final int picMinutes;
-  final int totalLandings;
-  final int entryCount;
-
-  const _LogbookTotals({
-    this.totalMinutes = 0,
-    this.dualMinutes = 0,
-    this.picMinutes = 0,
-    this.totalLandings = 0,
-    this.entryCount = 0,
-  });
-
-  factory _LogbookTotals.fromLessons(List<Lesson> lessons) {
-    int total = 0, dual = 0, pic = 0, landings = 0;
-    for (final l in lessons) {
-      if (l.status == LessonStatus.cancelled) continue;
-      total += l.flightTimeMinutes ?? l.lessonDuration ?? 0;
-      dual += l.dualTimeMinutes ?? 0;
-      pic += l.picTimeMinutes ?? 0;
-      landings += l.landings ?? 0;
-    }
-    return _LogbookTotals(
-      totalMinutes: total,
-      dualMinutes: dual,
-      picMinutes: pic,
-      totalLandings: landings,
-      entryCount: lessons.where((l) => l.status != LessonStatus.cancelled).length,
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // LogbookScreen
@@ -148,8 +90,10 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
 
   Future<void> _deleteLesson(String lessonId) async {
     try {
+      final uid = ref.read(currentUserIdProvider);
+      if (uid == null) return;
       final firestore = ref.read(firestoreServiceProvider);
-      await firestore.deleteLesson(lessonId);
+      await firestore.deleteLesson(uid, lessonId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -181,16 +125,16 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
       filtered = filtered.where((l) {
         final compositeId = compositeExerciseId(l.exerciseId, l.subExercise);
         final exerciseName = exerciseLongName(compositeId).toLowerCase();
-        final customName = (l.customExerciseName ?? '').toLowerCase();
+        final customName = l.customExerciseName.toLowerCase();
         final date = l.lessonDate ?? l.createdAt;
         final dateStr = DateFormat('d MMM yyyy').format(date).toLowerCase();
-        final reg = (l.aircraftRegistration ?? '').toLowerCase();
-        final dep = (l.departureAirfield ?? '').toLowerCase();
-        final arr = (l.arrivalAirfield ?? '').toLowerCase();
-        final remarks = (l.remarks ?? '').toLowerCase();
-        final instructorNotes = (l.instructorNotes ?? '').toLowerCase();
-        final reflection = (l.personalReflection ?? '').toLowerCase();
-        final instructor = (l.instructorName ?? '').toLowerCase();
+        final reg = l.aircraftRegistration.toLowerCase();
+        final dep = l.departureAirfield.toLowerCase();
+        final arr = l.arrivalAirfield.toLowerCase();
+        final remarks = l.remarks.toLowerCase();
+        final instructorNotes = l.instructorNotes.toLowerCase();
+        final reflection = l.personalReflection.toLowerCase();
+        final instructor = l.instructorName.toLowerCase();
         return exerciseName.contains(_searchQuery) ||
             customName.contains(_searchQuery) ||
             dateStr.contains(_searchQuery) ||
@@ -300,7 +244,6 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Center(
                 child: Container(
                   width: 40,
@@ -324,7 +267,6 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              // "All exercises" option
               ListTile(
                 leading: Icon(
                   _selectedExerciseId == null
@@ -349,7 +291,6 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
                 },
               ),
               const Divider(height: 1),
-              // Exercise list
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
@@ -402,7 +343,6 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Center(
                 child: Container(
                   width: 40,
@@ -426,7 +366,7 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              _SortOption(
+              LogbookSortOption(
                 label: 'Newest First',
                 icon: Icons.arrow_downward_rounded,
                 isSelected: _sortMode == _SortMode.newestFirst,
@@ -435,7 +375,7 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
                   Navigator.pop(context);
                 },
               ),
-              _SortOption(
+              LogbookSortOption(
                 label: 'Oldest First',
                 icon: Icons.arrow_upward_rounded,
                 isSelected: _sortMode == _SortMode.oldestFirst,
@@ -444,7 +384,7 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
                   Navigator.pop(context);
                 },
               ),
-              _SortOption(
+              LogbookSortOption(
                 label: 'Exercise Number',
                 icon: Icons.format_list_numbered_rounded,
                 isSelected: _sortMode == _SortMode.exerciseNumber,
@@ -466,7 +406,6 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
     final lessonsAsync = ref.watch(allLessonsProvider);
 
     return Scaffold(
-
       appBar: AppBar(
         title: const Text('Logbook'),
         elevation: 0,
@@ -491,7 +430,7 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
-        error: (_, _) => const Center(
+        error: (_, __) => const Center(
           child: Padding(
             padding: EdgeInsets.all(24),
             child: Text(
@@ -514,7 +453,7 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
           }
 
           final filteredLessons = _applyFiltersAndSort(lessons);
-          final totals = _LogbookTotals.fromLessons(filteredLessons);
+          final totals = LogbookTotals.fromLessons(filteredLessons);
 
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
@@ -574,7 +513,7 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
               ),
               // Filter bar
               SliverToBoxAdapter(
-                child: _FilterBar(
+                child: LogbookFilterBar(
                   selectedExerciseId: _selectedExerciseId,
                   dateRange: _dateRange,
                   hasFilters: _hasFilters,
@@ -585,7 +524,7 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
               ),
               // Running totals (reflect filtered results)
               SliverToBoxAdapter(
-                child: _TotalsCard(totals: totals),
+                child: LogbookTotalsCard(totals: totals),
               ),
               // Entry list
               if (filteredLessons.isEmpty)
@@ -631,7 +570,7 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
                           ),
                           confirmDismiss: (_) => _confirmDeleteLesson(context),
                           onDismissed: (_) => _deleteLesson(lesson.id),
-                          child: _LogbookEntryCard(lesson: lesson),
+                          child: LogbookEntryCard(lesson: lesson),
                         );
                       },
                       childCount: filteredLessons.length,
@@ -641,910 +580,6 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Filter bar
-// ---------------------------------------------------------------------------
-
-class _FilterBar extends StatelessWidget {
-  final String? selectedExerciseId;
-  final DateTimeRange? dateRange;
-  final bool hasFilters;
-  final VoidCallback onExerciseTap;
-  final VoidCallback onDateRangeTap;
-  final VoidCallback onClearFilters;
-
-  const _FilterBar({
-    required this.selectedExerciseId,
-    required this.dateRange,
-    required this.hasFilters,
-    required this.onExerciseTap,
-    required this.onDateRangeTap,
-    required this.onClearFilters,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final dateFormat = DateFormat('d MMM');
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 6,
-        children: [
-          // Exercise filter chip
-          ActionChip(
-            avatar: Icon(
-              Icons.flight_rounded,
-              size: 16,
-              color: selectedExerciseId != null
-                  ? Colors.white
-                  : AppColors.onSurfaceVariant,
-            ),
-            label: Text(
-              selectedExerciseId != null
-                  ? exerciseDisplayName(selectedExerciseId!)
-                  : 'Exercise',
-              style: TextStyle(
-                color: selectedExerciseId != null
-                    ? Colors.white
-                    : AppColors.onSurfaceVariant,
-                fontSize: 13,
-              ),
-            ),
-            backgroundColor: selectedExerciseId != null
-                ? AppColors.primary
-                : AppColors.surfaceVariant,
-            side: BorderSide.none,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            onPressed: onExerciseTap,
-          ),
-          // Date range chip
-          ActionChip(
-            avatar: Icon(
-              Icons.date_range_rounded,
-              size: 16,
-              color: dateRange != null
-                  ? Colors.white
-                  : AppColors.onSurfaceVariant,
-            ),
-            label: Text(
-              dateRange != null
-                  ? '${dateFormat.format(dateRange!.start)} – ${dateFormat.format(dateRange!.end)}'
-                  : 'Date Range',
-              style: TextStyle(
-                color: dateRange != null
-                    ? Colors.white
-                    : AppColors.onSurfaceVariant,
-                fontSize: 13,
-              ),
-            ),
-            backgroundColor: dateRange != null
-                ? AppColors.primary
-                : AppColors.surfaceVariant,
-            side: BorderSide.none,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            onPressed: onDateRangeTap,
-          ),
-          // Clear filters
-          if (hasFilters)
-            ActionChip(
-              avatar: const Icon(
-                Icons.clear_rounded,
-                size: 16,
-                color: AppColors.error,
-              ),
-              label: const Text(
-                'Clear',
-                style: TextStyle(
-                  color: AppColors.error,
-                  fontSize: 13,
-                ),
-              ),
-              backgroundColor: AppColors.error.withValues(alpha: 0.1),
-              side: BorderSide.none,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              onPressed: onClearFilters,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Sort option tile
-// ---------------------------------------------------------------------------
-
-class _SortOption extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SortOption({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primary, size: 20),
-      title: Text(
-        label,
-        style: TextStyle(
-          color: AppColors.onSurface,
-          fontSize: 14,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-        ),
-      ),
-      trailing: isSelected
-          ? const Icon(Icons.check_rounded, color: AppColors.primary, size: 20)
-          : null,
-      onTap: onTap,
-    );
-  }
-}
-
-
-// ---------------------------------------------------------------------------
-// Totals card
-// ---------------------------------------------------------------------------
-
-class _TotalsCard extends StatelessWidget {
-  final _LogbookTotals totals;
-
-  const _TotalsCard({required this.totals});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _TotalItem(
-              label: 'Total',
-              value: _formatMinutesAsHours(totals.totalMinutes),
-              icon: Icons.flight_rounded,
-            ),
-            _TotalItem(
-              label: 'Dual',
-              value: _formatMinutesAsHours(totals.dualMinutes),
-              icon: Icons.people_outline,
-            ),
-            _TotalItem(
-              label: 'PIC',
-              value: _formatMinutesAsHours(totals.picMinutes),
-              icon: Icons.person_outline,
-            ),
-            _TotalItem(
-              label: 'Landings',
-              value: '${totals.totalLandings}',
-              icon: Icons.flight_land_outlined,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TotalItem extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  const _TotalItem({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: AppColors.primary, size: 18),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style:  TextStyle(
-            color: AppColors.onSurface,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style:  TextStyle(
-            color: AppColors.onSurfaceVariant,
-            fontSize: 11,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Logbook entry card
-// ---------------------------------------------------------------------------
-
-class _LogbookEntryCard extends StatelessWidget {
-  final Lesson lesson;
-
-  const _LogbookEntryCard({required this.lesson});
-
-  @override
-  Widget build(BuildContext context) {
-    final date = lesson.lessonDate ?? lesson.createdAt;
-    final dateStr = DateFormat('EEE, d MMM yyyy').format(date);
-    final reg = lesson.aircraftRegistration ?? '';
-    final route = _routeString(lesson);
-    final flightTime = lesson.flightTimeMinutes ?? lesson.lessonDuration;
-    final exerciseName = _exerciseDisplayNameForLesson(lesson);
-
-    return GestureDetector(
-      onTap: () => _showDetailSheet(context),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row: date + day/night badge
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    dateStr,
-                    style:  TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: lesson.isDayFlight
-                        ? AppColors.warning.withValues(alpha: 0.15)
-                        : AppColors.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    lesson.isDayFlight ? 'Day' : 'Night',
-                    style: TextStyle(
-                      color: lesson.isDayFlight
-                          ? AppColors.warning
-                          : AppColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Registration + route row
-            Row(
-              children: [
-                if (reg.isNotEmpty) ...[
-                  const Icon(Icons.airplanemode_active,
-                      color: AppColors.primary, size: 14),
-                  const SizedBox(width: 4),
-                  Text(
-                    reg,
-                    style:  TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                ],
-                if (route.isNotEmpty) ...[
-                   Icon(Icons.navigation_outlined,
-                      color: AppColors.onSurfaceVariant, size: 13),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      route,
-                      style:  TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
-            const SizedBox(height: 6),
-
-            // Flight time + landings + exercise
-            Row(
-              children: [
-                if (flightTime != null) ...[
-                   Icon(Icons.access_time_rounded,
-                      color: AppColors.onSurfaceVariant, size: 13),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatMinutesAsHours(flightTime),
-                    style:  TextStyle(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                ],
-                if (lesson.landings != null) ...[
-                   Icon(Icons.flight_land_outlined,
-                      color: AppColors.onSurfaceVariant, size: 13),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${lesson.landings} ldg',
-                    style:  TextStyle(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
-            const SizedBox(height: 6),
-
-            // Exercise name
-            Text(
-              exerciseName,
-              style:  TextStyle(
-                color: AppColors.onSurfaceVariant,
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDetailSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (_) => _LogbookDetailSheet(lesson: lesson),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Logbook detail bottom sheet
-// ---------------------------------------------------------------------------
-
-class _LogbookDetailSheet extends StatefulWidget {
-  final Lesson lesson;
-
-  const _LogbookDetailSheet({required this.lesson});
-
-  @override
-  State<_LogbookDetailSheet> createState() => _LogbookDetailSheetState();
-}
-
-class _LogbookDetailSheetState extends State<_LogbookDetailSheet> {
-  bool _showLessonDetail = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final lesson = widget.lesson;
-    final date = lesson.lessonDate ?? lesson.createdAt;
-    final exerciseName = _exerciseDisplayNameForLesson(lesson);
-    final route = _routeString(lesson);
-    final flightTime = lesson.flightTimeMinutes ?? lesson.lessonDuration;
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.65,
-      maxChildSize: 0.95,
-      minChildSize: 0.4,
-      expand: false,
-      builder: (context, scrollController) {
-        return ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            // Title row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    DateFormat('EEEE, d MMMM yyyy').format(date),
-                    style:  TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: lesson.isDayFlight
-                        ? AppColors.warning.withValues(alpha: 0.15)
-                        : AppColors.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    lesson.isDayFlight ? 'Day' : 'Night',
-                    style: TextStyle(
-                      color: lesson.isDayFlight
-                          ? AppColors.warning
-                          : AppColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              exerciseName,
-              style:  TextStyle(
-                color: AppColors.onSurfaceVariant,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Logbook details grid
-            _DetailRow(label: 'Aircraft', value: lesson.aircraftRegistration ?? '—'),
-            _DetailRow(
-              label: 'Aircraft Type',
-              value: _aircraftTypeLabel(lesson.aircraftType),
-            ),
-            if (route.isNotEmpty) _DetailRow(label: 'Route', value: route),
-            if (flightTime != null)
-              _DetailRow(
-                  label: 'Flight Time',
-                  value: _formatMinutesAsHours(flightTime)),
-            if (lesson.dualTimeMinutes != null)
-              _DetailRow(
-                  label: 'Dual Time',
-                  value: _formatMinutesAsHours(lesson.dualTimeMinutes!)),
-            if (lesson.picTimeMinutes != null)
-              _DetailRow(
-                  label: 'PIC Time',
-                  value: _formatMinutesAsHours(lesson.picTimeMinutes!)),
-            if (lesson.landings != null)
-              _DetailRow(label: 'Landings', value: '${lesson.landings}'),
-            if (lesson.instructorName != null &&
-                lesson.instructorName!.isNotEmpty)
-              _DetailRow(label: 'Instructor', value: lesson.instructorName!),
-            if (lesson.remarks != null && lesson.remarks!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-               Text(
-                'Remarks',
-                style: TextStyle(
-                  color: AppColors.onSurface,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                lesson.remarks!,
-                style:  TextStyle(
-                  color: AppColors.onSurfaceVariant,
-                  fontSize: 13,
-                  height: 1.5,
-                ),
-              ),
-            ],
-
-            // Expandable lesson detail (ratings, quiz, AI debrief)
-            if (_hasLessonDetail(lesson)) ...[
-              const SizedBox(height: 20),
-              Divider(color: AppColors.divider),
-              GestureDetector(
-                onTap: () => setState(() => _showLessonDetail = !_showLessonDetail),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.school_outlined,
-                          color: AppColors.primary, size: 18),
-                      const SizedBox(width: 8),
-                       Expanded(
-                        child: Text(
-                          'Lesson Details',
-                          style: TextStyle(
-                            color: AppColors.onSurface,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        _showLessonDetail
-                            ? Icons.expand_less
-                            : Icons.expand_more,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (_showLessonDetail) _LessonDetailSection(lesson: lesson),
-            ],
-
-            // View full detail button
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  context.push('/lesson-detail', extra: lesson);
-                },
-                icon: const Icon(Icons.open_in_full_rounded, size: 16),
-                label: const Text('View Full Detail'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  bool _hasLessonDetail(Lesson lesson) {
-    return lesson.studentRating != null ||
-        lesson.instructorRating != null ||
-        lesson.quizScore != null ||
-        lesson.aiDebriefWell != null ||
-        lesson.instructorNotes != null ||
-        lesson.personalReflection != null;
-  }
-
-  String _aircraftTypeLabel(String? type) {
-    switch (type) {
-      case 'cessna_152':
-        return 'Cessna 152';
-      case 'cessna_172':
-        return 'Cessna 172';
-      case 'pa28':
-        return 'Piper PA-28';
-      case 'da40':
-        return 'Diamond DA40';
-      default:
-        return type ?? '—';
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Detail row
-// ---------------------------------------------------------------------------
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style:  TextStyle(
-                color: AppColors.onSurfaceVariant,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style:  TextStyle(
-                color: AppColors.onSurface,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Expandable lesson detail section
-// ---------------------------------------------------------------------------
-
-class _LessonDetailSection extends StatelessWidget {
-  final Lesson lesson;
-
-  const _LessonDetailSection({required this.lesson});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Ratings row
-        if (lesson.studentRating != null || lesson.instructorRating != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                if (lesson.studentRating != null)
-                  _MiniStat(
-                    icon: Icons.star_rounded,
-                    label: 'Self',
-                    value: '${lesson.studentRating}/5',
-                  ),
-                if (lesson.studentRating != null) const SizedBox(width: 12),
-                if (lesson.instructorRating != null)
-                  _MiniStat(
-                    icon: Icons.person_rounded,
-                    label: 'Instructor',
-                    value: '${lesson.instructorRating}/5',
-                  ),
-                if (lesson.quizScore != null) ...[
-                  const SizedBox(width: 12),
-                  _MiniStat(
-                    icon: Icons.quiz_outlined,
-                    label: 'Quiz',
-                    value: '${lesson.quizScore}%',
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-        // Instructor notes
-        if (lesson.instructorNotes != null &&
-            lesson.instructorNotes!.isNotEmpty) ...[
-           Text(
-            "Instructor's Comments",
-            style: TextStyle(
-              color: AppColors.onSurface,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            lesson.instructorNotes!,
-            style:  TextStyle(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 13,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-
-        // Personal reflection
-        if (lesson.personalReflection != null &&
-            lesson.personalReflection!.isNotEmpty) ...[
-           Text(
-            'Personal Reflection',
-            style: TextStyle(
-              color: AppColors.onSurface,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            lesson.personalReflection!,
-            style:  TextStyle(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 13,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-
-        // AI Debrief
-        if (lesson.aiDebriefWell != null ||
-            lesson.aiDebriefImprove != null ||
-            lesson.aiDebriefFocus != null) ...[
-           Row(
-            children: [
-              Icon(Icons.auto_awesome, color: AppColors.primary, size: 14),
-              SizedBox(width: 6),
-              Text(
-                'AI Debrief',
-                style: TextStyle(
-                  color: AppColors.onSurface,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (lesson.aiDebriefWell != null)
-            _AiField(
-              label: 'What Went Well',
-              content: lesson.aiDebriefWell!,
-              color: AppColors.success,
-            ),
-          if (lesson.aiDebriefImprove != null)
-            _AiField(
-              label: 'What to Improve',
-              content: lesson.aiDebriefImprove!,
-              color: AppColors.warning,
-            ),
-          if (lesson.aiDebriefFocus != null)
-            _AiField(
-              label: 'Focus Next Lesson',
-              content: lesson.aiDebriefFocus!,
-              color: AppColors.primary,
-            ),
-        ],
-      ],
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _MiniStat({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 16),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style:  TextStyle(
-              color: AppColors.onSurface,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-          Text(
-            label,
-            style:  TextStyle(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AiField extends StatelessWidget {
-  final String label;
-  final String content;
-  final Color color;
-
-  const _AiField({
-    required this.label,
-    required this.content,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            content,
-            style:  TextStyle(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 12,
-              height: 1.4,
-            ),
-          ),
-        ],
       ),
     );
   }

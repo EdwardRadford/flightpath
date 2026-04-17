@@ -229,18 +229,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () => context.go('/instructor-login'),
-                  child: Text(
-                    'I\'m a flight instructor',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24),
               ],
             ),

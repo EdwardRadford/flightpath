@@ -20,13 +20,23 @@ class AppUser {
   final DateTime? updatedAt;
   final String? profilePhotoUrl;
   final DateTime? purchaseDate;
-  final String role; // 'student' | 'instructor'
-  final String? instructorQualification;
-  final String? inviteCode; // 6-char code for instructors
   final int currentExerciseNumber; // Where in training (1-19), determines free window
+
+  /// Suggested exercise number from the onboarding quiz (1-19). Null if the
+  /// quiz has not been completed yet.
+  final int? suggestedExerciseNumber;
+
+  /// Timestamp of the last submitted debrief, used to drive the home nudge card.
+  final DateTime? lastDebriefAt;
 
   /// Per-category notification preferences, e.g. {'lesson_reminders': true}.
   final Map<String, bool> notificationPreferences;
+
+  /// Number of consecutive days the user has opened the app.
+  final int studyStreak;
+
+  /// The date on which the user was last seen active, used to compute the streak.
+  final DateTime? lastActiveDate;
 
   const AppUser({
     required this.uid,
@@ -44,11 +54,12 @@ class AppUser {
     this.updatedAt,
     this.profilePhotoUrl,
     this.purchaseDate,
-    this.role = 'student',
-    this.instructorQualification,
-    this.inviteCode,
     this.currentExerciseNumber = 1,
+    this.suggestedExerciseNumber,
     this.notificationPreferences = const {},
+    this.lastDebriefAt,
+    this.studyStreak = 0,
+    this.lastActiveDate,
   });
 
   /// Constructs an [AppUser] from a Firestore document snapshot.
@@ -72,14 +83,17 @@ class AppUser {
       updatedAt: (data['updated_at'] as Timestamp?)?.toDate(),
       profilePhotoUrl: _sanitisePhotoUrl(data['profile_photo_url']),
       purchaseDate: (data['purchase_date'] as Timestamp?)?.toDate(),
-      role: data['user_role'] ?? 'student',
-      instructorQualification: data['instructor_qualification'],
-      inviteCode: data['invite_code'],
       currentExerciseNumber:
           (data['current_exercise_number'] ?? 1).toInt().clamp(1, 19),
+      suggestedExerciseNumber: data['suggested_exercise_number'] != null
+          ? (data['suggested_exercise_number'] as num).toInt().clamp(1, 19)
+          : null,
       notificationPreferences: _parseNotificationPreferences(
         data['notification_preferences'],
       ),
+      lastDebriefAt: (data['last_debrief_at'] as Timestamp?)?.toDate(),
+      studyStreak: (data['study_streak'] ?? 0).toInt(),
+      lastActiveDate: (data['last_active_date'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -99,9 +113,6 @@ class AppUser {
       ),
     );
   }
-
-  /// True when the user is an instructor.
-  bool get isInstructor => role == 'instructor';
 
   /// True when the user has purchased the full-access Pro upgrade.
   /// Accepts any of the valid paid status values: 'pro', 'premium', 'lifetime'.
@@ -158,13 +169,16 @@ class AppUser {
     if (updatedAt != null) 'updated_at': Timestamp.fromDate(updatedAt!),
     if (profilePhotoUrl != null) 'profile_photo_url': profilePhotoUrl,
     if (purchaseDate != null) 'purchase_date': Timestamp.fromDate(purchaseDate!),
-    'user_role': role,
-    if (instructorQualification != null)
-      'instructor_qualification': instructorQualification,
-    if (inviteCode != null) 'invite_code': inviteCode,
     'current_exercise_number': currentExerciseNumber,
+    if (suggestedExerciseNumber != null)
+      'suggested_exercise_number': suggestedExerciseNumber,
     if (notificationPreferences.isNotEmpty)
       'notification_preferences': notificationPreferences,
+    if (lastDebriefAt != null)
+      'last_debrief_at': Timestamp.fromDate(lastDebriefAt!),
+    'study_streak': studyStreak,
+    if (lastActiveDate != null)
+      'last_active_date': Timestamp.fromDate(lastActiveDate!),
   };
 
   /// Returns a copy with the given fields replaced.
@@ -182,11 +196,12 @@ class AppUser {
     DateTime? updatedAt,
     String? profilePhotoUrl,
     DateTime? purchaseDate,
-    String? role,
-    String? instructorQualification,
-    String? inviteCode,
     int? currentExerciseNumber,
+    int? suggestedExerciseNumber,
     Map<String, bool>? notificationPreferences,
+    DateTime? lastDebriefAt,
+    int? studyStreak,
+    DateTime? lastActiveDate,
   }) {
     return AppUser(
       uid: uid,
@@ -205,14 +220,15 @@ class AppUser {
       updatedAt: updatedAt ?? this.updatedAt,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       purchaseDate: purchaseDate ?? this.purchaseDate,
-      role: role ?? this.role,
-      instructorQualification:
-          instructorQualification ?? this.instructorQualification,
-      inviteCode: inviteCode ?? this.inviteCode,
       currentExerciseNumber:
           currentExerciseNumber ?? this.currentExerciseNumber,
+      suggestedExerciseNumber:
+          suggestedExerciseNumber ?? this.suggestedExerciseNumber,
       notificationPreferences:
           notificationPreferences ?? this.notificationPreferences,
+      lastDebriefAt: lastDebriefAt ?? this.lastDebriefAt,
+      studyStreak: studyStreak ?? this.studyStreak,
+      lastActiveDate: lastActiveDate ?? this.lastActiveDate,
     );
   }
 }

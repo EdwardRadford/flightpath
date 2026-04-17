@@ -17,7 +17,6 @@ import '../../shared/widgets/main_shell.dart';
 // Auth screens
 import '../../features/auth/screens/welcome_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
-import '../../features/auth/screens/instructor_login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/disclaimer_screen.dart';
 import '../../features/auth/screens/profile_setup_screen.dart';
@@ -26,11 +25,15 @@ import '../../features/auth/screens/password_reset_screen.dart';
 // Shell (bottom-nav) screens
 import '../../features/home/screens/home_screen.dart';
 import '../../features/exercises/screens/exercise_list_screen.dart';
-import '../../features/ask_ai/screens/ask_ai_screen.dart';
 import '../../features/logbook/screens/logbook_screen.dart';
+import '../../features/learn/screens/learn_screen.dart';
+import '../../features/tools/screens/tools_screen.dart';
+
+// Ask AI (accessible from Learn tab)
+import '../../features/ask_ai/screens/ask_ai_screen.dart';
+
+// Settings
 import '../../features/settings/screens/settings_screen.dart';
-// ProgressScreen merged into LogbookProgressScreen — /progress now redirects to /logbook.
-import '../../features/instructor/screens/instructor_home_screen.dart';
 
 // Exercise prep + debrief screens
 import '../../features/exercises/screens/prepare_hub_screen.dart';
@@ -39,6 +42,7 @@ import '../../features/exercises/screens/quiz_screen.dart';
 import '../../features/exercises/screens/visualisation_screen.dart';
 import '../../features/exercises/screens/video_screen.dart';
 import '../../features/exercises/screens/flashcard_screen.dart';
+import '../../features/exercises/screens/revision_screen.dart';
 import '../../features/debrief/screens/debrief_screen.dart';
 
 // Logbook
@@ -46,23 +50,34 @@ import '../../features/logbook/screens/logbook_entry_screen.dart';
 
 // Progress sub-screens
 import '../../features/progress/screens/completion_screen.dart';
+import '../../features/progress/screens/goals_screen.dart';
 import '../../features/progress/screens/share_progress_screen.dart';
 import '../../features/progress/screens/weak_areas_screen.dart';
 import '../../features/progress/screens/achievements_screen.dart';
 import '../../features/progress/screens/lesson_detail_screen.dart';
 
-// Instructor sub-screens
-import '../../features/instructor/screens/student_detail_screen.dart';
-import '../../features/instructor/screens/exercise_assessment_screen.dart';
-import '../../features/instructor/screens/messaging_screen.dart';
-import '../../features/instructor/screens/invite_code_screen.dart';
-import '../../features/instructor/screens/link_instructor_screen.dart';
+// Schedule screen
+import '../../features/prepare/screens/schedule_screen.dart';
 
 // Settings sub-screens
 import '../../features/settings/screens/profile_edit_screen.dart';
 import '../../features/settings/screens/notification_preferences_screen.dart';
 import '../../features/settings/screens/whats_new_screen.dart';
 import '../../features/settings/screens/privacy_policy_screen.dart';
+
+// Learn sub-screens
+import '../../features/learn/screens/rt_practice_screen.dart';
+import '../../features/learn/screens/atis_screen.dart';
+
+// Tools sub-screens
+import '../../features/tools/screens/metar_screen.dart';
+import '../../features/tools/screens/qxc_guide_screen.dart';
+import '../../features/tools/screens/airfield_screen.dart';
+import '../../features/tools/screens/aircraft_data_screen.dart';
+import '../../features/tools/screens/weather_screen.dart';
+
+// Progress sub-screens (stub replacements)
+import '../../features/progress/screens/hours_minimums_screen.dart';
 
 // ── Onboarding constant ──────────────────────────────────────────────────────
 const String kHasSeenOnboardingKey = 'has_seen_onboarding';
@@ -107,7 +122,6 @@ class _RouterNotifier extends ChangeNotifier {
     }
 
     final isAuthRoute = loc.startsWith('/login') ||
-        loc.startsWith('/instructor-login') ||
         loc.startsWith('/signup') ||
         loc.startsWith('/disclaimer') ||
         loc.startsWith('/profile-setup') ||
@@ -143,16 +157,7 @@ class _RouterNotifier extends ChangeNotifier {
       return pendingLink;
     }
 
-    if (isAuthRoute) {
-      if (user.isInstructor) return '/instructor';
-      return '/home';
-    }
-
-    if (user.isInstructor && loc == '/home') return '/instructor';
-
-    if (!user.isInstructor && loc.startsWith('/instructor')) {
-      return '/home';
-    }
+    if (isAuthRoute) return '/home';
 
     return null;
   }
@@ -188,10 +193,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
-        path: '/instructor-login',
-        builder: (context, state) => const InstructorLoginScreen(),
-      ),
-      GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
       ),
@@ -221,16 +222,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ExerciseListScreen(),
           ),
           GoRoute(
-            path: '/ask-ai',
-            builder: (context, state) => const AskAiScreen(),
-          ),
-          GoRoute(
             path: '/logbook',
             builder: (context, state) => const LogbookScreen(),
           ),
           GoRoute(
-            path: '/settings',
-            builder: (context, state) => const SettingsScreen(),
+            path: '/learn',
+            builder: (context, state) => const LearnScreen(),
+          ),
+          GoRoute(
+            path: '/tools',
+            builder: (context, state) => const ToolsScreen(),
           ),
           GoRoute(
             path: '/progress',
@@ -243,12 +244,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/revision',
-            // Revision mode is accessed via the exercises prepare hub.
-            redirect: (context, state) => '/exercises',
-          ),
-          GoRoute(
-            path: '/instructor',
-            builder: (context, state) => const InstructorHomeScreen(),
+            // Cross-exercise skills-test revision mode (restored 2026-04-13
+            // from the 1.0.1 orphan set — closes the _RevisionBanner broken
+            // promise on the exercises prepare hub).
+            builder: (context, state) => const RevisionScreen(),
           ),
         ],
       ),
@@ -311,10 +310,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/exercises/:exerciseId/schedule',
-        // Schedule redirects to the prepare hub.
-        pageBuilder: (context, state) => fadeSlideTransition(
+        pageBuilder: (context, state) => slideTransition(
           state: state,
-          child: PrepareHubScreen(
+          child: ScheduleScreen(
             compositeExerciseId: state.pathParameters['exerciseId']!,
           ),
         ),
@@ -381,6 +379,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ── Progress sub-screens ─────────────────────────────────────────────
       GoRoute(
+        path: '/goals',
+        pageBuilder: (context, state) => fadeSlideTransition(
+          state: state,
+          child: const GoalsScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/completion',
         pageBuilder: (context, state) => fadeSlideTransition(
           state: state,
@@ -409,34 +414,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // ── Instructor sub-screens ────────────────────────────────────────────
+      // ── Ask AI (full screen, accessed from Learn tab) ─────────────────────
       GoRoute(
-        path: '/instructor/student/:studentId',
-        builder: (context, state) => StudentDetailScreen(
-          studentId: state.pathParameters['studentId']!,
-        ),
+        path: '/ask-ai',
+        builder: (context, state) => const AskAiScreen(),
       ),
+
+      // ── Settings (full screen, accessed via AppBar icon) ─────────────────
       GoRoute(
-        path: '/instructor/student/:studentId/assess/:exerciseId',
-        builder: (context, state) => ExerciseAssessmentScreen(
-          studentId: state.pathParameters['studentId']!,
-          exerciseId: state.pathParameters['exerciseId']!,
-        ),
-      ),
-      GoRoute(
-        path: '/instructor/messaging/:otherUserId',
-        builder: (context, state) => MessagingScreen(
-          otherUserId: state.pathParameters['otherUserId']!,
-          otherUserName: state.uri.queryParameters['name'],
-        ),
-      ),
-      GoRoute(
-        path: '/instructor/invite-code',
-        builder: (context, state) => const InviteCodeScreen(),
-      ),
-      GoRoute(
-        path: '/link-instructor',
-        builder: (context, state) => const LinkInstructorScreen(),
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
 
       // ── Settings sub-screens ──────────────────────────────────────────────
@@ -455,6 +442,44 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/privacy-policy',
         builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+
+      // ── Learn sub-routes ─────────────────────────────────────────────────
+      GoRoute(
+        path: '/learn/rt-practice',
+        builder: (context, state) => const RtPracticeScreen(),
+      ),
+      GoRoute(
+        path: '/learn/atis',
+        builder: (context, state) => const AtisScreen(),
+      ),
+
+      // ── Tools sub-routes ──────────────────────────────────────────────────
+      GoRoute(
+        path: '/tools/weather',
+        builder: (context, state) => const WeatherScreen(),
+      ),
+      GoRoute(
+        path: '/tools/metar',
+        builder: (context, state) => const MetarScreen(),
+      ),
+      GoRoute(
+        path: '/tools/qxc',
+        builder: (context, state) => const QxcGuideScreen(),
+      ),
+      GoRoute(
+        path: '/tools/airfield',
+        builder: (context, state) => const AirfieldScreen(),
+      ),
+      GoRoute(
+        path: '/tools/aircraft',
+        builder: (context, state) => const AircraftDataScreen(),
+      ),
+
+      // ── Progress sub-routes ───────────────────────────────────────────────
+      GoRoute(
+        path: '/progress/minimums',
+        builder: (context, state) => const HoursMinimumsScreen(),
       ),
     ],
   );

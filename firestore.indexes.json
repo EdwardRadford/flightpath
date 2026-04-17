@@ -24,40 +24,6 @@
         { "fieldPath": "exercise_id", "order": "ASCENDING" },
         { "fieldPath": "sub_exercise", "order": "ASCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "instructor_links",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "instructor_id", "order": "ASCENDING" },
-        { "fieldPath": "linked_at", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "instructor_links",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "instructor_id", "order": "ASCENDING" },
-        { "fieldPath": "student_id", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "instructor_notes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "instructor_id", "order": "ASCENDING" },
-        { "fieldPath": "student_id", "order": "ASCENDING" },
-        { "fieldPath": "created_at", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "instructor_notes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "student_id", "order": "ASCENDING" },
-        { "fieldPath": "exercise_id", "order": "ASCENDING" },
-        { "fieldPath": "created_at", "order": "DESCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []

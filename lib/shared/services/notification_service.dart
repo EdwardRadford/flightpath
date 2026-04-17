@@ -541,6 +541,75 @@ class NotificationService {
   }
 
   // ---------------------------------------------------------------------------
+  // Evening Reminder — local (exercise-id-keyed, Europe/London)
+  // ---------------------------------------------------------------------------
+
+  /// Deterministic notification ID for the evening-before reminder, keyed on
+  /// [exerciseId] so the same exercise never creates duplicate notifications.
+  static int _eveningReminderId(String exerciseId) {
+    return 'eveningReminder_$exerciseId'.hashCode.abs() % 0x7FFFFFFF;
+  }
+
+  /// Schedules a local notification at 7pm (Europe/London) the evening before
+  /// [lessonDate].
+  ///
+  /// Uses a deterministic ID derived from [exerciseId], so calling this twice
+  /// for the same exercise replaces the old notification rather than adding a
+  /// duplicate. Does nothing if 7pm the day before has already passed.
+  static Future<void> scheduleEveningReminder(
+    String exerciseId,
+    DateTime lessonDate,
+    String exerciseName,
+  ) async {
+    await init();
+
+    final london = tz.getLocation('Europe/London');
+
+    // 7pm Europe/London the evening before the lesson.
+    final notifyAt = tz.TZDateTime(
+      london,
+      lessonDate.year,
+      lessonDate.month,
+      lessonDate.day - 1,
+      19, // 7pm
+    );
+
+    if (!notifyAt.isAfter(tz.TZDateTime.now(london))) return;
+
+    final id = _eveningReminderId(exerciseId);
+
+    await _plugin.zonedSchedule(
+      id,
+      'Lesson tomorrow — are you ready?',
+      'Review $exerciseName before your lesson tomorrow.',
+      notifyAt,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _reminderChannelId,
+          _reminderChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  /// Cancels a previously scheduled evening-before reminder for [exerciseId].
+  static Future<void> cancelLessonReminder(String exerciseId) async {
+    await init();
+    await _plugin.cancel(_eveningReminderId(exerciseId));
+  }
+
+  // ---------------------------------------------------------------------------
   // Spaced Repetition — local
   // ---------------------------------------------------------------------------
 

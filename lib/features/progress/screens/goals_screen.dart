@@ -66,7 +66,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
         loading: () => Center(
           child: CircularProgressIndicator(color: cs.primary),
         ),
-        error: (_, _) => Center(
+        error: (_, __) => Center(
           child: Text(
             'Unable to load goals. Please try again.',
             style: TextStyle(color: cs.error),
@@ -75,7 +75,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
         data: (goals) {
           final exercises = exercisesAsync.valueOrNull ?? [];
           final completedIds = exercises
-              .where((e) => e.status == ExerciseStatus.complete)
+              .where((e) => e.status.isCompleted)
               .map((e) {
             if (e.subExercise != null) {
               return '${e.exerciseId}_${e.subExercise}';

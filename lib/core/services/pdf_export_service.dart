@@ -91,18 +91,18 @@ class PdfExportService {
                     dateFormat.format(date),
                     exerciseDisplayName(cId),
                     _aircraftLabel(l.aircraftType),
-                    l.aircraftRegistration ?? '',
-                    l.departureAirfield ?? '',
-                    l.arrivalAirfield ?? '',
-                    l.dualTimeMinutes != null
-                        ? _minutesToHours(l.dualTimeMinutes!)
+                    l.aircraftRegistration,
+                    l.departureAirfield,
+                    l.arrivalAirfield,
+                    l.dualTimeMinutes > 0
+                        ? _minutesToHours(l.dualTimeMinutes)
                         : '',
-                    l.picTimeMinutes != null
-                        ? _minutesToHours(l.picTimeMinutes!)
+                    l.picTimeMinutes > 0
+                        ? _minutesToHours(l.picTimeMinutes)
                         : '',
-                    '${l.landings ?? 0}',
+                    '${l.landings}',
                     l.studentRating != null ? '${l.studentRating}/5' : '',
-                    l.remarks ?? '',
+                    l.remarks,
                   ];
                 }).toList(),
               ),

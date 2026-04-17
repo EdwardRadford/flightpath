@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:flight_path/core/constants/flashcard_data.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/shared/models/flashcard.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
@@ -30,8 +30,8 @@ class FlashcardScreen extends ConsumerStatefulWidget {
 }
 
 class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
-  late List<Flashcard> _cards;
-  late List<Flashcard> _currentDeck;
+  List<Flashcard> _cards = [];
+  List<Flashcard> _currentDeck = [];
   int _currentIndex = 0;
   bool _isFlipped = false;
   bool _isAnimating = false;
@@ -48,19 +48,6 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   @override
   void initState() {
     super.initState();
-    _cards = getFlashcards(widget.compositeExerciseId);
-    _currentDeck = List.of(_cards);
-    FirebaseAnalytics.instance.logEvent(
-      name: 'flashcard_viewed',
-      parameters: {'exercise_id': widget.compositeExerciseId},
-    );
-    FirebaseAnalytics.instance.logEvent(
-      name: 'flashcards_opened',
-      parameters: {
-        'exercise_id': widget.compositeExerciseId,
-        'card_count': _currentDeck.length,
-      },
-    );
   }
 
   void _shuffle() {
@@ -191,33 +178,78 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   @override
   Widget build(BuildContext context) {
     final exerciseName = exerciseLongName(widget.compositeExerciseId);
+    final cardsAsync =
+        ref.watch(flashcardsProvider(widget.compositeExerciseId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _isRetryMode ? 'Retry — $exerciseName' : exerciseName,
-          style: const TextStyle(fontSize: 16),
+    return cardsAsync.when(
+      loading: () => Scaffold(
+        appBar: AppBar(
+          title: Text(exerciseName, style: const TextStyle(fontSize: 16)),
+          elevation: 0,
         ),
-        elevation: 0,
-        actions: [
-          if (!_showSummary)
-            IconButton(
-              onPressed: _shuffle,
-              icon: const Icon(Icons.shuffle_rounded),
-              tooltip: 'Shuffle cards',
-            ),
-        ],
+        body: const Center(child: CircularProgressIndicator()),
       ),
-      body: _cards.isEmpty
-          ? Center(
-              child: Text(
-                'No flashcards available for this exercise.',
-                style: TextStyle(color: AppColors.onSurfaceVariant),
-              ),
-            )
-          : _showSummary
-              ? _buildSummary()
-              : _buildCardView(),
+      error: (err, _) => Scaffold(
+        appBar: AppBar(
+          title: Text(exerciseName, style: const TextStyle(fontSize: 16)),
+          elevation: 0,
+        ),
+        body: Center(
+          child: Text(
+            'Failed to load flashcards.',
+            style: TextStyle(color: AppColors.onSurfaceVariant),
+          ),
+        ),
+      ),
+      data: (data) {
+        if (_cards.isEmpty && data.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _cards = data;
+              _currentDeck = List.of(data);
+            });
+            FirebaseAnalytics.instance.logEvent(
+              name: 'flashcard_viewed',
+              parameters: {'exercise_id': widget.compositeExerciseId},
+            );
+            FirebaseAnalytics.instance.logEvent(
+              name: 'flashcards_opened',
+              parameters: {
+                'exercise_id': widget.compositeExerciseId,
+                'card_count': data.length,
+              },
+            );
+          });
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              _isRetryMode ? 'Retry — $exerciseName' : exerciseName,
+              style: const TextStyle(fontSize: 16),
+            ),
+            elevation: 0,
+            actions: [
+              if (!_showSummary)
+                IconButton(
+                  onPressed: _shuffle,
+                  icon: const Icon(Icons.shuffle_rounded),
+                  tooltip: 'Shuffle cards',
+                ),
+            ],
+          ),
+          body: _cards.isEmpty
+              ? Center(
+                  child: Text(
+                    'No flashcards available for this exercise.',
+                    style: TextStyle(color: AppColors.onSurfaceVariant),
+                  ),
+                )
+              : _showSummary
+                  ? _buildSummary()
+                  : _buildCardView(),
+        );
+      },
     );
   }
 

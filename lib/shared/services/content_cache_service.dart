@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/shared/models/exercise_content.dart';
+import 'package:flight_path/shared/models/flashcard.dart';
 import 'package:flight_path/shared/models/quiz_question.dart';
 import 'package:flight_path/shared/services/connectivity_service.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
@@ -172,6 +173,66 @@ class ContentCacheService {
   }
 
   // ---------------------------------------------------------------------------
+  // Flashcards — cache with background refresh
+  // ---------------------------------------------------------------------------
+
+  /// Returns flashcards for an exercise, preferring cache.
+  /// If online, triggers a background refresh.
+  Future<List<Flashcard>> getFlashcards(String exerciseId) async {
+    final cacheKey = exerciseId;
+
+    // Try cache first.
+    final cachedJson = _hive.getCachedFlashcards(cacheKey);
+    List<Flashcard>? cached;
+    if (cachedJson != null && cachedJson.isNotEmpty) {
+      cached = cachedJson
+          .map((map) => Flashcard.fromMap(cacheKey, map))
+          .toList();
+    }
+
+    // If online, refresh in background.
+    if (_isOnline) {
+      _refreshFlashcards(exerciseId, cacheKey);
+    }
+
+    if (cached != null && cached.isNotEmpty) return cached;
+
+    // No cache — fetch from Firestore.
+    if (!_isOnline) return [];
+
+    final fresh = await _firestore.getFlashcards(exerciseId);
+    if (fresh.isNotEmpty) {
+      await _cacheFlashcards(cacheKey, fresh);
+    }
+    return fresh;
+  }
+
+  Future<void> _refreshFlashcards(
+    String exerciseId,
+    String cacheKey,
+  ) async {
+    try {
+      final fresh = await _firestore.getFlashcards(exerciseId);
+      if (fresh.isNotEmpty) {
+        await _cacheFlashcards(cacheKey, fresh);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ContentCacheService: flashcard refresh failed for '
+            '$cacheKey: $e');
+      }
+    }
+  }
+
+  Future<void> _cacheFlashcards(
+    String cacheKey,
+    List<Flashcard> cards,
+  ) async {
+    final maps = cards.map((c) => c.toMap()).toList();
+    await _hive.cacheFlashcards(cacheKey, maps);
+  }
+
+  // ---------------------------------------------------------------------------
   // Prefetch all content
   // ---------------------------------------------------------------------------
 
@@ -210,6 +271,12 @@ class ContentCacheService {
         );
         if (questions.isNotEmpty) {
           await _cacheQuizQuestions(cacheKey, questions);
+        }
+
+        // Fetch and cache flashcards (keyed by composite ID, e.g. 'ex_10_10a').
+        final cards = await _firestore.getFlashcards(cacheKey);
+        if (cards.isNotEmpty) {
+          await _cacheFlashcards(cacheKey, cards);
         }
 
         cached++;

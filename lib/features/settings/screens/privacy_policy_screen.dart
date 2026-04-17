@@ -46,9 +46,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: 'Data Storage',
             body:
-                'Your data is stored securely using Google Firebase, hosted in the EU. '
-                'Messages exchanged with your instructor are stored in Firestore and are '
-                'accessible only to you and your linked instructor.',
+                'Your data is stored securely using Google Firebase, hosted in the EU.',
           ),
           _Section(
             title: 'AI Features',
@@ -65,13 +63,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 'you of upcoming lessons, prompt spaced repetition reviews, and nudge '
                 'you if you have been inactive. You can manage or disable notifications '
                 'at any time from Settings > Notification Preferences.',
-          ),
-          _Section(
-            title: 'Instructor Linking',
-            body:
-                'When you link to an instructor, they can view your exercise progress, '
-                'lesson records, and leave notes. Instructors cannot access your account '
-                'credentials or personal contact information beyond your display name.',
           ),
           _Section(
             title: 'Account Deletion',

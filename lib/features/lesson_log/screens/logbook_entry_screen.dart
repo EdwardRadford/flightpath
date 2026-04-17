@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
-import 'package:flight_path/core/services/offline_lesson_service.dart';
+import 'package:flight_path/shared/services/offline_lesson_service.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/auth/providers/auth_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
@@ -44,6 +44,7 @@ class _LogbookEntryScreenState extends ConsumerState<LogbookEntryScreen> {
   final _remarksController = TextEditingController();
   final _customExerciseController = TextEditingController();
   bool _isDayFlight = true;
+  bool _isQxc = false;
   String _selectedExercise = 'ex_01';
 
   @override
@@ -153,10 +154,9 @@ class _LogbookEntryScreenState extends ConsumerState<LogbookEntryScreen> {
 
       final lesson = Lesson(
         id: '', // Firestore auto-generates
-        userId: uid,
         exerciseId: _selectedExercise,
         lessonDate: _date,
-        lessonDuration: totalMinutes > 0 ? totalMinutes : null,
+        lessonDuration: totalMinutes > 0 ? totalMinutes : 0,
         status: LessonStatus.manualEntry,
         createdAt: DateTime.now(),
         aircraftRegistration: InputSanitiser.sanitise(
@@ -172,10 +172,10 @@ class _LogbookEntryScreenState extends ConsumerState<LogbookEntryScreen> {
           _arrivalController.text.toUpperCase(),
           maxLength: 4,
         ),
-        flightTimeMinutes: totalMinutes > 0 ? totalMinutes : null,
-        dualTimeMinutes: dualMinutes > 0 ? dualMinutes : null,
-        picTimeMinutes: picMinutes > 0 ? picMinutes : null,
-        landings: landings > 0 ? landings : null,
+        flightTimeMinutes: totalMinutes > 0 ? totalMinutes : 0,
+        dualTimeMinutes: dualMinutes > 0 ? dualMinutes : 0,
+        picTimeMinutes: picMinutes > 0 ? picMinutes : 0,
+        landings: landings > 0 ? landings : 0,
         instructorName: InputSanitiser.sanitise(
           _instructorController.text,
           maxLength: InputSanitiser.maxName,
@@ -185,16 +185,17 @@ class _LogbookEntryScreenState extends ConsumerState<LogbookEntryScreen> {
           maxLength: InputSanitiser.maxMedium,
         ),
         isDayFlight: _isDayFlight,
+        isQxc: _isQxc,
         customExerciseName: _selectedExercise == 'custom'
             ? InputSanitiser.sanitise(
                 _customExerciseController.text,
                 maxLength: InputSanitiser.maxName,
               )
-            : null,
+            : '',
       );
 
       final offlineLessons = ref.read(offlineLessonServiceProvider);
-      await offlineLessons.createLesson(lesson);
+      await offlineLessons.createLesson(uid, lesson);
 
       FirebaseAnalytics.instance.logEvent(
         name: 'logbook_manual_entry_added',
@@ -527,6 +528,40 @@ class _LogbookEntryScreenState extends ConsumerState<LogbookEntryScreen> {
               decoration:  InputDecoration(
                 hintText: 'Optional notes...',
                 hintStyle: TextStyle(color: AppColors.onSurfaceVariant),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // QXC checkbox
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: CheckboxListTile(
+                value: _isQxc,
+                onChanged: (v) => setState(() => _isQxc = v ?? false),
+                title: Text(
+                  'Qualifying Cross-Country (QXC)',
+                  style: TextStyle(
+                    color: AppColors.onSurface,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  '150nm+, 3 legs, 2 full-stop landings',
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+                activeColor: AppColors.primary,
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
             const SizedBox(height: 32),

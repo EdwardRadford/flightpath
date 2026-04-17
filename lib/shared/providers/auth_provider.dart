@@ -12,7 +12,3 @@ final currentUserIdProvider = Provider<String?>((ref) {
   return ref.watch(authStateProvider).valueOrNull?.uid;
 });
 
-/// Set to `true` by the instructor login screen so that profile-setup can
-/// pre-toggle the instructor switch for brand-new users whose Firestore doc
-/// doesn't exist yet (and therefore has no `user_role` field).
-final pendingInstructorSignupProvider = StateProvider<bool>((ref) => false);

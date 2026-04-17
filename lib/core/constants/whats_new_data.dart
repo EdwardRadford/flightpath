@@ -16,6 +16,19 @@ class WhatsNewEntry {
 /// All version entries in reverse chronological order (newest first).
 const List<WhatsNewEntry> whatsNewEntries = [
   WhatsNewEntry(
+    version: '1.0.6',
+    date: 'April 2026',
+    changes: [
+      'RT Practice — AI-powered ATC roleplay for every scenario in the UK PPL syllabus, including ATIS decoding',
+      'METAR Training — decode live weather reports from real UK airfields',
+      'QXC Guide — learn to plan your cross-country, step by step',
+      'Aircraft Data — performance figures and speed limits for 10 common UK training aircraft',
+      'Airfield Info — local procedures, circuits and frequencies for UK training fields (content rolling out)',
+      'Hours to Licence — track your progress against CAA PPL minimum requirements',
+      'Smarter onboarding — a short quiz now suggests where to start in the syllabus',
+    ],
+  ),
+  WhatsNewEntry(
     version: '1.0.5',
     date: 'April 2026',
     changes: [
@@ -33,8 +46,6 @@ const List<WhatsNewEntry> whatsNewEntries = [
       'Fixed Google Sign-In crash on iOS',
       'Fixed logbook not loading after sign-in',
       'Fixed quiz questions showing A/B instead of True/False',
-      'Fixed instructor home screen briefly showing student view',
-      'Fixed instructor invite code input getting stuck loading',
       'Fixed Exercise 18C sub-node appearing off-screen',
       'Improved AI debrief — instructor rating now optional',
       'Fixed share progress screen showing incorrect lesson order',
@@ -48,7 +59,6 @@ const List<WhatsNewEntry> whatsNewEntries = [
       'Interactive quizzes and flashcards for every exercise',
       'Digital pilot logbook',
       'AI-powered post-lesson debriefs',
-      'Instructor dashboard with student progress tracking',
       'Light and dark theme support',
     ],
   ),

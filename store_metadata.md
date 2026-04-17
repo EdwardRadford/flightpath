@@ -27,19 +27,15 @@ KEY FEATURES:
 
 - AI Lesson Debriefs: After each lesson, receive a personalised AI-generated debrief that highlights what went well, areas to improve, and what to focus on next time.
 
-- Weather Briefing: Check real-time weather conditions for your home airfield before heading out to fly.
-
 - Interactive Checklists: Pre-flight checklists tailored to your aircraft type (Cessna 152, Cessna 172, PA-28, DA40) for study and familiarisation.
 
 - Digital Logbook: Log every lesson with ratings, duration, weather conditions, and personal reflections. Track your total hours and progress over time.
-
-- Instructor Dashboard: Instructors can view their students' progress, exercise completion, and lesson history via a dedicated dashboard.
 
 - Progress Tracking: Visual progress maps, completion percentages, hours breakdown, and identification of areas that need more practice.
 
 FREE AND PREMIUM:
 
-Flight Path gives you free access to a selection of exercises based on your current training level. Upgrade to Full Access with a one-time purchase to unlock all 19 exercises, AI-powered debriefs, instructor sharing, and every premium feature. No subscriptions, no recurring charges.
+Flight Path gives you free access to a selection of exercises based on your current training level. Upgrade to Full Access with a one-time purchase to unlock all 19 exercises, AI-powered debriefs, and every premium feature. No subscriptions, no recurring charges.
 
 SAFETY NOTICE:
 
@@ -51,10 +47,10 @@ PPL, pilot training, flying lessons, CAA, private pilot licence, aviation, stude
 
 ## URLs and Contact
 
-- **Privacy Policy URL:** https://flightpath.app/privacy
-- **Terms of Service URL:** https://flightpath.app/terms
-- **Support URL:** https://flightpath.app/support
-- **Contact Email:** eddie@yowzer.co.uk
+- **Privacy Policy URL:** https://getflightpath.app/privacy.html
+- **Terms of Service URL:** https://getflightpath.app/terms.html
+- **Support URL:** https://getflightpath.app/support.html
+- **Contact Email:** support@getflightpath.app
 
 ## Screenshots Needed
 

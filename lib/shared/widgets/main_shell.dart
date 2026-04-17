@@ -1,6 +1,6 @@
 // Bottom navigation shell — wraps tab screens with a persistent nav bar.
-// 5 tabs for students: Home | Exercises | Ask AI | Logbook | Settings
-// 3 tabs for instructors: Dashboard | Exercises | Settings
+// 5 tabs: Home | Exercises | Progress | Learn | Tools
+// Settings is accessed via the AppBar icon on each tab.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +8,10 @@ import 'package:go_router/go_router.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/auth_provider.dart';
 import 'package:flight_path/shared/providers/update_badge_provider.dart';
+import 'package:flight_path/shared/services/firestore_service.dart';
+import 'package:flight_path/shared/services/streak_service.dart';
 import 'package:flight_path/shared/widgets/connectivity_banner.dart';
 
 typedef _Tab = ({String path, String label, IconData icon, IconData activeIcon});
@@ -24,18 +27,12 @@ class MainShell extends ConsumerStatefulWidget {
   /// walkthrough to measure nav tab positions.
   static final bottomNavKey = GlobalKey();
 
-  static const List<_Tab> _studentTabs = [
+  static const List<_Tab> _tabs = [
     (path: '/home', label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home),
     (path: '/exercises', label: 'Exercises', icon: Icons.list_outlined, activeIcon: Icons.list),
-    (path: '/ask-ai', label: 'Ask AI', icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome_rounded),
-    (path: '/logbook', label: 'Logbook', icon: Icons.menu_book_outlined, activeIcon: Icons.menu_book),
-    (path: '/settings', label: 'Settings', icon: Icons.settings_outlined, activeIcon: Icons.settings),
-  ];
-
-  static const List<_Tab> _instructorTabs = [
-    (path: '/instructor', label: 'Dashboard', icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard),
-    (path: '/exercises', label: 'Exercises', icon: Icons.list_outlined, activeIcon: Icons.list),
-    (path: '/settings', label: 'Settings', icon: Icons.settings_outlined, activeIcon: Icons.settings),
+    (path: '/logbook', label: 'Progress', icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart_rounded),
+    (path: '/learn', label: 'Learn', icon: Icons.school_outlined, activeIcon: Icons.school_rounded),
+    (path: '/tools', label: 'Tools', icon: Icons.handyman_outlined, activeIcon: Icons.handyman_rounded),
   ];
 
   @override
@@ -43,9 +40,28 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
+  /// Tracks whether the streak update has been fired this app session.
+  static bool _streakUpdated = false;
+
   /// Index of the tab that was active before the most recent navigation.
   /// Used to determine the slide direction of the AnimatedSwitcher.
   int _prevIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateStreak());
+  }
+
+  void _updateStreak() {
+    if (_streakUpdated) return;
+    _streakUpdated = true;
+    final uid = ref.read(currentUserIdProvider);
+    final user = ref.read(appUserProvider).valueOrNull;
+    if (uid == null || user == null) return;
+    final firestoreService = ref.read(firestoreServiceProvider);
+    StreakService.updateStreakIfNeeded(uid, user, firestoreService);
+  }
 
   int _currentIndex(BuildContext context, List<_Tab> tabs) {
     final location = GoRouterState.of(context).matchedLocation;
@@ -55,27 +71,37 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(appUserProvider);
-    if (userAsync.isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-      );
-    }
-    final user = userAsync.valueOrNull;
-    final isInstructor = user?.isInstructor ?? false;
-    final tabs = isInstructor ? MainShell._instructorTabs : MainShell._studentTabs;
+    final tabs = MainShell._tabs;
     final index = _currentIndex(context, tabs);
     final showUpdateBadge = ref.watch(updateBadgeProvider);
-
-    // Settings tab index varies by role.
-    final settingsIndex = tabs.indexWhere((t) => t.path == '/settings');
 
     // New tab is to the left of the previous one → slide in from the left.
     final slideFromLeft = index < _prevIndex;
 
     return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        toolbarHeight: 48,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        actions: [
+          Badge(
+            isLabelVisible: showUpdateBadge,
+            smallSize: 7,
+            backgroundColor: AppColors.primary,
+            child: IconButton(
+              icon: const Icon(Icons.settings_rounded),
+              tooltip: 'Settings',
+              onPressed: () {
+                ref.read(updateBadgeProvider.notifier).markSeen();
+                context.push('/settings');
+              },
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: Column(
         children: [
           const ConnectivityBanner(),
@@ -99,7 +125,12 @@ class _MainShellState extends ConsumerState<MainShell> {
               },
               child: KeyedSubtree(
                 key: ValueKey(tabs[index].path),
-                child: widget.child,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: widget.child,
+                  ),
+                ),
               ),
             ),
           ),
@@ -122,9 +153,6 @@ class _MainShellState extends ConsumerState<MainShell> {
               name: 'tab_switched',
               parameters: {'tab_name': tabs[i].label.toLowerCase()},
             );
-            if (i == settingsIndex) {
-              ref.read(updateBadgeProvider.notifier).markSeen();
-            }
             // Capture current index before navigating so slideFromLeft
             // is computed correctly on the next build.
             setState(() => _prevIndex = index);
@@ -138,27 +166,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           selectedFontSize: 11,
           unselectedFontSize: 11,
           elevation: 0,
-          items: tabs.asMap().entries.map((entry) {
-            final i = entry.key;
-            final t = entry.value;
-            final isSettings = i == settingsIndex;
-            final badgeIcon = Badge(
-              isLabelVisible: showUpdateBadge,
-              smallSize: 7,
-              backgroundColor: AppColors.primary,
-              child: Icon(t.icon, semanticLabel: t.label),
-            );
-            final badgeActiveIcon = Badge(
-              isLabelVisible: showUpdateBadge,
-              smallSize: 7,
-              backgroundColor: AppColors.primary,
-              child: Icon(t.activeIcon, semanticLabel: t.label),
-            );
+          items: tabs.map((t) {
             return BottomNavigationBarItem(
-              icon: isSettings ? badgeIcon : Icon(t.icon, semanticLabel: t.label),
-              activeIcon: isSettings
-                  ? badgeActiveIcon
-                  : Icon(t.activeIcon, semanticLabel: t.label),
+              icon: Icon(t.icon, semanticLabel: t.label),
+              activeIcon: Icon(t.activeIcon, semanticLabel: t.label),
               label: t.label,
               tooltip: t.label,
             );

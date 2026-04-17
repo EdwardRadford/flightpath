@@ -33,7 +33,7 @@ class HoursScreen extends ConsumerWidget {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
-        error: (_, _) => const Center(
+        error: (_, __) => const Center(
           child: Text('Unable to load data. Please try again.',
               style: TextStyle(color: AppColors.error)),
         ),
@@ -66,7 +66,7 @@ class HoursScreen extends ConsumerWidget {
           // Calculate total hours from lesson durations
           int totalMinutes = 0;
           for (final lesson in completedLessons) {
-            totalMinutes += lesson.lessonDuration ?? 0;
+            totalMinutes += lesson.lessonDuration;
           }
           final totalHours = totalMinutes / 60;
 
@@ -173,7 +173,7 @@ class HoursScreen extends ConsumerWidget {
                   ...byMonth.entries.map((entry) {
                     int monthMinutes = 0;
                     for (final l in entry.value) {
-                      monthMinutes += l.lessonDuration ?? 0;
+                      monthMinutes += l.lessonDuration;
                     }
                     return _MonthRow(
                       month: entry.key,

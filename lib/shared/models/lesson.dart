@@ -47,6 +47,7 @@ class Lesson {
   final String remarks;
   final bool isDayFlight; // true = day, false = night
   final String customExerciseName; // free-text when exerciseId == 'custom'
+  final bool isQxc; // true when this flight is the qualifying cross-country
 
   const Lesson({
     required this.id,
@@ -86,6 +87,7 @@ class Lesson {
     this.remarks = '',
     this.isDayFlight = true,
     this.customExerciseName = '',
+    this.isQxc = false,
   });
 
   /// Constructs a [Lesson] from a Firestore document snapshot.
@@ -134,6 +136,7 @@ class Lesson {
       remarks: data['remarks'] ?? '',
       isDayFlight: data['is_day_flight'] ?? true,
       customExerciseName: data['custom_exercise_name'] ?? '',
+      isQxc: data['is_qxc'] ?? false,
     );
   }
 
@@ -212,6 +215,7 @@ class Lesson {
     'is_day_flight': isDayFlight,
     if (customExerciseName.isNotEmpty)
       'custom_exercise_name': customExerciseName,
+    if (isQxc) 'is_qxc': true,
   };
 
   /// Returns a copy of this lesson with the given fields replaced.
@@ -252,6 +256,7 @@ class Lesson {
     String? remarks,
     bool? isDayFlight,
     String? customExerciseName,
+    bool? isQxc,
   }) {
     return Lesson(
       id: id ?? this.id,
@@ -292,6 +297,7 @@ class Lesson {
       remarks: remarks ?? this.remarks,
       isDayFlight: isDayFlight ?? this.isDayFlight,
       customExerciseName: customExerciseName ?? this.customExerciseName,
+      isQxc: isQxc ?? this.isQxc,
     );
   }
 }

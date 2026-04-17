@@ -65,38 +65,6 @@ class DataExportService {
         .map((d) => _sanitiseTimestamps({...d.data(), 'id': d.id}))
         .toList();
 
-    // 5. Instructor links (where user is student or instructor)
-    final instrLinksAsInstructor = await _db
-        .collection('instructor_links')
-        .where('instructor_id', isEqualTo: uid)
-        .get();
-    final instrLinksAsStudent = await _db
-        .collection('instructor_links')
-        .where('student_id', isEqualTo: uid)
-        .get();
-    export['instructor_links'] = [
-      ...instrLinksAsInstructor.docs
-          .map((d) => _sanitiseTimestamps({...d.data(), 'id': d.id})),
-      ...instrLinksAsStudent.docs
-          .map((d) => _sanitiseTimestamps({...d.data(), 'id': d.id})),
-    ];
-
-    // 6. Instructor notes (where user is student or instructor)
-    final instrNotesAsInstructor = await _db
-        .collection('instructor_notes')
-        .where('instructor_id', isEqualTo: uid)
-        .get();
-    final instrNotesAsStudent = await _db
-        .collection('instructor_notes')
-        .where('student_id', isEqualTo: uid)
-        .get();
-    export['instructor_notes'] = [
-      ...instrNotesAsInstructor.docs
-          .map((d) => _sanitiseTimestamps({...d.data(), 'id': d.id})),
-      ...instrNotesAsStudent.docs
-          .map((d) => _sanitiseTimestamps({...d.data(), 'id': d.id})),
-    ];
-
     return export;
   }
 

@@ -11,6 +11,7 @@ import 'package:flight_path/shared/services/hive_service.dart';
 import 'package:flight_path/shared/models/app_user.dart';
 import 'package:flight_path/shared/models/exercise_content.dart';
 import 'package:flight_path/shared/models/lesson.dart';
+import 'package:flight_path/shared/models/flashcard.dart';
 import 'package:flight_path/shared/models/quiz_question.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 
@@ -58,13 +59,9 @@ class FirestoreService {
   CollectionReference<Map<String, dynamic>> get quizQuestionsCollection =>
       _db.collection('quiz_questions');
 
-  /// Top-level instructor links collection.
-  CollectionReference<Map<String, dynamic>> get instructorLinksCollection =>
-      _db.collection('instructor_links');
-
-  /// Top-level instructor notes collection.
-  CollectionReference<Map<String, dynamic>> get instructorNotesCollection =>
-      _db.collection('instructor_notes');
+  /// Read-only flashcards collection.
+  CollectionReference<Map<String, dynamic>> get flashcardsCollection =>
+      _db.collection('flashcards');
 
   /// Top-level share links collection.
   CollectionReference<Map<String, dynamic>> get shareLinksCollection =>
@@ -262,15 +259,12 @@ class FirestoreService {
   /// Permanently deletes all user data and the Firebase Auth account by
   /// calling the `deleteUserAccount` Cloud Function. The Cloud Function uses
   /// the Admin SDK, which bypasses Firestore security rules that block
-  /// client-side deletion of subcollections, share_links, instructor_links,
-  /// instructor_notes, etc.
+  /// client-side deletion of subcollections, share_links, etc.
   ///
   /// The Cloud Function deletes:
   ///   - The `users/{uid}/lessons` subcollection
   ///   - The `users/{uid}/exercises` subcollection
   ///   - All `share_links` where user_id == uid
-  ///   - All `instructor_links` where instructor_id or student_id == uid
-  ///   - All `instructor_notes` where instructor_id or student_id == uid
   ///   - The `users/{uid}` profile document
   ///   - The Firebase Auth account
   ///
@@ -378,6 +372,26 @@ class FirestoreService {
     // Shuffle and cap at 10.
     questions.shuffle();
     return questions.take(10).toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Flashcards
+  // ---------------------------------------------------------------------------
+
+  /// Fetches all flashcards for [exerciseId].
+  Future<List<Flashcard>> getFlashcards(String exerciseId) async {
+    final qs = await flashcardsCollection
+        .where('exercise_id', isEqualTo: exerciseId)
+        .get();
+    final cards = <Flashcard>[];
+    for (final doc in qs.docs) {
+      try {
+        cards.add(Flashcard.fromFirestore(doc));
+      } catch (e) {
+        debugPrint('Skipping malformed document ${doc.id}: $e');
+      }
+    }
+    return cards;
   }
 
   /// Cached daily question result — avoids re-fetching within the same session.

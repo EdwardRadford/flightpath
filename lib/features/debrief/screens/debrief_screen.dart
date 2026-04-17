@@ -329,12 +329,14 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         );
       }
 
-      // Increment hours_flown
+      // Increment hours_flown and stamp lastDebriefAt
+      final userUpdate = <String, dynamic>{
+        'last_debrief_at': FieldValue.serverTimestamp(),
+      };
       if (durationMinutes != null && durationMinutes > 0) {
-        await firestore.updateUser(uid, {
-          'hours_flown': FieldValue.increment(durationMinutes / 60),
-        });
+        userUpdate['hours_flown'] = FieldValue.increment(durationMinutes / 60);
       }
+      await firestore.updateUser(uid, userUpdate);
 
       // Schedule spaced-rep notifications
       final exerciseName = exerciseFullName(widget.exerciseId);

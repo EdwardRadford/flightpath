@@ -113,6 +113,21 @@ final suggestedExerciseProvider =
 });
 
 // ---------------------------------------------------------------------------
+// Skills test readiness
+// ---------------------------------------------------------------------------
+
+/// Percentage of exercises with bestRating >= 4 (skills test ready).
+/// Returns 0.0..1.0. Returns null if exercises haven't loaded yet.
+final skillsReadinessProvider = Provider<double?>((ref) {
+  final exercisesAsync = ref.watch(userExercisesProvider);
+  final exercises = exercisesAsync.valueOrNull;
+  if (exercises == null) return null;
+
+  final ready = exercises.where((e) => (e.bestRating ?? 0) >= 4).length;
+  return ready / _orderedExercises.length;
+});
+
+// ---------------------------------------------------------------------------
 // Due for review
 // ---------------------------------------------------------------------------
 

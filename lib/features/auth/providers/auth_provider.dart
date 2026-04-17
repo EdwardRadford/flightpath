@@ -16,8 +16,3 @@ final currentUserIdProvider = Provider<String?>((ref) {
 
 /// Auth service for performing sign in / sign up / sign out.
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
-
-/// Set to `true` by the instructor login screen so that profile-setup can
-/// pre-toggle the instructor switch for brand-new users whose Firestore doc
-/// doesn't exist yet (and therefore has no `user_role` field).
-final pendingInstructorSignupProvider = StateProvider<bool>((ref) => false);

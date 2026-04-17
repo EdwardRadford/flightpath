@@ -9,10 +9,12 @@ import 'package:intl/intl.dart';
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/utils/exercise_helpers.dart';
+import 'package:flight_path/features/progress/screens/hours_minimums_screen.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
 
 // Syllabus phases
@@ -58,13 +60,13 @@ class ProgressScreen extends ConsumerStatefulWidget {
 
 class _ProgressScreenState extends ConsumerState<ProgressScreen>
     with SingleTickerProviderStateMixin {
-  static const _tabNames = ['lessons', 'hours', 'syllabus'];
+  static const _tabNames = ['lessons', 'hours', 'syllabus', 'minimums'];
   late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     FirebaseAnalytics.instance.logEvent(
       name: 'progress_viewed',
       parameters: {'tab_name': 'lessons'},
@@ -124,6 +126,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
               Tab(text: 'Lessons'),
               Tab(text: 'Hours'),
               Tab(text: 'Syllabus'),
+              Tab(text: 'Minimums'),
             ],
           ),
         ),
@@ -133,6 +136,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
             _LessonsTab(),
             _HoursTab(),
             _SyllabusTab(),
+            HoursMinimumsScreen(),
           ],
         ),
       );
@@ -153,7 +157,7 @@ class _LessonsTab extends ConsumerWidget {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
-      error: (_, _) => const Center(
+      error: (_, __) => const Center(
         child: Text('Unable to load data. Please try again.', style: TextStyle(color: AppColors.error)),
       ),
       data: (lessons) {
@@ -241,7 +245,7 @@ class _LessonTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = lesson.lessonDate ?? lesson.scheduledDate ?? lesson.createdAt;
 
-    final primaryKey = lesson.subExercise != null
+    final primaryKey = lesson.subExercise.isNotEmpty
         ? '${lesson.exerciseId}_${lesson.subExercise}'
         : lesson.exerciseId;
     final primaryName = exerciseLongName(primaryKey);
@@ -382,9 +386,9 @@ class _LessonTile extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              if (lesson.lessonDuration != null)
+                              if (lesson.lessonDuration > 0)
                                 Text(
-                                  _formatDuration(lesson.lessonDuration!),
+                                  _formatDuration(lesson.lessonDuration),
                                   style:  TextStyle(
                                     color: AppColors.onSurfaceVariant,
                                     fontSize: 12,
@@ -461,8 +465,8 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
   double _totalHours(List<Lesson> lessons) {
     double total = 0;
     for (final l in lessons) {
-      if (l.lessonDuration != null && l.status == LessonStatus.completed) {
-        total += l.lessonDuration! / 60.0;
+      if (l.lessonDuration > 0 && l.status == LessonStatus.completed) {
+        total += l.lessonDuration / 60.0;
       }
     }
     return total;
@@ -485,7 +489,7 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
-      error: (_, _) => const Center(
+      error: (_, __) => const Center(
         child: Text('Unable to load data. Please try again.', style: TextStyle(color: AppColors.error)),
       ),
       data: (allLessons) {
@@ -517,7 +521,7 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
         // Totals for the logbook table footer.
         int totalMinutesFiltered = 0;
         for (final l in completedFiltered) {
-          totalMinutesFiltered += l.lessonDuration ?? 0;
+          totalMinutesFiltered += l.lessonDuration;
         }
 
         return SingleChildScrollView(
@@ -976,7 +980,7 @@ class _LogbookDataRow extends StatelessWidget {
     final dateStr = DateFormat('d MMM yy').format(date);
 
     // Resolve exercise name — handle sub-exercises
-    final compositeKey = lesson.subExercise != null
+    final compositeKey = lesson.subExercise.isNotEmpty
         ? '${lesson.exerciseId}_${lesson.subExercise}'
         : lesson.exerciseId;
     final fullName = exerciseLongName(compositeKey);
@@ -986,7 +990,7 @@ class _LogbookDataRow extends StatelessWidget {
         : fullName;
 
     final durationStr =
-        lesson.lessonDuration != null ? hhMm(lesson.lessonDuration!) : '—';
+        lesson.lessonDuration > 0 ? hhMm(lesson.lessonDuration) : '—';
 
     final ratingColor = _ratingColor(lesson.studentRating);
 
@@ -1228,6 +1232,78 @@ class _FilterChip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Readiness card
+// ---------------------------------------------------------------------------
+class _ReadinessCard extends StatelessWidget {
+  final double readiness;
+
+  const _ReadinessCard({required this.readiness});
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = (readiness * 100).round();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Skills Test Readiness',
+            style: TextStyle(
+              color: AppColors.onSurface,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Exercises rated 4/5 or above',
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: readiness,
+                    backgroundColor: AppColors.surfaceVariant,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                    minHeight: 8,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '$pct%',
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Tab 3: Syllabus
 // ---------------------------------------------------------------------------
 class _SyllabusTab extends ConsumerWidget {
@@ -1241,7 +1317,7 @@ class _SyllabusTab extends ConsumerWidget {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
-      error: (_, _) => const Center(
+      error: (_, __) => const Center(
         child: Text('Unable to load data. Please try again.',
             style: TextStyle(color: AppColors.error)),
       ),
@@ -1256,12 +1332,20 @@ class _SyllabusTab extends ConsumerWidget {
         }
 
         final totalComplete = AppConstants.allExerciseIds
-            .where((id) => ueMap[id]?.status == ExerciseStatus.complete)
+            .where((id) => ueMap[id]?.status.isCompleted ?? false)
             .length;
+
+        final readiness = ref.watch(skillsReadinessProvider);
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
+            // Skills test readiness
+            if (readiness != null)
+              _ReadinessCard(readiness: readiness),
+            if (readiness != null)
+              const SizedBox(height: 16),
+
             // Overall summary
             Container(
               margin: const EdgeInsets.only(bottom: 20),
@@ -1308,7 +1392,7 @@ class _SyllabusTab extends ConsumerWidget {
             ..._phases.map((phase) {
               final phaseTotal = phase.ids.length;
               final phaseComplete = phase.ids
-                  .where((id) => ueMap[id]?.status == ExerciseStatus.complete)
+                  .where((id) => ueMap[id]?.status.isCompleted ?? false)
                   .length;
               final phaseProgress =
                   phaseTotal > 0 ? phaseComplete / phaseTotal : 0.0;

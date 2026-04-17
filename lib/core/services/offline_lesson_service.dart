@@ -5,9 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flight_path/core/services/connectivity_service.dart';
-import 'package:flight_path/core/services/firestore_service.dart';
+import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/core/services/sync_service.dart';
-import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 
 /// Wraps [FirestoreService] lesson operations with offline fallback.
@@ -31,12 +30,12 @@ class OfflineLessonService {
   /// Creates a lesson. If online, writes to Firestore directly and returns
   /// the Firestore document ID. If offline, saves locally and returns a
   /// temporary local ID.
-  Future<String> createLesson(Lesson lesson) async {
+  Future<String> createLesson(String uid, Lesson lesson) async {
     final isOnline = await _connectivity.checkConnectivity();
 
     if (isOnline) {
       try {
-        return await _firestore.createLesson(lesson);
+        return await _firestore.createLesson(uid, lesson);
       } catch (e) {
         // Network error despite connectivity check — fall through to offline.
         debugPrint('OfflineLessonService: Firestore write failed, saving locally: $e');
@@ -47,6 +46,7 @@ class OfflineLessonService {
     final localId = 'local_${DateTime.now().millisecondsSinceEpoch}';
     final data = lesson.toFirestore();
     data['pending_sync'] = true;
+    data['_uid'] = uid; // Needed to reconstruct the subcollection path on sync.
 
     // Convert Timestamps to ISO strings for JSON serialisation.
     _convertTimestampsToStrings(data);
@@ -56,12 +56,12 @@ class OfflineLessonService {
   }
 
   /// Updates a lesson. If offline, queues the update for later sync.
-  Future<void> updateLesson(String lessonId, Map<String, dynamic> data) async {
+  Future<void> updateLesson(String uid, String lessonId, Map<String, dynamic> data) async {
     final isOnline = await _connectivity.checkConnectivity();
 
     if (isOnline) {
       try {
-        await _firestore.updateLesson(lessonId, data);
+        await _firestore.updateLesson(uid, lessonId, data);
         return;
       } catch (e) {
         debugPrint('OfflineLessonService: update failed, queueing: $e');
@@ -71,6 +71,7 @@ class OfflineLessonService {
     // Queue for later sync.
     final queueData = Map<String, dynamic>.from(data);
     queueData['_lesson_id'] = lessonId;
+    queueData['_uid'] = uid;
     _convertTimestampsToStrings(queueData);
 
     await _syncService.enqueue(SyncQueueEntry(

@@ -20,16 +20,13 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // App Check — debug provider in debug builds, device attestation in release.
-  // ignore: deprecated_member_use
   await FirebaseAppCheck.instance.activate(
-    // ignore: deprecated_member_use
-    androidProvider: kDebugMode
-        ? AndroidProvider.debug
-        : AndroidProvider.playIntegrity,
-    // ignore: deprecated_member_use
-    appleProvider: kDebugMode
-        ? AppleProvider.debug
-        : AppleProvider.appAttest,
+    providerAndroid: kDebugMode
+        ? const AndroidDebugProvider()
+        : const AndroidPlayIntegrityProvider(),
+    providerApple: kDebugMode
+        ? const AppleDebugProvider()
+        : const AppleAppAttestProvider(),
   );
 
   // Crashlytics — pass Flutter framework errors and async zone errors.

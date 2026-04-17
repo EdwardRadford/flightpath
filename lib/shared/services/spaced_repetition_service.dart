@@ -4,7 +4,7 @@
 import 'dart:math' show min;
 
 import 'package:flight_path/core/constants/app_constants.dart';
-import 'package:flight_path/core/constants/flashcard_data.dart';
+import 'package:flight_path/shared/models/flashcard.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 
 /// Result of a spaced repetition update after a flashcard session.

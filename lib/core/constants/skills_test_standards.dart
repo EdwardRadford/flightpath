@@ -110,8 +110,9 @@ const Map<String, String> skillsTestStandards = {
 
   // ── Ex 18A: Navigation ────────────────────────────────────────────────────
   'ex_18_18a':
-      'Plan and execute a cross-country flight (minimum 150 nm total, with at '
-      'least one leg ≥ 27 nm). Maintain heading within ±5°, altitude within '
+      'Plan and execute a cross-country flight (minimum 150 nm total, at least '
+      '3 legs, with two full-stop landings at different aerodromes from departure). '
+      'Maintain heading within ±5°, altitude within '
       '±100 ft, and accurate time tracking. Use a 1:500,000 topographic chart '
       'and dead reckoning to identify turning points. Arrive at destination '
       'within ±5 min of ETA. Demonstrate FREDA checks, correct radio '

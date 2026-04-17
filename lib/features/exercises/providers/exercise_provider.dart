@@ -6,6 +6,7 @@ import 'package:flight_path/shared/services/content_cache_service.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/shared/models/exercise_content.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
+import 'package:flight_path/shared/models/flashcard.dart';
 import 'package:flight_path/shared/models/quiz_question.dart';
 
 // ---------------------------------------------------------------------------
@@ -61,5 +62,20 @@ final quizQuestionsProvider =
       exerciseId,
       subExerciseId: subExerciseId,
     );
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Flashcards
+// ---------------------------------------------------------------------------
+
+/// Fetches flashcards for the given composite exercise ID.
+///
+/// Uses [ContentCacheService] for offline caching with background refresh.
+final flashcardsProvider =
+    FutureProvider.family<List<Flashcard>, String>(
+  (ref, compositeExerciseId) async {
+    final cache = ref.watch(contentCacheServiceProvider);
+    return cache.getFlashcards(compositeExerciseId);
   },
 );

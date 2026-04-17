@@ -1,7 +1,7 @@
 name: flight_path
 description: "UK PPL(A) student pilot lesson companion app."
 publish_to: 'none'
-version: 1.0.5+10
+version: 1.0.6+11
 
 environment:
   sdk: ^3.6.0
@@ -33,9 +33,6 @@ dependencies:
   # Local storage / offline cache
   hive_flutter: ^1.1.0
 
-  # Video
-  youtube_player_flutter: ^9.1.1
-
   # Local notifications (quiet hours logic)
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
@@ -45,6 +42,10 @@ dependencies:
 
   # Deep linking
   app_links: ^6.4.0
+
+  # Voice (TTS + STT for RT Practice)
+  flutter_tts: ^4.2.0
+  speech_to_text: ^7.0.0
 
   # Utilities
   intl: ^0.20.2

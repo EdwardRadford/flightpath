@@ -1,11 +1,9 @@
 // Premium paywall bottom sheet — shown when a free user tries to access
-// exercises 5+ or premium features (AI debrief, instructor sharing).
+// exercises 5+ or premium features (AI debrief, full progress tracking).
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
-import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/shared/services/subscription_service.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 
@@ -33,7 +31,7 @@ Future<bool> showPremiumPaywall(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
-    builder: (_) => _PremiumPaywallSheet(
+    builder: (_) => PremiumPaywallSheet(
       freeWindowStart: freeWindowStart,
       freeWindowEnd: freeWindowEnd,
     ),
@@ -51,20 +49,21 @@ Future<bool> showPremiumPaywall(
   });
 }
 
-class _PremiumPaywallSheet extends StatefulWidget {
+class PremiumPaywallSheet extends StatefulWidget {
   final int freeWindowStart;
   final int freeWindowEnd;
 
-  const _PremiumPaywallSheet({
-    required this.freeWindowStart,
-    required this.freeWindowEnd,
+  const PremiumPaywallSheet({
+    super.key,
+    this.freeWindowStart = 1,
+    this.freeWindowEnd = 3,
   });
 
   @override
-  State<_PremiumPaywallSheet> createState() => _PremiumPaywallSheetState();
+  State<PremiumPaywallSheet> createState() => _PremiumPaywallSheetState();
 }
 
-class _PremiumPaywallSheetState extends State<_PremiumPaywallSheet> {
+class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
   bool _loading = false;
 
   Future<void> _purchase() async {
@@ -72,21 +71,15 @@ class _PremiumPaywallSheetState extends State<_PremiumPaywallSheet> {
     setState(() => _loading = true);
     final success = await SubscriptionService.purchaseLifetime();
 
-    // Belt-and-suspenders: update Firestore immediately so isPremium is true
-    // before the RevenueCat webhook fires. Do this BEFORE the mounted check so
-    // the write still happens even if the sheet was dismissed during payment.
     if (success) {
       FirebaseAnalytics.instance.logEvent(name: 'premium_purchased');
       FirebaseAnalytics.instance.logEvent(name: 'subscription_started');
       FirebaseAnalytics.instance.logEvent(name: 'purchase_completed');
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        final fs = FirestoreService();
-        await fs.updateUser(uid, {
-          'has_purchased': true,
-          'subscription_status': 'lifetime',
-        });
-      }
+      // Premium fields (has_purchased, subscription_status) are written
+      // exclusively by the RevenueCat webhook Cloud Function. The
+      // appUserProvider stream will reflect the updated status once the
+      // webhook fires. Do NOT write them here — that would bypass the
+      // server-side validation and create a paywall bypass vector.
     }
 
     if (!mounted) return;
@@ -157,7 +150,7 @@ class _PremiumPaywallSheetState extends State<_PremiumPaywallSheet> {
 
             // Title
              Text(
-              'Unlock All 19 Exercises',
+              'Unlock FlightPath Pro',
               style: TextStyle(
                 color: AppColors.onSurface,
                 fontSize: 22,
@@ -166,23 +159,32 @@ class _PremiumPaywallSheetState extends State<_PremiumPaywallSheet> {
             ),
             const SizedBox(height: 8),
              Text(
-              'You have free access to exercises ${widget.freeWindowStart} to ${widget.freeWindowEnd}. '
-              'Unlock all 19 exercises with a one-time purchase.',
+              '\u00A339 \u2014 one payment, no subscription.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 4),
+             Text(
+              'Less than the cost of a single flying lesson.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // Feature list
-            _FeatureRow(icon: Icons.school_rounded, text: 'All 19 CAA exercises with briefs & quizzes'),
+            _FeatureRow(icon: Icons.auto_awesome_rounded, text: 'AI debrief after every lesson \u2014 know what to fix before you fly again'),
             const SizedBox(height: 12),
-            _FeatureRow(icon: Icons.auto_awesome_rounded, text: 'AI-powered lesson debriefs'),
+            _FeatureRow(icon: Icons.style_rounded, text: 'Spaced repetition flashcards \u2014 stop forgetting between lessons'),
             const SizedBox(height: 12),
-            _FeatureRow(icon: Icons.share_rounded, text: 'Share progress with your instructor'),
+            _FeatureRow(icon: Icons.track_changes_rounded, text: 'Full progress tracking across all 19 exercises'),
             const SizedBox(height: 12),
-            _FeatureRow(icon: Icons.all_inclusive_rounded, text: 'One-time payment \u2014 no subscription'),
+            _FeatureRow(icon: Icons.psychology_rounded, text: 'Ask the AI tutor anything, any time'),
+            const SizedBox(height: 12),
+            _FeatureRow(icon: Icons.quiz_rounded, text: 'Quiz bank \u2014 pass your RT and ground exams'),
             const SizedBox(height: 28),
 
             // Purchase button
@@ -208,7 +210,7 @@ class _PremiumPaywallSheetState extends State<_PremiumPaywallSheet> {
                         ),
                       )
                     : Text(
-                        'Upgrade to Pro \u2014 \u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(2)}',
+                        'Get lifetime access \u2014 \u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(0)}',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),

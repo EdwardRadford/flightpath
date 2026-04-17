@@ -9,9 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/features/ask_ai/providers/ask_ai_provider.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
+import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
 // ---------------------------------------------------------------------------
 // Chat message model
@@ -74,10 +76,19 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
     final rawText = _controller.text.trim();
     if (rawText.isEmpty || _isLoading) return;
 
+    // --- Daily message limit gate ---
+    final allowed =
+        await ref.read(askAiLimitProvider.notifier).canSendMessage();
+    if (!allowed) {
+      // State is already updated to limitReached; the banner will appear.
+      return;
+    }
+
     // --- Rate limit: prevent rapid-fire API calls ---
     final now = DateTime.now();
     if (_lastSendTime != null &&
         now.difference(_lastSendTime!) < _minSendInterval) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please wait a moment before sending another message.'),
@@ -105,6 +116,9 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
       _isLoading = true;
     });
     _scrollToBottom();
+
+    // Increment the daily count immediately after the message is queued.
+    await ref.read(askAiLimitProvider.notifier).incrementMessageCount();
 
     // Analytics: track first message and every message
     final userMessages = _messages.where((m) => m.role == 'user').length;
@@ -205,8 +219,19 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
     }
   }
 
+  /// Shows the paywall. paywall_shown is logged inside showPremiumPaywall.
+  Future<void> _showPaywall() async {
+    await showPremiumPaywall(context, source: 'ask_ai_daily_limit');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final limitState = ref.watch(askAiLimitProvider);
+    final limitReached = limitState.limitReached;
+    final messagesRemaining = limitState.messagesRemaining;
+    final showRemainingHint =
+        !limitReached && messagesRemaining < kAskAiFreeDailyLimit;
+
     return Scaffold(
       appBar: AppBar(
         title: const Row(
@@ -262,6 +287,24 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
             ),
           ),
 
+          // ── Daily limit banner (shown when free tier is exhausted) ─────────
+          if (limitReached)
+            _DailyLimitBanner(onUpgradeTapped: _showPaywall),
+
+          // ── Messages-remaining hint (shown when < 5 used, > 0 used) ────────
+          if (showRemainingHint)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                '$messagesRemaining message${messagesRemaining == 1 ? '' : 's'} remaining today',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
           // ── Input bar ────────────────────────────────────────────
           Container(
             padding: EdgeInsets.fromLTRB(
@@ -281,6 +324,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    enabled: !limitReached,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendMessage(),
                     maxLength: InputSanitiser.maxChat,
@@ -290,7 +334,9 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
                       fontSize: 15,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Ask anything about flying...',
+                      hintText: limitReached
+                          ? 'Daily limit reached'
+                          : 'Ask anything about flying...',
                       hintStyle: TextStyle(
                         color: AppColors.onSurfaceVariant,
                         fontSize: 15,
@@ -311,12 +357,12 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
                 ),
                 const SizedBox(width: 8),
                 Material(
-                  color: _isLoading
+                  color: (_isLoading || limitReached)
                       ? AppColors.surfaceVariant
                       : AppColors.primary,
                   borderRadius: BorderRadius.circular(24),
                   child: InkWell(
-                    onTap: _isLoading ? null : _sendMessage,
+                    onTap: (_isLoading || limitReached) ? null : _sendMessage,
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
                       width: 44,
@@ -324,7 +370,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
                       alignment: Alignment.center,
                       child: Icon(
                         Icons.arrow_upward_rounded,
-                        color: _isLoading
+                        color: (_isLoading || limitReached)
                             ? AppColors.onSurfaceVariant
                             : Colors.white,
                         size: 20,
@@ -333,6 +379,59 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Daily limit banner
+// ---------------------------------------------------------------------------
+
+class _DailyLimitBanner extends StatelessWidget {
+  final VoidCallback onUpgradeTapped;
+
+  const _DailyLimitBanner({required this.onUpgradeTapped});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        border: Border(
+          top: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded,
+              color: AppColors.primary, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "You've used your 5 free messages today. Upgrade for unlimited access.",
+              style: TextStyle(
+                color: AppColors.onSurface,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: onUpgradeTapped,
+            child: Text(
+              'Get unlimited access',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

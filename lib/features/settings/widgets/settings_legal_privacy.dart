@@ -1,0 +1,288 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flight_path/core/theme/app_theme.dart';
+
+// ---------------------------------------------------------------------------
+// Safety disclaimer section
+// ---------------------------------------------------------------------------
+class SettingsDisclaimerSection extends StatelessWidget {
+  static const String _shortText =
+      'Flight Path is a study aid only. It does not replace official flight '
+      'training, your instructor\'s guidance, or official CAA publications. '
+      'Never use this app in flight.';
+
+  static const String _fullText =
+      'Flight Path is a study aid only. It does not replace official flight '
+      'training, your instructor\'s guidance, or official CAA publications. '
+      'Never use this app in flight. Always conduct a full pre-flight briefing '
+      'with your instructor.\n\n'
+      'The information contained within this app is for educational and '
+      'reference purposes only. Flight operations involve risk. Always follow '
+      'your instructor\'s advice, current NOTAMs, and official CAA guidance. '
+      'The app\'s AI-generated content is not a substitute for professional '
+      'flight instruction.';
+
+  const SettingsDisclaimerSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  color: AppColors.warning, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Safety Notice',
+                style: TextStyle(
+                  color: AppColors.warning,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _shortText,
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.6),
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Semantics(
+            label: 'View Full Disclaimer',
+            button: true,
+            child: GestureDetector(
+              onTap: () => _showFullDisclaimer(context),
+              child: Text(
+                'View Full Disclaimer',
+                style: TextStyle(
+                  color: cs.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFullDisclaimer(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Safety Disclaimer',
+          style: TextStyle(color: cs.onSurface),
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            _fullText,
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.6),
+              fontSize: 14,
+              height: 1.6,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Close', style: TextStyle(color: cs.primary)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Legal section
+// ---------------------------------------------------------------------------
+class SettingsLegalSection extends StatelessWidget {
+  const SettingsLegalSection({super.key});
+
+  Future<void> _openUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open link. Please try again later.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(
+              Icons.privacy_tip_outlined,
+              color: cs.onSurface.withValues(alpha: 0.6),
+            ),
+            title: Text(
+              'Privacy Policy',
+              style: TextStyle(color: cs.onSurface, fontSize: 15),
+            ),
+            trailing: Icon(
+              Icons.open_in_new,
+              size: 16,
+              color: cs.onSurface.withValues(alpha: 0.6),
+            ),
+            onTap: () =>
+                _openUrl(context, 'https://getflightpath.app/privacy'),
+          ),
+          Divider(color: cs.outline, height: 1, indent: 56),
+          ListTile(
+            leading: Icon(
+              Icons.description_outlined,
+              color: cs.onSurface.withValues(alpha: 0.6),
+            ),
+            title: Text(
+              'Terms of Service',
+              style: TextStyle(color: cs.onSurface, fontSize: 15),
+            ),
+            trailing: Icon(
+              Icons.open_in_new,
+              size: 16,
+              color: cs.onSurface.withValues(alpha: 0.6),
+            ),
+            onTap: () =>
+                _openUrl(context, 'https://getflightpath.app/terms'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Privacy section (GDPR data export)
+// ---------------------------------------------------------------------------
+class SettingsPrivacySection extends StatefulWidget {
+  final String uid;
+
+  const SettingsPrivacySection({super.key, required this.uid});
+
+  @override
+  State<SettingsPrivacySection> createState() => _SettingsPrivacySectionState();
+}
+
+class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
+  bool _exporting = false;
+
+  Future<void> _exportData() async {
+    if (_exporting || widget.uid.isEmpty) return;
+    setState(() => _exporting = true);
+
+    try {
+      FirebaseAnalytics.instance.logEvent(name: 'data_export_started');
+      final uri = Uri(
+        scheme: 'mailto',
+        path: 'privacy@getflightpath.app',
+        queryParameters: {
+          'subject': 'Data Request — Flight Path',
+          'body':
+              'Hi,\n\nI would like to request a copy of my data.\n\n'
+              'Account UID: ${widget.uid}\n\n'
+              'Thank you.',
+        },
+      );
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        throw Exception('Could not launch email client');
+      }
+      FirebaseAnalytics.instance.logEvent(name: 'data_export_completed');
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Could not open email. Please email privacy@getflightpath.app directly.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        onTap: _exporting ? null : _exportData,
+        leading: _exporting
+            ? SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: cs.primary,
+                ),
+              )
+            : Icon(Icons.download_rounded,
+                color: cs.onSurface.withValues(alpha: 0.6)),
+        title: Text(
+          _exporting ? 'Exporting\u2026' : 'Export My Data',
+          style: TextStyle(
+            color: cs.onSurface,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          'Download a copy of all your Flight Path data',
+          style: TextStyle(
+            color: cs.onSurface.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+        trailing: _exporting
+            ? null
+            : Icon(Icons.chevron_right_rounded,
+                color: cs.onSurface.withValues(alpha: 0.6)),
+      ),
+    );
+  }
+}
