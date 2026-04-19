@@ -70,6 +70,7 @@ if (Test-Path $envFile) {
 # fire. Real keys live in tool/.env.local and override these.
 if (-not $env:REVENUECAT_ANDROID_KEY) { $env:REVENUECAT_ANDROID_KEY = "goog_dev_placeholder" }
 if (-not $env:REVENUECAT_IOS_KEY)     { $env:REVENUECAT_IOS_KEY     = "appl_dev_placeholder" }
+if (-not $env:AVWX_API_KEY)           { $env:AVWX_API_KEY           = "avwx_dev_placeholder" }
 
 # ---------------------------------------------------------------------------
 # 3. Ensure an Android emulator/device is running
@@ -147,7 +148,8 @@ if ($Release) { $buildMode = "--release" }
 
 $dartDefines = @(
     "--dart-define=REVENUECAT_ANDROID_KEY=$($env:REVENUECAT_ANDROID_KEY)",
-    "--dart-define=REVENUECAT_IOS_KEY=$($env:REVENUECAT_IOS_KEY)"
+    "--dart-define=REVENUECAT_IOS_KEY=$($env:REVENUECAT_IOS_KEY)",
+    "--dart-define=AVWX_API_KEY=$($env:AVWX_API_KEY)"
 )
 
 Write-Info "flutter run $buildMode -d $deviceId $($dartDefines -join ' ')"
