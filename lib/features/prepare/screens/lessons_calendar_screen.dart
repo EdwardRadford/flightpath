@@ -1,12 +1,15 @@
 // Lessons calendar screen — monthly view of all scheduled lessons.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/features/auth/providers/auth_provider.dart';
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
+import 'package:flight_path/shared/services/offline_lesson_service.dart';
 import 'package:flight_path/shared/utils/exercise_helpers.dart';
 
 class LessonsCalendarScreen extends ConsumerStatefulWidget {
@@ -180,7 +183,7 @@ class _LessonsCalendarScreenState
   }
 }
 
-class _LessonCard extends StatelessWidget {
+class _LessonCard extends ConsumerWidget {
   final Lesson lesson;
   final String title;
 
@@ -201,14 +204,62 @@ class _LessonCard extends StatelessWidget {
     }
   }
 
+  Future<void> _confirmCancel(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          'Cancel this lesson?',
+          style: TextStyle(color: AppColors.onSurface, fontSize: 16),
+        ),
+        content: Text(
+          'This will mark the lesson as cancelled.',
+          style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Keep',
+              style: TextStyle(color: AppColors.onSurfaceVariant),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Cancel lesson',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final uid = ref.read(currentUserIdProvider);
+    if (uid == null) return;
+
+    try {
+      await ref
+          .read(offlineLessonServiceProvider)
+          .updateLesson(uid, lesson.id, {'status': 'cancelled'});
+    } catch (_) {
+      // Error is non-fatal; Firestore / sync handles retry.
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final d = lesson.scheduledDate;
     final timeStr = lesson.scheduledTime.isNotEmpty
         ? lesson.scheduledTime
         : d != null
             ? DateFormat('HH:mm').format(d)
             : '';
+
+    final isScheduled = lesson.status == LessonStatus.scheduled;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -254,8 +305,7 @@ class _LessonCard extends StatelessWidget {
             ),
           ),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: _statusColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
@@ -269,6 +319,35 @@ class _LessonCard extends StatelessWidget {
               ),
             ),
           ),
+          if (isScheduled) ...[
+            const SizedBox(width: 4),
+            IconButton(
+              icon: Icon(
+                Icons.edit_rounded,
+                size: 18,
+                color: AppColors.onSurfaceVariant,
+              ),
+              tooltip: 'Reschedule',
+              visualDensity: VisualDensity.compact,
+              onPressed: () {
+                final cid = compositeExerciseId(
+                  lesson.exerciseId,
+                  lesson.subExercise.isNotEmpty ? lesson.subExercise : null,
+                );
+                context.push('/exercises/$cid/schedule');
+              },
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: AppColors.error,
+              ),
+              tooltip: 'Cancel lesson',
+              visualDensity: VisualDensity.compact,
+              onPressed: () => _confirmCancel(context, ref),
+            ),
+          ],
         ],
       ),
     );

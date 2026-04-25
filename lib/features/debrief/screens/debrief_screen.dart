@@ -939,25 +939,44 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     required int rating,
     required ValueChanged<int> onChanged,
   }) {
-    return Row(
-      children: List.generate(5, (index) {
-        final starIndex = index + 1;
-        return GestureDetector(
-          onTap: () => onChanged(starIndex),
-          child: Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Icon(
-              starIndex <= rating
-                  ? Icons.star_rounded
-                  : Icons.star_outline_rounded,
-              color: starIndex <= rating
-                  ? AppColors.primary
-                  : AppColors.onSurfaceVariant,
-              size: 36,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: List.generate(5, (index) {
+            final starIndex = index + 1;
+            return GestureDetector(
+              onTap: () => onChanged(starIndex),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(
+                  starIndex <= rating
+                      ? Icons.star_rounded
+                      : Icons.star_outline_rounded,
+                  color: starIndex <= rating
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
+                  size: 36,
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Struggled',
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 11),
             ),
-          ),
-        );
-      }),
+            Text(
+              'Nailed it',
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 11),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

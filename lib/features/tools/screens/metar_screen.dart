@@ -154,8 +154,8 @@ class _MetarScreenState extends ConsumerState<MetarScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Live weather coming soon — API key not yet configured. '
-                    'Below is a demonstration METAR so you can practise.',
+                    'Live METAR fetch is not available in this build. '
+                    'Practise decoding the example below — it uses real-world format.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),

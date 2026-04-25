@@ -32,6 +32,7 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
   late final VoiceService _voice;
   bool _muted = false;
   bool _showTranscript = false;
+  bool _showHistory = false;
   bool _wasListening = false;
   double _ttsSpeed = 0.45; // 0.3 = slow, 0.45 = normal, 0.65 = fast
 
@@ -148,7 +149,9 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
     }
 
     await _voice.stopSpeaking();
+    // startScenario internally saves the current session before clearing it.
     notifier.startScenario(scenario);
+    if (mounted) setState(() => _showHistory = false);
     _scrollToBottom();
   }
 
@@ -206,9 +209,27 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
                 foregroundColor: AppColors.warning,
               ),
             ),
+          // History toggle
+          IconButton(
+            onPressed: () => setState(() {
+              _showHistory = !_showHistory;
+              if (_showHistory) _showTranscript = false;
+            }),
+            icon: Icon(
+              _showHistory
+                  ? Icons.bar_chart_rounded
+                  : Icons.bar_chart_rounded,
+              size: 22,
+              color: _showHistory ? AppColors.primary : null,
+            ),
+            tooltip: _showHistory ? 'Hide history' : 'Score history',
+          ),
           // Transcript toggle
           IconButton(
-            onPressed: () => setState(() => _showTranscript = !_showTranscript),
+            onPressed: () => setState(() {
+              _showTranscript = !_showTranscript;
+              if (_showTranscript) _showHistory = false;
+            }),
             icon: Icon(
               _showTranscript
                   ? Icons.chat_bubble_rounded
@@ -250,62 +271,68 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
               fast: _kSpeedFast,
             ),
 
-          // ── Radio display / transcript ────────────────────────────────
+          // ── Radio display / transcript / history ──────────────────────
           Expanded(
-            child: _showTranscript
-                ? GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => FocusScope.of(context).unfocus(),
-                    child: rtState.messages.isEmpty
-                        ? _EmptyState(scenario: rtState.currentScenario)
-                        : ListView.builder(
-                            controller: _scrollController,
-                            padding:
-                                const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                            itemCount: rtState.messages.length +
-                                (rtState.isLoading ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index == rtState.messages.length &&
-                                  rtState.isLoading) {
-                                return const _TypingIndicator();
-                              }
-                              return _MessageBubble(
-                                message: rtState.messages[index],
-                                onReplay: (text) {
-                                  if (!_muted) _voice.speakAtcResponse(text);
-                                },
-                              );
-                            },
-                          ),
-                  )
-                : _RadioDisplay(
-                    voice: _voice,
-                    rtState: rtState,
+            child: _showHistory
+                ? _ScoreHistoryPanel(
                     scenario: rtState.currentScenario,
-                  ),
+                    onNewSession: () => setState(() => _showHistory = false),
+                  )
+                : _showTranscript
+                    ? GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => FocusScope.of(context).unfocus(),
+                        child: rtState.messages.isEmpty
+                            ? _EmptyState(scenario: rtState.currentScenario)
+                            : ListView.builder(
+                                controller: _scrollController,
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                                itemCount: rtState.messages.length +
+                                    (rtState.isLoading ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index == rtState.messages.length &&
+                                      rtState.isLoading) {
+                                    return const _TypingIndicator();
+                                  }
+                                  return _MessageBubble(
+                                    message: rtState.messages[index],
+                                    onReplay: (text) {
+                                      if (!_muted) _voice.speakAtcResponse(text);
+                                    },
+                                  );
+                                },
+                              ),
+                      )
+                    : _RadioDisplay(
+                        voice: _voice,
+                        rtState: rtState,
+                        scenario: rtState.currentScenario,
+                      ),
           ),
 
           // ── Paywall banner ─────────────────────────────────────────────
           if (atLimit) _PaywallBanner(context: context),
 
           // ── PTT / text input ───────────────────────────────────────────
-          if (_showTranscript)
-            _InputBar(
-              controller: _controller,
-              isLoading: rtState.isLoading,
-              disabled: atLimit,
-              onSend: _handleSend,
-              voiceService: _voice,
-              onMicToggle: _toggleListening,
-            )
-          else
-            _PttBar(
-              isListening: _voice.isListening,
-              isSpeaking: _voice.isSpeaking,
-              isLoading: rtState.isLoading,
-              disabled: atLimit,
-              onTap: _toggleListening,
-            ),
+          if (!_showHistory)
+            if (_showTranscript)
+              _InputBar(
+                controller: _controller,
+                isLoading: rtState.isLoading,
+                disabled: atLimit,
+                onSend: _handleSend,
+                voiceService: _voice,
+                onMicToggle: _toggleListening,
+              )
+            else
+              _PttBar(
+                isListening: _voice.isListening,
+                isSpeaking: _voice.isSpeaking,
+                isLoading: rtState.isLoading,
+                disabled: atLimit,
+                onTap: _toggleListening,
+              ),
 
           // ── ATIS link ─────────────────────────────────────────────────
           _AtisLink(),
@@ -1040,10 +1067,6 @@ class _TtsSpeedBar extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// ATIS link footer
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
 // Radio display — shown instead of transcript during active session
 // ---------------------------------------------------------------------------
 
@@ -1238,6 +1261,245 @@ class _ListeningBanner extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Score history panel
+// ---------------------------------------------------------------------------
+
+class _ScoreHistoryPanel extends StatefulWidget {
+  final RtScenario scenario;
+  final VoidCallback onNewSession;
+
+  const _ScoreHistoryPanel({
+    required this.scenario,
+    required this.onNewSession,
+  });
+
+  @override
+  State<_ScoreHistoryPanel> createState() => _ScoreHistoryPanelState();
+}
+
+class _ScoreHistoryPanelState extends State<_ScoreHistoryPanel> {
+  List<RtSessionRecord>? _history;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(_ScoreHistoryPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scenario != widget.scenario) _load();
+  }
+
+  Future<void> _load() async {
+    final history = await loadRtHistory(widget.scenario);
+    if (mounted) setState(() => _history = history);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final history = _history;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: Text(
+            widget.scenario.displayName,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            'Score history — last $kMaxRtHistory sessions',
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 13,
+            ),
+          ),
+        ),
+
+        // Session list or empty state
+        Expanded(
+          child: history == null
+              ? const Center(child: CircularProgressIndicator())
+              : history.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          'No completed sessions yet for this scenario.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.onSurfaceVariant,
+                            fontSize: 14,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      itemCount: history.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        // Show most recent first
+                        final record =
+                            history[history.length - 1 - index];
+                        return _HistoryRow(
+                          record: record,
+                          sessionNumber: history.length - index,
+                        );
+                      },
+                    ),
+        ),
+
+        // New Session button
+        Container(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.divider)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: widget.onNewSession,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'New Session',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HistoryRow extends StatelessWidget {
+  final RtSessionRecord record;
+  final int sessionNumber;
+
+  const _HistoryRow({required this.record, required this.sessionNumber});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateLabel =
+        '${record.date.day.toString().padLeft(2, '0')}/'
+        '${record.date.month.toString().padLeft(2, '0')}/'
+        '${record.date.year}';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          // Session number + date
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Session $sessionNumber',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  dateLabel,
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Score badges
+          Wrap(
+            spacing: 6,
+            children: [
+              _HistoryScoreBadge(
+                label: 'Phrasing',
+                score: record.phrasing,
+              ),
+              _HistoryScoreBadge(
+                label: 'Readback',
+                score: record.readback,
+              ),
+              _HistoryScoreBadge(
+                label: 'Format',
+                score: record.format,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryScoreBadge extends StatelessWidget {
+  final String label;
+  final double score;
+
+  const _HistoryScoreBadge({required this.label, required this.score});
+
+  Color get _color {
+    if (score >= 4) return AppColors.success;
+    if (score >= 3) return AppColors.warning;
+    return AppColors.error;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final display = score.toStringAsFixed(1);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: _color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        '$label $display',
+        style: TextStyle(
+          color: _color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ATIS link footer
+// ---------------------------------------------------------------------------
 
 class _AtisLink extends StatelessWidget {
   @override

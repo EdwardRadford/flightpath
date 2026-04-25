@@ -9,6 +9,8 @@ import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/services/weather_service.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/home/providers/weather_preview_provider.dart';
+import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
+import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
@@ -21,6 +23,12 @@ class DebriefNudgeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(appUserProvider).valueOrNull;
     if (user == null) return const SizedBox.shrink();
+
+    // Don't nudge users who have never flown — they can't debrief what hasn't happened.
+    final lessons = ref.watch(allLessonsProvider).valueOrNull ?? [];
+    final hasFlown = lessons.any((l) =>
+        l.status == LessonStatus.completed || l.status == LessonStatus.manualEntry);
+    if (!hasFlown) return const SizedBox.shrink();
 
     final lastDebrief = user.lastDebriefAt;
     final needsNudge = lastDebrief == null ||

@@ -462,16 +462,30 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               ],
               decoration: const InputDecoration(
                 labelText: 'Home airfield (ICAO code)',
-                hintText: 'e.g. EGHH',
-                helperText: '4-letter ICAO code',
+                hintText: 'e.g. EGTH',
+                helperText: '4-letter ICAO code — optional',
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Enter your airfield ICAO code';
-                }
+                if (v == null || v.trim().isEmpty) return null;
                 if (v.trim().length != 4) return 'ICAO codes are 4 letters';
                 return null;
               },
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => setState(() => _icaoController.clear()),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.onSurfaceVariant,
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                child: const Text('Skip for now'),
+              ),
             ),
             // ── Where are you in your training? ──────────────────────────────
             const SizedBox(height: 28),

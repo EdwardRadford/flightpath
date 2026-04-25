@@ -206,7 +206,7 @@ class _PrepareHubBody extends StatelessWidget {
           ProgressCard(userExercise: userExercise),
           const SizedBox(height: 16),
 
-          // 2b. Paywall banner
+          // 2b. Paywall banner + objectives preview
           if (!isPremium) ...[
             PaywallBanner(
               freeWindowStart: freeWindowStart,
@@ -221,6 +221,9 @@ class _PrepareHubBody extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 12),
+            if (content.aim.isNotEmpty)
+              _LockedObjectivesPreview(aim: content.aim),
             const SizedBox(height: 16),
           ],
 
@@ -257,6 +260,72 @@ class _PrepareHubBody extends StatelessWidget {
           const SizedBox(height: 8),
           const PrepareHubRevisionBanner(),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Locked objectives preview
+// ---------------------------------------------------------------------------
+
+/// Shows the exercise aim as a "What you'll learn" preview card when the
+/// exercise is locked. Read-only — no actual content is unlocked.
+class _LockedObjectivesPreview extends StatelessWidget {
+  final String aim;
+
+  const _LockedObjectivesPreview({required this.aim});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Opacity(
+      opacity: 0.8,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.checklist_rounded,
+                  size: 16,
+                  color: AppColors.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'What you\'ll learn',
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              aim,
+              style: TextStyle(
+                color: AppColors.onSurfaceVariant,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
