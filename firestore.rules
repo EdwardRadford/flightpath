@@ -111,6 +111,14 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
+    // flashcards/{docId}  — read-only, no client writes ever
+    // -------------------------------------------------------------------------
+    match /flashcards/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
     // share_links/{token}
     // -------------------------------------------------------------------------
     match /share_links/{token} {
