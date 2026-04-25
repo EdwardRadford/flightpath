@@ -185,6 +185,7 @@ class AppTheme {
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
+            decoration: TextDecoration.none,
           ),
         ),
       ),
@@ -400,6 +401,7 @@ class AppTheme {
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
+            decoration: TextDecoration.none,
           ),
         ),
       ),

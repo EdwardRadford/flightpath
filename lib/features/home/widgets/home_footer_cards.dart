@@ -232,7 +232,7 @@ class ShareCard extends StatelessWidget {
   const ShareCard({super.key});
 
   static const _shareText =
-      "I'm using FlightPath to study for my PPL — give it a try: https://getflightpath.app";
+      "I'm using Flight Path Training to study for my PPL — give it a try: https://getflightpath.app";
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +269,7 @@ class ShareCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Enjoying FlightPath?',
+                    'Enjoying Flight Path Training?',
                     style: TextStyle(
                       color: cs.onSurface,
                       fontSize: 15,

@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
@@ -234,7 +235,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   /// Saves the profile and (optionally) the suggested exercise number.
   Future<void> _complete({int? suggestedExercise, bool useManual = false}) async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState != null && !_formKey.currentState!.validate()) return;
     final uid = ref.read(currentUserIdProvider);
     if (uid == null) return;
 
@@ -287,6 +288,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       );
       FirebaseAnalytics.instance.logEvent(name: 'profile_completed');
 
+      // Clear the walkthrough flag so new users always see the app tour,
+      // even on devices that previously had the app installed.
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('has_seen_walkthrough');
+
       // Router automatically navigates to /disclaimer
     } catch (e) {
       if (mounted) {
@@ -309,7 +315,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       setState(() {}); // Trigger rebuild to show aircraft error
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState != null && !_formKey.currentState!.validate()) return;
 
     if (_quizAlreadyDone) {
       // Quiz already done on a previous session — save straight away

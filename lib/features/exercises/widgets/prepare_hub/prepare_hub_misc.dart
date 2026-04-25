@@ -171,8 +171,8 @@ class PrepareHubErrorBody extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: AppColors.error, size: 48),
+            Icon(Icons.wifi_off_rounded,
+                color: AppColors.onSurfaceVariant, size: 48),
             const SizedBox(height: 16),
             Text(
               message,
@@ -182,11 +182,20 @@ class PrepareHubErrorBody extends StatelessWidget {
                 fontSize: 14,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Check your connection and try again.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
+              label: const Text('Try again'),
             ),
           ],
         ),

@@ -14,6 +14,7 @@ import 'package:flight_path/features/settings/widgets/settings_appearance_sectio
 import 'package:flight_path/features/settings/widgets/settings_subscription_section.dart';
 import 'package:flight_path/features/settings/widgets/settings_legal_privacy.dart';
 import 'package:flight_path/features/settings/widgets/settings_account_buttons.dart';
+import 'package:flight_path/shared/widgets/app_tour_dialog.dart';
 
 // ---------------------------------------------------------------------------
 // SettingsScreen
@@ -152,12 +153,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     Divider(color: cs.outline, height: 1, indent: 56),
                     ListTile(
-                      onTap: () {
-                        ref
+                      onTap: () async {
+                        await ref
                             .read(walkthroughNotifierProvider.notifier)
                             .reset();
-                        HomeScreen.resetWalkthroughGuard();
-                        context.go('/home');
+                        if (!context.mounted) return;
+                        await showAppTourDialog(context);
+                        if (!context.mounted) return;
+                        await ref
+                            .read(walkthroughNotifierProvider.notifier)
+                            .markComplete();
                       },
                       leading: Icon(Icons.tour_outlined,
                           color: cs.onSurface.withValues(alpha: 0.6)),

@@ -11,6 +11,7 @@ import '../utils/screen_transitions.dart';
 import '../../shared/providers/auth_provider.dart';
 import '../../shared/providers/app_user_provider.dart';
 import '../../shared/services/deep_link_service.dart';
+import '../../shared/services/notification_service.dart';
 import '../../shared/models/lesson.dart';
 import '../../shared/widgets/main_shell.dart';
 
@@ -56,8 +57,9 @@ import '../../features/progress/screens/weak_areas_screen.dart';
 import '../../features/progress/screens/achievements_screen.dart';
 import '../../features/progress/screens/lesson_detail_screen.dart';
 
-// Schedule screen
+// Schedule screens
 import '../../features/prepare/screens/schedule_screen.dart';
+import '../../features/prepare/screens/lessons_calendar_screen.dart';
 
 // Settings sub-screens
 import '../../features/settings/screens/profile_edit_screen.dart';
@@ -318,6 +320,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/schedule/calendar',
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: const LessonsCalendarScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/exercises/:exerciseId/flashcards',
         pageBuilder: (context, state) => slideTransition(
           state: state,
@@ -483,6 +492,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  // Wire notification tap routing.
+  NotificationService.onNotificationRoute = [(route) {
+    if (route != null) router.go(route);
+    return route ?? '/home';
+  }];
 
   // Listen for incoming deep links while the app is running.
   StreamSubscription<Uri>? deepLinkSub;

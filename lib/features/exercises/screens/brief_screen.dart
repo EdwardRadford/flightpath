@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
+import 'package:flight_path/core/constants/exercise_criteria.dart';
 import 'package:flight_path/core/constants/skills_test_standards.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
@@ -258,7 +259,17 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                 const SizedBox(height: 24),
               ],
 
-              // 4. Key Focus Areas
+              // 4. CAA Assessment Criteria
+              if (ExerciseCriteria.exerciseCriteria
+                  .containsKey(widget.compositeExerciseId)) ...[
+                _CaaStandardsSection(
+                  criteria: ExerciseCriteria
+                      .exerciseCriteria[widget.compositeExerciseId]!,
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // 5. Key Focus Areas
               if (content.keyFocusAreas.isNotEmpty) ...[
                 _BriefSection(
                   title: 'Key Focus Areas',
@@ -274,7 +285,7 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                 const SizedBox(height: 24),
               ],
 
-              // 5. Pre-Flight Checklist
+              // 6. Pre-Flight Checklist
               if (content.preFlightChecklist.isNotEmpty) ...[
                 _InteractiveChecklist(
                   checklistText: content.preFlightChecklist,
@@ -909,6 +920,113 @@ class _RecallPrompt extends StatelessWidget {
                 fontSize: 14,
                 height: 1.5,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CaaStandardsSection extends StatelessWidget {
+  final List<ExerciseCriterion> criteria;
+
+  const _CaaStandardsSection({required this.criteria});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outline, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.checklist_rounded,
+                  color: AppColors.primary, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'CAA Assessment Criteria',
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'What your instructor will assess on this exercise',
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Divider(color: cs.outline, height: 1),
+          const SizedBox(height: 12),
+          ...criteria.map((c) => _CriterionRow(criterion: c)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CriterionRow extends StatelessWidget {
+  final ExerciseCriterion criterion;
+
+  const _CriterionRow({required this.criterion});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 3, right: 10),
+            child: Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  criterion.label,
+                  style: TextStyle(
+                    color: AppColors.onSurface,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  criterion.description,
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

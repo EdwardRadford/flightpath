@@ -27,6 +27,34 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _obscureConfirm = true;
   bool _loading = false;
 
+  Future<void> _handleBackPress() async {
+    final hasContent = _nameController.text.isNotEmpty ||
+        _emailController.text.isNotEmpty ||
+        _passwordController.text.isNotEmpty;
+    if (!hasContent || !mounted) {
+      if (mounted) context.pop();
+      return;
+    }
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Leave signup?'),
+        content: const Text('Your details will not be saved.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Stay'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+    if ((leave ?? false) && mounted) context.pop();
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -66,11 +94,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBackPress();
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: _handleBackPress,
         ),
         title: const Text('Create account'),
       ),
@@ -201,6 +234,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

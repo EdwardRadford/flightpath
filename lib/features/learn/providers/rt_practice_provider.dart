@@ -14,18 +14,19 @@ import 'package:flight_path/shared/providers/app_user_provider.dart';
 
 /// All available RT practice scenario types.
 enum RtScenario {
-  radioCheck('Radio Check'),
-  taxiForDeparture('Taxi for Departure'),
-  joiningCircuit('Joining the Circuit'),
-  circuitCalls('Circuit Calls (Downwind / Base / Final)'),
-  goingAround('Going Around'),
-  matzTransit('MATZ Transit Request'),
-  enRouteNavigation('En-Route Navigation Call'),
-  emergencyMayday('Emergency (MAYDAY)'),
-  emergencyPanPan('Emergency (PAN PAN)');
+  radioCheck('Radio Check', 'radio_check'),
+  taxiForDeparture('Taxi for Departure', 'taxi_departure'),
+  joiningCircuit('Joining the Circuit', 'joining_circuit'),
+  circuitCalls('Circuit Calls (Downwind / Base / Final)', 'circuit_calls'),
+  goingAround('Going Around', 'going_around'),
+  matzTransit('MATZ Transit Request', 'matz_transit'),
+  enRouteNavigation('En-Route Navigation Call', 'en_route_nav'),
+  emergencyMayday('Emergency (MAYDAY)', 'emergency_mayday'),
+  emergencyPanPan('Emergency (PAN PAN)', 'emergency_pan');
 
-  const RtScenario(this.displayName);
+  const RtScenario(this.displayName, this.apiValue);
   final String displayName;
+  final String apiValue;
 }
 
 // ---------------------------------------------------------------------------
@@ -191,15 +192,28 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
           : state.messages;
 
       final result = await callable.call<dynamic>({
-        'scenario': state.currentScenario.name,
+        'scenario': state.currentScenario.apiValue,
         'messages': recent,
       });
 
       final data = result.data as Map<String, dynamic>?;
       final atcText = data?['reply'] as String? ??
           'Unable to generate ATC response. Please try again.';
+      final feedbackData = data?['feedback'] as Map<String, dynamic>?;
 
-      _appendAtcMessage(atcText);
+      final atcMessage = <String, String>{'role': 'atc', 'content': atcText};
+      if (feedbackData != null) {
+        final p = feedbackData['phrasing'];
+        final r = feedbackData['readback_accuracy'];
+        final f = feedbackData['format'];
+        if (p is num) atcMessage['score_phrasing'] = p.round().toString();
+        if (r is num) atcMessage['score_readback'] = r.round().toString();
+        if (f is num) atcMessage['score_format'] = f.round().toString();
+      }
+      state = state.copyWith(
+        messages: [...state.messages, atcMessage],
+        isLoading: false,
+      );
       return RtSendResult.ok;
     } on FirebaseFunctionsException catch (e) {
       FirebaseCrashlytics.instance.recordError(e, e.stackTrace);
@@ -258,7 +272,7 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
           : state.messages;
 
       final result = await callable.call<dynamic>({
-        'scenario': state.currentScenario.name,
+        'scenario': state.currentScenario.apiValue,
         'messages': recent,
         'hint': true,
       });

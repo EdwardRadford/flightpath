@@ -1,5 +1,7 @@
 // Debrief screen — post-lesson form collecting ratings, reflections, and
 // weather, then calling the Claude API for AI-generated feedback.
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -69,6 +71,8 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
   final Set<String> _additionalExerciseIds = {};
 
   bool _saving = false;
+  bool _draftSaved = false;
+  Timer? _savedIndicatorTimer;
 
   // Autosave
   late final DebriefAutosaveService _autosave;
@@ -115,6 +119,13 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
   }
 
   void _onFieldChanged() {
+    if (!_isEditMode) {
+      setState(() => _draftSaved = true);
+      _savedIndicatorTimer?.cancel();
+      _savedIndicatorTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _draftSaved = false);
+      });
+    }
     _autosave.saveDraft(DebriefDraft(
       exerciseId: widget.exerciseId,
       studentRating: _studentRating,
@@ -174,6 +185,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
 
   @override
   void dispose() {
+    _savedIndicatorTimer?.cancel();
     _instructorNotesController.removeListener(_onFieldChanged);
     _reflectionController.removeListener(_onFieldChanged);
     _soloDurationController.removeListener(_onFieldChanged);
@@ -645,10 +657,62 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
       );
     }
 
-    return Scaffold(
+    return PopScope(
+      canPop: _isEditMode,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || _isEditMode) return;
+        final hasContent = _instructorNotesController.text.isNotEmpty ||
+            _reflectionController.text.isNotEmpty;
+        final navigator = Navigator.of(context);
+        if (!hasContent) {
+          navigator.pop();
+          return;
+        }
+        final leave = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Leave debrief?'),
+            content: const Text(
+                'Your draft is saved. You can resume next time you log a lesson for this exercise.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Keep filling in'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Leave'),
+              ),
+            ],
+          ),
+        );
+        if ((leave ?? false) && mounted) navigator.pop();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Debrief' : 'Lesson Check-In'),
         elevation: 0,
+        actions: [
+          if (_draftSaved)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle_outline_rounded,
+                      size: 14, color: AppColors.success),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Draft saved',
+                    style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
       body: ConnectivityAwareBody(
         child: contentAsync.when(
@@ -678,6 +742,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
           },
         ),
       ),
+    ),
     );
   }
 

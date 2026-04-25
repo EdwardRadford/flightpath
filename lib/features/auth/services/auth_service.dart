@@ -100,7 +100,9 @@ class AuthService {
   /// Signs out of Google, resets RevenueCat session, and signs out of Firebase.
   Future<void> signOut() async {
     await NotificationService.cleanupFcm();
-    await _googleSignIn.signOut();
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
     await SubscriptionService.resetUser();
     await _auth.signOut();
   }

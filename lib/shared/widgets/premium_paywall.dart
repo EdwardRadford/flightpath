@@ -90,7 +90,7 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Purchase cancelled or unavailable.'),
+          content: Text('Purchase not completed. Tap the button to try again.'),
         ),
       );
     }

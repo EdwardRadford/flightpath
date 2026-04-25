@@ -258,6 +258,21 @@ const double kHorizontalPadding = 48.0;
 const double kSubExerciseOffsetY = 54.0;
 const double kSubExerciseSpacingX = 80.0;
 
+// Returns the X centre for sub-exercise [si] of [subCount], given the parent
+// centre [parentCx] and canvas [screenWidth]. For 3+ subs the cluster shifts
+// inward so all nodes AND their labels (76px wide) remain on-screen.
+double _computeSubCx(
+    double parentCx, int si, int subCount, double screenWidth) {
+  final spacing = subCount > 2 ? 100.0 : kSubExerciseSpacingX;
+  final halfSpan = (subCount - 1) / 2 * spacing;
+  // Shrink cluster centre so the outermost label edges sit 4px inside screen.
+  const labelHalfWidth = 38.0;
+  final minCx = kSubNodeRadius + 4.0 + halfSpan + labelHalfWidth;
+  final maxCx = screenWidth - kSubNodeRadius - 4.0 - halfSpan - labelHalfWidth;
+  final clusterCx = parentCx.clamp(minCx, maxCx);
+  return clusterCx + (si - (subCount - 1) / 2) * spacing;
+}
+
 // ---------------------------------------------------------------------------
 // FlightPathBody
 // ---------------------------------------------------------------------------
@@ -632,10 +647,7 @@ class _FlightPathBodyState extends State<FlightPathBody>
           widget.userExercises, item.exerciseId, sub.subId);
       final subStatus = nodeStatus(ue);
 
-      final offsetX = (si - (subCount - 1) / 2) * kSubExerciseSpacingX;
-      final rawSubCx = cx + offsetX;
-      final subCx = rawSubCx.clamp(
-          kSubNodeRadius + 4.0, screenWidth - kSubNodeRadius - 4.0);
+      final subCx = _computeSubCx(cx, si, subCount, screenWidth);
       final subCy = cy + kSubExerciseOffsetY;
 
       widgets.add(
@@ -659,9 +671,9 @@ class _FlightPathBodyState extends State<FlightPathBody>
 
       widgets.add(
         Positioned(
-          left: (subCx - 44).clamp(4.0, screenWidth - 92.0),
+          left: subCx - 38,
           top: subCy + kSubNodeRadius + 4,
-          width: 88,
+          width: 76,
           child: GestureDetector(
             onTap: () {
               context.push('/exercises/${item.exerciseId}_${sub.subId}');
@@ -689,6 +701,12 @@ class _FlightPathBodyState extends State<FlightPathBody>
   }
 
   void _onExerciseTap(ExerciseListItem item) {
+    if (!widget.isPremium) {
+      final exNum = int.tryParse(item.exerciseId.replaceFirst('ex_', '')) ?? 0;
+      final freeStart = math.max(1, widget.currentExerciseNumber - 2);
+      final freeEnd = math.min(kExercises.length, widget.currentExerciseNumber + 2);
+      if (exNum < freeStart || exNum > freeEnd) return;
+    }
     if (item.hasSubExercises) {
       context.push(
           '/exercises/${item.exerciseId}_${item.subExercises.first.subId}');
@@ -1081,7 +1099,7 @@ class FlightPathPainter extends CustomPainter {
     _drawMainPath(canvas, size);
     for (int i = 0; i < exercises.length; i++) {
       if (exercises[i].hasSubExercises) {
-        _drawSubExerciseBranches(canvas, i);
+        _drawSubExerciseBranches(canvas, i, size.width);
       }
     }
     _drawClouds(canvas, size);
@@ -1129,7 +1147,8 @@ class FlightPathPainter extends CustomPainter {
     }
   }
 
-  void _drawSubExerciseBranches(Canvas canvas, int parentIndex) {
+  void _drawSubExerciseBranches(
+      Canvas canvas, int parentIndex, double screenWidth) {
     final item = exercises[parentIndex];
     final cx = nodeXCalculator(parentIndex);
     final cy = nodeYCalculator(parentIndex);
@@ -1140,8 +1159,7 @@ class FlightPathPainter extends CustomPainter {
       final ue = findExerciseInList(userExercises, item.exerciseId, sub.subId);
       final subStatus = nodeStatus(ue);
 
-      final offsetX = (si - (subCount - 1) / 2) * kSubExerciseSpacingX;
-      final subCx = cx + offsetX;
+      final subCx = _computeSubCx(cx, si, subCount, screenWidth);
       final subCy = cy + kSubExerciseOffsetY;
 
       final branchPath = Path();

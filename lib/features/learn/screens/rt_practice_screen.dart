@@ -31,6 +31,8 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
 
   late final VoiceService _voice;
   bool _muted = false;
+  bool _showTranscript = false;
+  bool _wasListening = false;
   double _ttsSpeed = 0.45; // 0.3 = slow, 0.45 = normal, 0.65 = fast
 
   static const _kTtsSpeedKey = 'rt_tts_speed';
@@ -63,7 +65,15 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
   }
 
   void _onVoiceStateChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final wasListening = _wasListening;
+    _wasListening = _voice.isListening;
+    // Auto-send when STT ends and there is transcribed text
+    if (wasListening && !_voice.isListening) {
+      final text = _controller.text.trim();
+      if (text.isNotEmpty) _handleSend();
+    }
+    setState(() {});
   }
 
   @override
@@ -196,6 +206,17 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
                 foregroundColor: AppColors.warning,
               ),
             ),
+          // Transcript toggle
+          IconButton(
+            onPressed: () => setState(() => _showTranscript = !_showTranscript),
+            icon: Icon(
+              _showTranscript
+                  ? Icons.chat_bubble_rounded
+                  : Icons.chat_bubble_outline_rounded,
+              size: 22,
+            ),
+            tooltip: _showTranscript ? 'Hide transcript' : 'Show transcript',
+          ),
           // Mute/unmute TTS — only shown when TTS is available
           if (_voice.ttsReady)
             IconButton(
@@ -229,46 +250,62 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
               fast: _kSpeedFast,
             ),
 
-          // ── Message list ───────────────────────────────────────────────
+          // ── Radio display / transcript ────────────────────────────────
           Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: rtState.messages.isEmpty
-                  ? _EmptyState(scenario: rtState.currentScenario)
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      itemCount: rtState.messages.length +
-                          (rtState.isLoading ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == rtState.messages.length &&
-                            rtState.isLoading) {
-                          return const _TypingIndicator();
-                        }
-                        return _MessageBubble(
-                          message: rtState.messages[index],
-                          onReplay: (text) {
-                            if (!_muted) _voice.speakAtcResponse(text);
-                          },
-                        );
-                      },
-                    ),
-            ),
+            child: _showTranscript
+                ? GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => FocusScope.of(context).unfocus(),
+                    child: rtState.messages.isEmpty
+                        ? _EmptyState(scenario: rtState.currentScenario)
+                        : ListView.builder(
+                            controller: _scrollController,
+                            padding:
+                                const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                            itemCount: rtState.messages.length +
+                                (rtState.isLoading ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == rtState.messages.length &&
+                                  rtState.isLoading) {
+                                return const _TypingIndicator();
+                              }
+                              return _MessageBubble(
+                                message: rtState.messages[index],
+                                onReplay: (text) {
+                                  if (!_muted) _voice.speakAtcResponse(text);
+                                },
+                              );
+                            },
+                          ),
+                  )
+                : _RadioDisplay(
+                    voice: _voice,
+                    rtState: rtState,
+                    scenario: rtState.currentScenario,
+                  ),
           ),
 
           // ── Paywall banner ─────────────────────────────────────────────
           if (atLimit) _PaywallBanner(context: context),
 
-          // ── Input bar ─────────────────────────────────────────────────
-          _InputBar(
-            controller: _controller,
-            isLoading: rtState.isLoading,
-            disabled: atLimit,
-            onSend: _handleSend,
-            voiceService: _voice,
-            onMicToggle: _toggleListening,
-          ),
+          // ── PTT / text input ───────────────────────────────────────────
+          if (_showTranscript)
+            _InputBar(
+              controller: _controller,
+              isLoading: rtState.isLoading,
+              disabled: atLimit,
+              onSend: _handleSend,
+              voiceService: _voice,
+              onMicToggle: _toggleListening,
+            )
+          else
+            _PttBar(
+              isListening: _voice.isListening,
+              isSpeaking: _voice.isSpeaking,
+              isLoading: rtState.isLoading,
+              disabled: atLimit,
+              onTap: _toggleListening,
+            ),
 
           // ── ATIS link ─────────────────────────────────────────────────
           _AtisLink(),
@@ -486,12 +523,67 @@ class _MessageBubble extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
+                  // Score chips for ATC responses that carry feedback
+                  if (!isStudent && !isHint) ...[
+                    Builder(builder: (context) {
+                      final ps = message['score_phrasing'];
+                      final rs = message['score_readback'];
+                      final fs = message['score_format'];
+                      if (ps == null || rs == null || fs == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Wrap(
+                          spacing: 6,
+                          children: [
+                            _ScoreChip(label: 'Phrasing', score: int.tryParse(ps) ?? 0),
+                            _ScoreChip(label: 'Readback', score: int.tryParse(rs) ?? 0),
+                            _ScoreChip(label: 'Format', score: int.tryParse(fs) ?? 0),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
                 ],
               ),
             ),
           ),
           if (isStudent) const SizedBox(width: 40),
         ],
+      ),
+    );
+  }
+}
+
+class _ScoreChip extends StatelessWidget {
+  final String label;
+  final int score;
+
+  const _ScoreChip({required this.label, required this.score});
+
+  Color get _color {
+    if (score >= 4) return AppColors.success;
+    if (score >= 3) return AppColors.warning;
+    return AppColors.error;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: _color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        '$label $score/5',
+        style: TextStyle(
+          color: _color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -950,6 +1042,202 @@ class _TtsSpeedBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // ATIS link footer
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Radio display — shown instead of transcript during active session
+// ---------------------------------------------------------------------------
+
+class _RadioDisplay extends StatelessWidget {
+  final VoiceService voice;
+  final dynamic rtState;
+  final RtScenario scenario;
+
+  const _RadioDisplay({
+    required this.voice,
+    required this.rtState,
+    required this.scenario,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isSpeaking = voice.isSpeaking;
+    final bool isListening = voice.isListening;
+    final bool isLoading = rtState.isLoading as bool;
+    final bool hasMessages = (rtState.messages as List).isNotEmpty;
+
+    String statusText;
+    IconData statusIcon;
+    Color statusColor;
+
+    if (isSpeaking) {
+      statusText = 'ATC Transmitting...';
+      statusIcon = Icons.radio_rounded;
+      statusColor = AppColors.primary;
+    } else if (isListening) {
+      statusText = 'Transmitting...';
+      statusIcon = Icons.mic_rounded;
+      statusColor = AppColors.error;
+    } else if (isLoading) {
+      statusText = 'Awaiting response...';
+      statusIcon = Icons.hourglass_top_rounded;
+      statusColor = AppColors.onSurfaceVariant;
+    } else if (!hasMessages) {
+      statusText = 'Press PTT to begin';
+      statusIcon = Icons.radio_outlined;
+      statusColor = AppColors.onSurfaceVariant;
+    } else {
+      statusText = 'Press PTT to transmit';
+      statusIcon = Icons.mic_none_rounded;
+      statusColor = AppColors.onSurfaceVariant;
+    }
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: statusColor.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: isLoading
+                ? Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: statusColor,
+                    ),
+                  )
+                : Icon(statusIcon, size: 36, color: statusColor),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            statusText,
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            scenario.displayName,
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PTT bar — push-to-talk button shown in radio (non-transcript) mode
+// ---------------------------------------------------------------------------
+
+class _PttBar extends StatelessWidget {
+  final bool isListening;
+  final bool isSpeaking;
+  final bool isLoading;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  const _PttBar({
+    required this.isListening,
+    required this.isSpeaking,
+    required this.isLoading,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool canTransmit = !isSpeaking && !isLoading && !disabled;
+    final Color btnColor = isListening
+        ? AppColors.error
+        : canTransmit
+            ? AppColors.primary
+            : AppColors.onSurfaceVariant.withValues(alpha: 0.3);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: canTransmit || isListening ? onTap : null,
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: btnColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            isListening
+                ? 'Tap to stop'
+                : isSpeaking
+                    ? 'ATC talking...'
+                    : 'PTT',
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ListeningBanner extends StatelessWidget {
+  const _ListeningBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      color: AppColors.primary.withValues(alpha: 0.12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.mic_rounded, size: 16, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Text(
+            'Listening — say your radio call now',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _AtisLink extends StatelessWidget {
   @override

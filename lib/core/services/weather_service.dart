@@ -196,93 +196,47 @@ class WeatherData {
     required this.flightCategory,
   });
 
-  /// Parses an OpenWeatherMap `/data/2.5/weather` JSON object as returned by
-  /// the `getWeather` Cloud Function.
+  /// Parses the normalised JSON object returned by the `getWeather`
+  /// Cloud Function (sourced from AVWX METAR data).
   factory WeatherData.fromJson(Map<String, dynamic> json) {
     // --- Conditions ---
-    final weatherList = json['weather'] as List<dynamic>?;
-    final firstWeather = weatherList != null && weatherList.isNotEmpty
-        ? weatherList.first as Map<String, dynamic>
-        : null;
-    final conditionsRaw = firstWeather?['description'] as String? ?? 'Unknown';
-    final conditions = _capitalise(conditionsRaw);
-    final conditionId = (firstWeather?['id'] as num?)?.toInt() ?? 0;
-
-    final iconCode = (firstWeather?['icon'] as String?) ?? '';
+    final conditions = _capitalise((json['conditions'] as String?) ?? 'Unknown');
+    final conditionId = (json['condition_code'] as num?)?.toInt() ?? 800;
 
     // --- Temperature & Dewpoint ---
-    final main = json['main'] as Map<String, dynamic>?;
-    final tempRaw = (main?['temp'] as num?)?.toDouble() ?? 0.0;
-    // OWM doesn't always include dewpoint in free tier; estimate if missing
-    final humidity = (main?['humidity'] as num?)?.toDouble() ?? 50.0;
-    // Magnus formula approximation for dewpoint
-    final dewpoint = tempRaw - ((100.0 - humidity) / 5.0);
+    final temperature = (json['temperature'] as num?)?.toDouble() ?? 0.0;
+    final dewpoint = (json['dewpoint'] as num?)?.toDouble() ?? (temperature - 5.0);
 
     // --- Pressure ---
-    final pressureHpa = (main?['pressure'] as num?)?.toDouble() ?? 1013.25;
+    final pressureHpa = (json['pressure_hpa'] as num?)?.toDouble() ?? 1013.25;
 
-    // --- Wind speed: convert m/s → knots ---
-    final windJson = json['wind'] as Map<String, dynamic>?;
-    final windMps = (windJson?['speed'] as num?)?.toDouble() ?? 0.0;
-    final windKt = windMps * 1.944;
+    // --- Wind (already in knots) ---
+    final windKt = (json['wind_speed_kt'] as num?)?.toDouble() ?? 0.0;
+    final gustKt = (json['wind_gust_kt'] as num?)?.toDouble();
+    final windDeg = (json['wind_direction_deg'] as num?)?.toInt();
     final windSpeedStr = '${windKt.round()} kt';
 
-    // --- Wind gust ---
-    final gustMps = (windJson?['gust'] as num?)?.toDouble();
-    final gustKt = gustMps != null ? gustMps * 1.944 : null;
-
-    // --- Wind direction (degrees) ---
-    final windDeg = (windJson?['deg'] as num?)?.toInt();
-
-    // --- Visibility ---
-    final visMeters = (json['visibility'] as num?)?.toInt() ?? 0;
+    // --- Visibility (metres) ---
+    final visMeters = (json['visibility_m'] as num?)?.toInt() ?? 0;
     final visibilityStr = visMeters >= 10000
         ? '>10 km'
         : '${(visMeters / 1000).toStringAsFixed(1)} km';
 
     // --- Cloud layers ---
-    final cloudsList = json['clouds'] as Map<String, dynamic>?;
-    final allClouds = (json['weather_clouds'] as List<dynamic>?) ?? [];
-    final List<CloudLayer> cloudLayers = [];
+    final cloudsRaw = json['clouds'] as List<dynamic>? ?? [];
+    final List<CloudLayer> cloudLayers = cloudsRaw.map((c) {
+      final cloud = c as Map<String, dynamic>;
+      return CloudLayer(
+        coverage: (cloud['coverage'] as String?) ?? 'FEW',
+        heightFt: (cloud['height_ft'] as num?)?.toInt() ?? 0,
+      );
+    }).toList()
+      ..sort((a, b) => a.heightFt.compareTo(b.heightFt));
 
-    if (allClouds.isNotEmpty) {
-      for (final c in allClouds) {
-        final cloud = c as Map<String, dynamic>;
-        final coverage = _mapCloudCoverage(
-          (cloud['all'] as num?)?.toInt() ?? 0,
-        );
-        final heightM = (cloud['height'] as num?)?.toDouble() ?? 0;
-        final heightFt = (heightM * 3.281).round();
-        cloudLayers.add(CloudLayer(coverage: coverage, heightFt: heightFt));
-      }
-    } else if (cloudsList != null) {
-      // Standard OWM response has clouds.all as percentage
-      final pct = (cloudsList['all'] as num?)?.toInt() ?? 0;
-      final coverage = _mapCloudCoverage(pct);
-      // OWM free tier doesn't give cloud height; estimate from conditions
-      final estHeight = _estimateCloudHeight(conditionId, visMeters);
-      cloudLayers.add(CloudLayer(coverage: coverage, heightFt: estHeight));
-    }
-
-    // Sort by height ascending
-    cloudLayers.sort((a, b) => a.heightFt.compareTo(b.heightFt));
-
-    final lowestBase =
-        cloudLayers.isNotEmpty ? cloudLayers.first.heightFt : null;
+    final lowestBase = cloudLayers.isNotEmpty ? cloudLayers.first.heightFt : null;
 
     // --- Flight category ---
     final flightCat = _determineFlightCategory(visMeters, lowestBase);
-
-    // --- Sunrise / Sunset ---
-    final sys = json['sys'] as Map<String, dynamic>?;
-    final sunriseEpoch = (sys?['sunrise'] as num?)?.toInt();
-    final sunsetEpoch = (sys?['sunset'] as num?)?.toInt();
-    final sunrise = sunriseEpoch != null
-        ? DateTime.fromMillisecondsSinceEpoch(sunriseEpoch * 1000, isUtc: true)
-        : null;
-    final sunset = sunsetEpoch != null
-        ? DateTime.fromMillisecondsSinceEpoch(sunsetEpoch * 1000, isUtc: true)
-        : null;
 
     // --- Suitability ---
     final suitable = windKt < 25 && visMeters >= 5000;
@@ -290,7 +244,7 @@ class WeatherData {
     return WeatherData(
       conditions: conditions,
       conditionId: conditionId,
-      temperature: tempRaw,
+      temperature: temperature,
       dewpoint: dewpoint,
       windSpeed: windSpeedStr,
       windSpeedKt: windKt,
@@ -301,9 +255,9 @@ class WeatherData {
       pressureHpa: pressureHpa,
       cloudLayers: cloudLayers,
       lowestCloudBaseFt: lowestBase,
-      iconCode: iconCode,
-      sunrise: sunrise,
-      sunset: sunset,
+      iconCode: '',
+      sunrise: null,
+      sunset: null,
       isSuitable: suitable,
       flightCategory: flightCat,
     );

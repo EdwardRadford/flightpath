@@ -47,9 +47,9 @@ const _pages = [
     icon: Icons.explore_rounded,
     headline: 'Ready for Takeoff',
     subtext:
-        'Create your account and we\'ll give you a quick tour of the app '
-        'once you\'re set up.\n\n'
-        'Let\'s get started!',
+        'Exercises 1–3 are free. Unlock all 19 exercises, AI-powered debriefs, '
+        'and the full question bank with a one-time Pro upgrade — £39.\n\n'
+        'Create your account to get started.',
   ),
 ];
 

@@ -10,30 +10,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/ask_ai/providers/ask_ai_provider.dart';
+import 'package:flight_path/features/ask_ai/widgets/ask_ai_shared_widgets.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
-
-// ---------------------------------------------------------------------------
-// Chat message model
-// ---------------------------------------------------------------------------
-
-class _ChatMessage {
-  final String role; // 'user' or 'assistant'
-  final String content;
-  final DateTime timestamp;
-
-  const _ChatMessage({
-    required this.role,
-    required this.content,
-    required this.timestamp,
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Ask AI Screen
-// ---------------------------------------------------------------------------
 
 /// Chat interface for asking PPL(A) training questions to an AI assistant.
 class AskAiScreen extends ConsumerStatefulWidget {
@@ -46,12 +27,13 @@ class AskAiScreen extends ConsumerStatefulWidget {
 class _AskAiScreenState extends ConsumerState<AskAiScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<_ChatMessage> _messages = [];
+  final List<ChatMessage> _messages = [];
   bool _isLoading = false;
 
-  /// Simple client-side rate limit: minimum interval between API calls.
   DateTime? _lastSendTime;
   static const _minSendInterval = Duration(seconds: 3);
+  String? _lastUserMessage;
+  bool _hasError = false;
 
   @override
   void dispose() {
@@ -76,15 +58,10 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
     final rawText = _controller.text.trim();
     if (rawText.isEmpty || _isLoading) return;
 
-    // --- Daily message limit gate ---
     final allowed =
         await ref.read(askAiLimitProvider.notifier).canSendMessage();
-    if (!allowed) {
-      // State is already updated to limitReached; the banner will appear.
-      return;
-    }
+    if (!allowed) return;
 
-    // --- Rate limit: prevent rapid-fire API calls ---
     final now = DateTime.now();
     if (_lastSendTime != null &&
         now.difference(_lastSendTime!) < _minSendInterval) {
@@ -98,17 +75,17 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
     }
     _lastSendTime = now;
 
-    // --- Sanitise & enforce length limit ---
     final text = InputSanitiser.sanitise(
       rawText,
       maxLength: InputSanitiser.maxChat,
     );
     if (text.isEmpty) return;
 
+    _lastUserMessage = text;
     _controller.clear();
 
     setState(() {
-      _messages.add(_ChatMessage(
+      _messages.add(ChatMessage(
         role: 'user',
         content: text,
         timestamp: DateTime.now(),
@@ -117,10 +94,8 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
     });
     _scrollToBottom();
 
-    // Increment the daily count immediately after the message is queued.
     await ref.read(askAiLimitProvider.notifier).incrementMessageCount();
 
-    // Analytics: track first message and every message
     final userMessages = _messages.where((m) => m.role == 'user').length;
     if (userMessages == 1) {
       FirebaseAnalytics.instance.logEvent(name: 'ai_chat_started');
@@ -133,12 +108,9 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
 
     try {
       final user = ref.read(appUserProvider).valueOrNull;
-      // aircraftName comes from a constrained dropdown — safe to interpolate.
       final aircraftName =
           AppConstants.aircraftTypes[user?.aircraftType] ?? 'a training aircraft';
 
-      // Build conversation history — cap at last 20 messages to limit payload
-      // size and prevent abuse via huge context windows.
       final recentMessages = _messages.length > 20
           ? _messages.sublist(_messages.length - 20)
           : _messages;
@@ -146,11 +118,10 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
           .map((m) => {'role': m.role, 'content': m.content})
           .toList();
 
-      // Force token refresh to avoid stale auth/App Check tokens
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
         setState(() {
-          _messages.add(_ChatMessage(
+          _messages.add(ChatMessage(
             role: 'assistant',
             content: 'You appear to be signed out. Please close the app and sign in again.',
             timestamp: DateTime.now(),
@@ -174,7 +145,8 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
           'Sorry, I couldn\'t process that right now. Please try again.';
 
       setState(() {
-        _messages.add(_ChatMessage(
+        _hasError = false;
+        _messages.add(ChatMessage(
           role: 'assistant',
           content: aiText,
           timestamp: DateTime.now(),
@@ -191,13 +163,9 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
       } else {
         errorMsg = e.message ?? 'AI service error. Please try again.';
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
-      }
       setState(() {
-        _messages.add(_ChatMessage(
+        _hasError = true;
+        _messages.add(ChatMessage(
           role: 'assistant',
           content: errorMsg,
           timestamp: DateTime.now(),
@@ -206,10 +174,10 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
     } catch (e, stackTrace) {
       FirebaseCrashlytics.instance.recordError(e, stackTrace);
       setState(() {
-        _messages.add(_ChatMessage(
+        _hasError = true;
+        _messages.add(ChatMessage(
           role: 'assistant',
-          content:
-              'Something went wrong. Check your connection and try again.',
+          content: 'Something went wrong. Check your connection and try again.',
           timestamp: DateTime.now(),
         ));
       });
@@ -219,7 +187,6 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
     }
   }
 
-  /// Shows the paywall. paywall_shown is logged inside showPremiumPaywall.
   Future<void> _showPaywall() async {
     await showPremiumPaywall(context, source: 'ask_ai_daily_limit');
   }
@@ -229,8 +196,9 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
     final limitState = ref.watch(askAiLimitProvider);
     final limitReached = limitState.limitReached;
     final messagesRemaining = limitState.messagesRemaining;
+    final isPremium = ref.watch(appUserProvider).valueOrNull?.isPremium ?? false;
     final showRemainingHint =
-        !limitReached && messagesRemaining < kAskAiFreeDailyLimit;
+        !isPremium && !limitReached && messagesRemaining < kAskAiFreeDailyLimit;
 
     return Scaffold(
       appBar: AppBar(
@@ -247,7 +215,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
             ),
           ],
         ),
-        automaticallyImplyLeading: false,
+        leading: const BackButton(),
         actions: [
           if (_messages.isNotEmpty)
             IconButton(
@@ -279,19 +247,50 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
                       itemCount: _messages.length + (_isLoading ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == _messages.length && _isLoading) {
-                          return const _TypingIndicator();
+                          return const AskAiTypingIndicator();
                         }
-                        return _MessageBubble(message: _messages[index]);
+                        return AskAiMessageBubble(message: _messages[index]);
                       },
                     ),
             ),
           ),
 
-          // ── Daily limit banner (shown when free tier is exhausted) ─────────
-          if (limitReached)
-            _DailyLimitBanner(onUpgradeTapped: _showPaywall),
+          // ── Retry banner ─────────────────────────────────────────
+          if (_hasError && _lastUserMessage != null && !_isLoading)
+            GestureDetector(
+              onTap: () {
+                setState(() => _hasError = false);
+                _controller.text = _lastUserMessage!;
+                _sendMessage();
+              },
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color: AppColors.error.withValues(alpha: 0.08),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.refresh_rounded,
+                        size: 14, color: AppColors.error),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Tap to retry last message',
+                      style: TextStyle(
+                          color: AppColors.error,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
-          // ── Messages-remaining hint (shown when < 5 used, > 0 used) ────────
+          // ── Daily limit banner ───────────────────────────────────
+          if (limitReached)
+            AskAiDailyLimitBanner(onUpgradeTapped: _showPaywall),
+
+          // ── Messages-remaining hint ──────────────────────────────
           if (showRemainingHint)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -343,7 +342,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
                       ),
                       filled: true,
                       fillColor: AppColors.surfaceVariant,
-                      counterText: '', // hide the character counter
+                      counterText: '',
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -379,230 +378,6 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Daily limit banner
-// ---------------------------------------------------------------------------
-
-class _DailyLimitBanner extends StatelessWidget {
-  final VoidCallback onUpgradeTapped;
-
-  const _DailyLimitBanner({required this.onUpgradeTapped});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
-        border: Border(
-          top: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline_rounded,
-              color: AppColors.primary, size: 18),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "You've used your 5 free messages today. Upgrade for unlimited access.",
-              style: TextStyle(
-                color: AppColors.onSurface,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: onUpgradeTapped,
-            child: Text(
-              'Get unlimited access',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Message bubble
-// ---------------------------------------------------------------------------
-
-class _MessageBubble extends StatelessWidget {
-  final _ChatMessage message;
-
-  const _MessageBubble({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final isUser = message.role == 'user';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.auto_awesome,
-                color: AppColors.primary,
-                size: 16,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: isUser
-                    ? AppColors.primary.withValues(alpha: 0.15)
-                    : AppColors.surface,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 16),
-                ),
-                border: isUser
-                    ? null
-                    : Border.all(color: AppColors.divider),
-              ),
-              child: SelectableText(
-                message.content,
-                style: TextStyle(
-                  color: AppColors.onSurface,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ),
-          if (isUser) const SizedBox(width: 40),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Typing indicator
-// ---------------------------------------------------------------------------
-
-class _TypingIndicator extends StatefulWidget {
-  const _TypingIndicator();
-
-  @override
-  State<_TypingIndicator> createState() => _TypingIndicatorState();
-}
-
-class _TypingIndicatorState extends State<_TypingIndicator>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.auto_awesome,
-              color: AppColors.primary,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-                bottomLeft: Radius.circular(4),
-                bottomRight: Radius.circular(16),
-              ),
-              border: Border.all(color: AppColors.divider),
-            ),
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(3, (i) {
-                    final offset = (_controller.value + i * 0.33) % 1.0;
-                    final opacity = 0.3 +
-                        0.7 *
-                            (1.0 - (offset - 0.5).abs() * 2)
-                                .clamp(0.0, 1.0);
-                    return Padding(
-                      padding: EdgeInsets.only(right: i < 2 ? 4 : 0),
-                      child: Opacity(
-                        opacity: opacity,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: AppColors.onSurfaceVariant,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                );
-              },
             ),
           ),
         ],

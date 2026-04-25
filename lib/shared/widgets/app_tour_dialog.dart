@@ -1,10 +1,7 @@
-// Full-screen page-by-page app tour dialog.
-// Shows one page per main tab explaining what each section does.
 import 'package:flutter/material.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 
-/// Data for a single tour page.
 class _TourPage {
   final IconData icon;
   final String title;
@@ -66,30 +63,23 @@ const _pages = [
 ///
 /// Returns `true` if the user completed or skipped the tour.
 Future<bool> showAppTourDialog(BuildContext context) async {
-  final result = await showGeneralDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.black87,
-    transitionDuration: const Duration(milliseconds: 300),
-    transitionBuilder: (ctx, anim, secondaryAnim, child) {
-      return FadeTransition(
-        opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
-        child: child,
-      );
-    },
-    pageBuilder: (ctx, _, __) => const _AppTourDialog(),
+  final result = await Navigator.of(context, rootNavigator: true).push<bool>(
+    MaterialPageRoute<bool>(
+      fullscreenDialog: true,
+      builder: (ctx) => const _AppTourPage(),
+    ),
   );
   return result ?? false;
 }
 
-class _AppTourDialog extends StatefulWidget {
-  const _AppTourDialog();
+class _AppTourPage extends StatefulWidget {
+  const _AppTourPage();
 
   @override
-  State<_AppTourDialog> createState() => _AppTourDialogState();
+  State<_AppTourPage> createState() => _AppTourPageState();
 }
 
-class _AppTourDialogState extends State<_AppTourDialog> {
+class _AppTourPageState extends State<_AppTourPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -114,151 +104,127 @@ class _AppTourDialogState extends State<_AppTourDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
     final textColor = isDark ? AppColors.onSurfaceDark : AppColors.onSurfaceLight;
 
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            decoration: BoxDecoration(
-              color: surfaceColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.3),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+    return Scaffold(
+      backgroundColor: cs.surface,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: Alignment.topRight,
+              child: TextButton(
+                onPressed: _skip,
+                style: TextButton.styleFrom(
+                  foregroundColor: textColor.withValues(alpha: 0.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-              ],
+                child: const Text('Skip'),
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Page content
-                SizedBox(
-                  height: 320,
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (i) => setState(() => _currentPage = i),
-                    itemCount: _pages.length,
-                    itemBuilder: (ctx, i) {
-                      final page = _pages[i];
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(28, 40, 28, 16),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Icon(
-                                page.icon,
-                                color: AppColors.primary,
-                                size: 36,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Text(
-                              page.title,
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              page.description,
-                              style: TextStyle(
-                                color: textColor.withValues(alpha: 0.7),
-                                fontSize: 15,
-                                height: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (i) => setState(() => _currentPage = i),
+                itemCount: _pages.length,
+                itemBuilder: (ctx, i) {
+                  final page = _pages[i];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 88,
+                          height: 88,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Icon(
+                            page.icon,
+                            color: AppColors.primary,
+                            size: 44,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Text(
+                          page.title,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          page.description,
+                          style: TextStyle(
+                            color: textColor.withValues(alpha: 0.7),
+                            fontSize: 16,
+                            height: 1.55,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_pages.length, (i) {
+                      final isActive = i == _currentPage;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: isActive ? 20 : 8,
+                        height: 8,
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? AppColors.primary
+                              : AppColors.primary.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       );
-                    },
+                    }),
                   ),
-                ),
-
-                // Dots + buttons
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: Column(
-                    children: [
-                      // Dot indicators
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(_pages.length, (i) {
-                          final isActive = i == _currentPage;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: isActive ? 20 : 8,
-                            height: 8,
-                            margin: const EdgeInsets.only(right: 6),
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? AppColors.primary
-                                  : AppColors.primary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          );
-                        }),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _next,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
                       ),
-                      const SizedBox(height: 24),
-
-                      // Buttons row
-                      Row(
-                        children: [
-                          TextButton(
-                            onPressed: _skip,
-                            style: TextButton.styleFrom(
-                              foregroundColor: textColor.withValues(alpha: 0.5),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                            ),
-                            child: const Text('Skip'),
-                          ),
-                          const Spacer(),
-                          ElevatedButton(
-                            onPressed: _next,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 28, vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              _currentPage == _pages.length - 1
-                                  ? 'Get Started'
-                                  : 'Next',
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

@@ -34,7 +34,7 @@ Future<void> _checkWhatsNew(BuildContext context) async {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: cs.surface,
+    backgroundColor: cs.surfaceContainerHighest,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),

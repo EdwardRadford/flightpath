@@ -55,7 +55,7 @@ class FlightPathApp extends ConsumerWidget {
     final accessibility = ref.watch(accessibilityProvider);
 
     return MaterialApp.router(
-      title: 'Flight Path',
+      title: 'Flight Path Training',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

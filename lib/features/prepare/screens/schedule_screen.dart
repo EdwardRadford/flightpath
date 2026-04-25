@@ -192,7 +192,13 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
       
       appBar: AppBar(
         title: const Text('Schedule Lesson'),
-        
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month_rounded),
+            tooltip: 'View all scheduled lessons',
+            onPressed: () => context.push('/schedule/calendar'),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),

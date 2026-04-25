@@ -30,7 +30,7 @@ class MainShell extends ConsumerStatefulWidget {
   static const List<_Tab> _tabs = [
     (path: '/home', label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home),
     (path: '/exercises', label: 'Exercises', icon: Icons.list_outlined, activeIcon: Icons.list),
-    (path: '/logbook', label: 'Progress', icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart_rounded),
+    (path: '/logbook', label: 'Logbook', icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart_rounded),
     (path: '/learn', label: 'Learn', icon: Icons.school_outlined, activeIcon: Icons.school_rounded),
     (path: '/tools', label: 'Tools', icon: Icons.handyman_outlined, activeIcon: Icons.handyman_rounded),
   ];

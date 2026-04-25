@@ -501,11 +501,31 @@ class LockedStepCard extends StatelessWidget {
             ),
           ),
 
-          // Lock icon
-          Icon(
-            Icons.lock_rounded,
-            color: AppColors.onSurfaceVariant.withValues(alpha: 0.4),
-            size: 18,
+          // Pro badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_rounded, color: AppColors.primary, size: 11),
+                const SizedBox(width: 3),
+                Text(
+                  'Pro',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

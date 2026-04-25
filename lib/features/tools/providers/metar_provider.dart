@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/services/avwx_service.dart';
 import 'package:flight_path/shared/services/subscription_service.dart';
 
@@ -186,8 +187,8 @@ class MetarSessionState {
 class MetarNotifier extends StateNotifier<MetarSessionState> {
   final AvwxService _avwx;
 
-  MetarNotifier(this._avwx)
-      : super(const MetarSessionState(icao: 'EGTC')) {
+  MetarNotifier(this._avwx, {String initialIcao = 'EGTC'})
+      : super(MetarSessionState(icao: initialIcao)) {
     _loadDailyCount();
   }
 
@@ -641,7 +642,11 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
 final metarProvider =
     StateNotifierProvider<MetarNotifier, MetarSessionState>((ref) {
   final avwx = ref.watch(avwxServiceProvider);
-  return MetarNotifier(avwx);
+  final user = ref.read(appUserProvider).valueOrNull;
+  final homeIcao = (user?.airfieldIcao != null && user!.airfieldIcao!.isNotEmpty)
+      ? user.airfieldIcao!.toUpperCase()
+      : 'EGTC';
+  return MetarNotifier(avwx, initialIcao: homeIcao);
 });
 
 // ---------------------------------------------------------------------------
