@@ -566,11 +566,12 @@ class NotificationService {
     final london = tz.getLocation('Europe/London');
 
     // 7pm Europe/London the evening before the lesson.
+    final dayBefore = lessonDate.subtract(const Duration(days: 1));
     final notifyAt = tz.TZDateTime(
       london,
-      lessonDate.year,
-      lessonDate.month,
-      lessonDate.day - 1,
+      dayBefore.year,
+      dayBefore.month,
+      dayBefore.day,
       19, // 7pm
     );
 

@@ -37,7 +37,21 @@ Future<bool> showPremiumPaywall(
     ),
   ).then((v) {
     final purchased = v ?? false;
-    if (!purchased) {
+    if (purchased) {
+      // Show a success confirmation. The RevenueCat webhook updates isPremium
+      // async — this snackbar bridges the gap while the stream catches up.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Welcome to Pro. All exercises and AI features are now unlocked.',
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
       FirebaseAnalytics.instance.logEvent(
         name: 'paywall_dismissed',
         parameters: {
