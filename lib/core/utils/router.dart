@@ -41,7 +41,6 @@ import '../../features/exercises/screens/prepare_hub_screen.dart';
 import '../../features/exercises/screens/brief_screen.dart';
 import '../../features/exercises/screens/quiz_screen.dart';
 import '../../features/exercises/screens/visualisation_screen.dart';
-import '../../features/exercises/screens/video_screen.dart';
 import '../../features/exercises/screens/flashcard_screen.dart';
 import '../../features/exercises/screens/revision_screen.dart';
 import '../../features/debrief/screens/debrief_screen.dart';
@@ -297,15 +296,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => slideTransition(
           state: state,
           child: VisualisationScreen(
-            compositeExerciseId: state.pathParameters['exerciseId']!,
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/exercises/:exerciseId/video',
-        pageBuilder: (context, state) => slideTransition(
-          state: state,
-          child: VideoScreen(
             compositeExerciseId: state.pathParameters['exerciseId']!,
           ),
         ),

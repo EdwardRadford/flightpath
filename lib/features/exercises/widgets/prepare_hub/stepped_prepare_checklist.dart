@@ -48,10 +48,8 @@ class SteppedPrepareChecklist extends StatelessWidget {
 
   List<PrepareStepItem> _buildSteps() {
     final bool briefDone = userExercise?.briefViewed ?? false;
-    final bool videoDone = userExercise?.videoWatched ?? false;
     final bool flashcardsDone = userExercise?.flashcardsCompleted ?? false;
     final String briefStatusLabel = userExercise?.briefStatus ?? 'Not Viewed';
-    final String videoStatusLabel = userExercise?.videoStatus ?? 'Not Watched';
     final String flashcardsStatusLabel =
         userExercise?.flashcardsStatus ?? 'Not Started';
     final String quizStatusLabel = userExercise?.quizStatus ?? 'Not Started';
@@ -109,14 +107,6 @@ class SteppedPrepareChecklist extends StatelessWidget {
           ),
           PrepareStepItem(
             stepNumber: 2,
-            icon: Icons.play_circle_rounded,
-            label: 'Video',
-            done: videoDone,
-            route: '/exercises/$compositeExerciseId/video',
-            statusLabel: videoStatusLabel,
-          ),
-          PrepareStepItem(
-            stepNumber: 3,
             icon: Icons.style_rounded,
             label: 'Flashcards',
             done: flashcardsDone,
@@ -124,7 +114,7 @@ class SteppedPrepareChecklist extends StatelessWidget {
             statusLabel: flashcardsStatusLabel,
           ),
           PrepareStepItem(
-            stepNumber: 4,
+            stepNumber: 3,
             icon: Icons.edit_rounded,
             label: 'Quiz',
             done: quizPassed,
@@ -227,7 +217,7 @@ class SteppedPrepareChecklist extends StatelessWidget {
 
         // Step list
         ...steps.map((step) {
-          const viewableLabels = {'Brief', 'Video', 'Visualisation'};
+          const viewableLabels = {'Brief', 'Visualisation'};
           final isStepLocked =
               locked && !viewableLabels.contains(step.label);
           final isNext = !isStepLocked &&
