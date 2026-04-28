@@ -678,9 +678,7 @@ class _FlightPathBodyState extends State<FlightPathBody>
           left: subCx - kSubNodeRadius,
           top: subCy - kSubNodeRadius,
           child: GestureDetector(
-            onTap: () {
-              context.push('/exercises/${item.exerciseId}_${sub.subId}');
-            },
+            onTap: () => _onSubExerciseTap(item, sub.subId),
             child: ExerciseNodeCircle(
               label: sub.subId.toUpperCase(),
               status: subStatus,
@@ -698,9 +696,7 @@ class _FlightPathBodyState extends State<FlightPathBody>
           top: subCy + kSubNodeRadius + 4,
           width: 76,
           child: GestureDetector(
-            onTap: () {
-              context.push('/exercises/${item.exerciseId}_${sub.subId}');
-            },
+            onTap: () => _onSubExerciseTap(item, sub.subId),
             child: Text(
               sub.subName.split(' \u2013 ').last,
               style: TextStyle(
@@ -744,6 +740,24 @@ class _FlightPathBodyState extends State<FlightPathBody>
     } else {
       context.push('/exercises/${item.exerciseId}');
     }
+  }
+
+  void _onSubExerciseTap(ExerciseListItem item, String subId) {
+    if (!widget.isPremium) {
+      final exNum = exerciseNumber(item.exerciseId);
+      final freeStart = math.max(1, widget.currentExerciseNumber - 2);
+      final freeEnd = math.min(19, widget.currentExerciseNumber + 2);
+      if (exNum < freeStart || exNum > freeEnd) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Upgrade to Pro to unlock all 22 exercises'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+    }
+    context.push('/exercises/${item.exerciseId}_$subId');
   }
 }
 
