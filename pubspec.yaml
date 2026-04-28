@@ -50,6 +50,9 @@ dependencies:
   # Lesson scheduling calendar
   table_calendar: ^3.1.2
 
+  # HTTP client (used for streaming AI chat SSE)
+  http: ^1.2.2
+
   # Utilities
   intl: ^0.20.2
   shared_preferences: ^2.5.3

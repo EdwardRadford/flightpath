@@ -47,6 +47,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   // ── Question mastery tracking ──────────────────────────────────────────
   List<QuizQuestion>? _orderedQuestions;
   Map<String, int>? _cachedMasteryData;
+  Map<String, int>? _updatedMasteryData;
 
   /// A question is "mastered" when answered correctly 2+ times consecutively.
   static const int _masteryThreshold = 2;
@@ -275,6 +276,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     final newMastery =
         _computeUpdatedMastery(questions, _cachedMasteryData ?? {});
+    setState(() => _updatedMasteryData = newMastery);
     if (!_saved) {
       _saveResult(questions, passed: passed, updatedMastery: newMastery);
     }
@@ -356,6 +358,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       _loggedStart = false;
       _orderedQuestions = null;
       _cachedMasteryData = null;
+      _updatedMasteryData = null;
     });
   }
 
@@ -444,10 +447,17 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           }
 
           if (_showResults) {
+            final masteredCount = (_updatedMasteryData ?? _cachedMasteryData ?? {})
+                .values
+                .where((v) => v >= _masteryThreshold)
+                .length;
             return _ResultsView(
               questions: ordered,
               selectedAnswers: _selectedAnswers,
               score: _score,
+              masteredCount: masteredCount,
+              totalQuestions: ordered.length,
+              compositeExerciseId: widget.compositeExerciseId,
               onTryAgain: _resetQuiz,
               onBack: () => context.pop(),
             );
@@ -696,6 +706,9 @@ class _ResultsView extends StatelessWidget {
   final List<QuizQuestion> questions;
   final Map<int, String> selectedAnswers;
   final int score;
+  final int masteredCount;
+  final int totalQuestions;
+  final String compositeExerciseId;
   final VoidCallback onTryAgain;
   final VoidCallback onBack;
 
@@ -703,6 +716,9 @@ class _ResultsView extends StatelessWidget {
     required this.questions,
     required this.selectedAnswers,
     required this.score,
+    required this.masteredCount,
+    required this.totalQuestions,
+    required this.compositeExerciseId,
     required this.onTryAgain,
     required this.onBack,
   });
@@ -796,6 +812,34 @@ class _ResultsView extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+
+          // Mastery count
+          if (totalQuestions > 0)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.auto_awesome_rounded,
+                      color: AppColors.primary, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$masteredCount of $totalQuestions question${totalQuestions == 1 ? '' : 's'} mastered',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 24),
 
           // Question breakdown
@@ -909,34 +953,65 @@ class _ResultsView extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          if (!passed)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: ElevatedButton.icon(
-                onPressed: onTryAgain,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Try Again'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+          if (passed) ...[
+            ElevatedButton.icon(
+              onPressed: onBack,
+              icon: const Icon(Icons.flight_takeoff_rounded, size: 20),
+              label: const Text('Ready to Fly'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
             ),
-
-          OutlinedButton(
-            onPressed: onBack,
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: AppColors.divider),
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => context.push(
+                '/exercises/$compositeExerciseId/brief',
+              ),
+              icon: const Icon(Icons.menu_book_rounded, size: 18),
+              label: const Text('Review Brief'),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.divider),
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
-            child: const Text('Back to Exercise'),
-          ),
+          ] else ...[
+            ElevatedButton.icon(
+              onPressed: onTryAgain,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: const Text('Try Again'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => context.push(
+                '/exercises/$compositeExerciseId/brief',
+              ),
+              icon: const Icon(Icons.menu_book_rounded, size: 18),
+              label: const Text('Review Brief'),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.divider),
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

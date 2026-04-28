@@ -130,13 +130,30 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
             ],
           ),
         ),
-        body: TabBarView(
-          controller: _tabController,
-          children: const [
-            _LessonsTab(),
-            _HoursTab(),
-            _SyllabusTab(),
-            HoursMinimumsScreen(),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: Text(
+                'Your training analytics and CAA progress',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: const [
+                  _LessonsTab(),
+                  _HoursTab(),
+                  _SyllabusTab(),
+                  HoursMinimumsScreen(),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -157,17 +174,27 @@ class _LessonsTab extends ConsumerWidget {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
-      error: (_, __) => const Center(
-        child: Text('Unable to load data. Please try again.', style: TextStyle(color: AppColors.error)),
+      error: (_, __) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Could not load progress'),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => ref.invalidate(allLessonsProvider),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
       data: (lessons) {
         if (lessons.isEmpty) {
           return EmptyStateWidget(
-            icon: Icons.bar_chart_rounded,
-            title: 'Complete your first lesson to see your progress',
+            icon: Icons.trending_up_rounded,
+            title: 'Nothing to track yet',
             subtitle:
-                'Your lesson history, ratings, and improvement trends will appear here as you fly.',
-            buttonText: 'Browse Exercises',
+                'Complete exercises and log lessons to see your progress here.',
+            buttonText: 'Go to Exercises',
             onButtonPressed: () => context.push('/exercises'),
           );
         }
@@ -489,8 +516,18 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
-      error: (_, __) => const Center(
-        child: Text('Unable to load data. Please try again.', style: TextStyle(color: AppColors.error)),
+      error: (_, __) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Could not load progress'),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => ref.invalidate(allLessonsProvider),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
       data: (allLessons) {
         // All completed lessons across all time (for the circular indicator).
@@ -1235,25 +1272,72 @@ class _FilterChip extends StatelessWidget {
 // Readiness card
 // ---------------------------------------------------------------------------
 class _ReadinessCard extends StatelessWidget {
-  final double readiness;
+  final SkillsReadinessData data;
 
-  const _ReadinessCard({required this.readiness});
+  const _ReadinessCard({required this.data});
+
+  Color get _ringColor {
+    final pct = data.score * 100;
+    if (pct < 40) return AppColors.error;
+    if (pct < 70) return AppColors.warning;
+    return AppColors.success;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final pct = (readiness * 100).round();
+    final pct = (data.score * 100).round();
+    final ringColor = _ringColor;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.divider),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(
+            width: 140,
+            height: 140,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 140,
+                  height: 140,
+                  child: CircularProgressIndicator(
+                    value: data.score,
+                    strokeWidth: 11,
+                    backgroundColor: AppColors.surfaceVariant,
+                    valueColor: AlwaysStoppedAnimation<Color>(ringColor),
+                  ),
+                ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$pct%',
+                      style: TextStyle(
+                        color: AppColors.onSurface,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'readiness',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
             'Skills Test Readiness',
             style: TextStyle(
@@ -1264,41 +1348,81 @@ class _ReadinessCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Exercises rated 4/5 or above',
+            '${data.ready} of ${data.total} exercises rated 4+ / 5',
             style: TextStyle(
               color: AppColors.onSurfaceVariant,
-              fontSize: 12,
+              fontSize: 13,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: readiness,
-                    backgroundColor: AppColors.surfaceVariant,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
-                    ),
-                    minHeight: 8,
-                  ),
+                child: _ReadinessBreakdownCell(
+                  label: 'Ready',
+                  count: data.ready,
+                  color: AppColors.success,
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                '$pct%',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
+              Container(width: 1, height: 36, color: AppColors.divider),
+              Expanded(
+                child: _ReadinessBreakdownCell(
+                  label: 'In Progress',
+                  count: data.inProgress,
+                  color: AppColors.warning,
+                ),
+              ),
+              Container(width: 1, height: 36, color: AppColors.divider),
+              Expanded(
+                child: _ReadinessBreakdownCell(
+                  label: 'Not Started',
+                  count: data.notStarted,
+                  color: AppColors.onSurfaceVariant,
                 ),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ReadinessBreakdownCell extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+
+  const _ReadinessBreakdownCell({
+    required this.label,
+    required this.count,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$count',
+          style: TextStyle(
+            color: color,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.onSurfaceVariant,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -1317,9 +1441,18 @@ class _SyllabusTab extends ConsumerWidget {
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
-      error: (_, __) => const Center(
-        child: Text('Unable to load data. Please try again.',
-            style: TextStyle(color: AppColors.error)),
+      error: (_, __) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Could not load progress'),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => ref.invalidate(userExercisesProvider),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
       data: (userExercises) {
         // Build lookup map
@@ -1335,15 +1468,14 @@ class _SyllabusTab extends ConsumerWidget {
             .where((id) => ueMap[id]?.status.isCompleted ?? false)
             .length;
 
-        final readiness = ref.watch(skillsReadinessProvider);
+        final readinessData = ref.watch(skillsReadinessDataProvider);
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
-            // Skills test readiness
-            if (readiness != null)
-              _ReadinessCard(readiness: readiness),
-            if (readiness != null)
+            if (readinessData != null)
+              _ReadinessCard(data: readinessData),
+            if (readinessData != null)
               const SizedBox(height: 16),
 
             // Overall summary

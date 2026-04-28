@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/features/exercises/widgets/exercise_list/flight_path_body.dart';
 
 // ---------------------------------------------------------------------------
@@ -19,7 +20,7 @@ class ExerciseListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesAsync = ref.watch(userExercisesProvider);
     final appUser = ref.watch(appUserProvider).valueOrNull;
-    final isPremium = appUser?.isPremium ?? false;
+    final isPremium = ref.watch(premiumStatusProvider).valueOrNull ?? false;
     final currentExerciseNumber = appUser?.currentExerciseNumber ?? 1;
 
     return Scaffold(

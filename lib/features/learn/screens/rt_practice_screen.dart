@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
-import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
 import 'package:flight_path/features/learn/providers/rt_practice_provider.dart';
@@ -142,7 +142,7 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
     final notifier = ref.read(rtPracticeProvider.notifier);
 
     // Check free tier before starting
-    if (!notifier.canStartNewScenario) {
+    if (!await notifier.canStartNewScenario()) {
       if (!mounted) return;
       await showPremiumPaywall(context, source: 'rt_practice_scenario_limit');
       return;
@@ -180,8 +180,7 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
   @override
   Widget build(BuildContext context) {
     final rtState = ref.watch(rtPracticeProvider);
-    final user = ref.watch(appUserProvider).valueOrNull;
-    final isPremium = user?.isPremium ?? false;
+    final isPremium = ref.watch(premiumStatusProvider).valueOrNull ?? false;
     final atLimit = !isPremium &&
         rtState.scenariosUsedThisSession >= kRtPracticeFreeScenarios;
 
@@ -1226,34 +1225,6 @@ class _PttBar extends StatelessWidget {
               color: AppColors.onSurfaceVariant,
               fontSize: 12,
               fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ListeningBanner extends StatelessWidget {
-  const _ListeningBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      color: AppColors.primary.withValues(alpha: 0.12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.mic_rounded, size: 16, color: AppColors.primary),
-          const SizedBox(width: 8),
-          Text(
-            'Listening — say your radio call now',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ],

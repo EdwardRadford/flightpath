@@ -3,9 +3,11 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
+import 'package:flight_path/core/constants/exercise_criteria.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
@@ -193,6 +195,13 @@ class _PrepareHubBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final exerciseLabel = content.subExercise != null
+        ? 'Exercise ${content.subExercise}'
+        : 'Exercise ${content.exerciseNumber}';
+    final briefRoute = '/exercises/$compositeExerciseId/brief';
+    final hasFirstStep =
+        content.lessonType != LessonType.milestone;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       child: Column(
@@ -200,7 +209,38 @@ class _PrepareHubBody extends StatelessWidget {
         children: [
           // 1. Exercise header
           ExerciseHeader(content: content),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+
+          // Ask AI chip
+          ActionChip(
+            avatar: const Icon(Icons.auto_awesome_rounded, size: 16),
+            label: Text('Ask AI about $exerciseLabel'),
+            onPressed: isPremium
+                ? () => context.push(
+                      '/ask-ai',
+                      extra:
+                          'Tell me about $exerciseLabel: ${content.exerciseName}',
+                    )
+                : null,
+            backgroundColor: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest,
+            side: BorderSide(
+              color: AppColors.primary.withValues(alpha: 0.3),
+            ),
+            labelStyle: TextStyle(
+              color: isPremium
+                  ? AppColors.primary
+                  : AppColors.onSurfaceVariant,
+              fontSize: 13,
+            ),
+            iconTheme: IconThemeData(
+              color: isPremium
+                  ? AppColors.primary
+                  : AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
 
           // 2. Progress card
           ProgressCard(userExercise: userExercise),
@@ -233,7 +273,16 @@ class _PrepareHubBody extends StatelessWidget {
             const SizedBox(height: 16),
           ],
 
-          // 3. Prepare checklist
+          // 3. Today's Expectations — CAA assessment criteria
+          if (ExerciseCriteria.exerciseCriteria
+              .containsKey(compositeExerciseId)) ...[
+            _TodaysExpectationsSection(
+              compositeExerciseId: compositeExerciseId,
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // 4. Prepare checklist
           const PrepareHubSectionLabel(label: 'PREPARE'),
           const SizedBox(height: 8),
           SteppedPrepareChecklist(
@@ -242,7 +291,30 @@ class _PrepareHubBody extends StatelessWidget {
             userExercise: userExercise,
             quizPassed: quizPassed,
             locked: !isPremium,
+            content: content,
           ),
+          if (hasFirstStep && isPremium) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => context.push(briefRoute),
+                icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                label: const Text(
+                  'Start Preparing',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 28),
 
           // 4. Log / Start button
@@ -259,6 +331,103 @@ class _PrepareHubBody extends StatelessWidget {
           const PrepareHubSectionLabel(label: 'REVISION'),
           const SizedBox(height: 8),
           const PrepareHubRevisionBanner(),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Today's Expectations — CAA criteria
+// ---------------------------------------------------------------------------
+
+class _TodaysExpectationsSection extends StatelessWidget {
+  final String compositeExerciseId;
+
+  const _TodaysExpectationsSection({required this.compositeExerciseId});
+
+  @override
+  Widget build(BuildContext context) {
+    final criteria =
+        ExerciseCriteria.exerciseCriteria[compositeExerciseId] ?? const [];
+    if (criteria.isEmpty) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.fact_check_rounded,
+                size: 16,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "TODAY'S EXPECTATIONS",
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'What your instructor will assess',
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...criteria.map(
+            (c) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5, right: 8),
+                    child: Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      c.label,
+                      style: TextStyle(
+                        color: AppColors.onSurface,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

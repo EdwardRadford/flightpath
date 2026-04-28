@@ -539,6 +539,19 @@ class _LessonDetailBody extends ConsumerWidget {
             const SizedBox(height: 12),
           ],
 
+          // Next lesson focus
+          if (lesson.nextFocusSuggestion.isNotEmpty) ...[
+            _buildNextFocusCard(lesson.nextFocusSuggestion),
+            const SizedBox(height: 12),
+          ],
+
+          // Per-criterion ratings
+          if (lesson.criterionRatings != null &&
+              lesson.criterionRatings!.isNotEmpty) ...[
+            _buildCriterionRatingsCard(lesson.criterionRatings!),
+            const SizedBox(height: 12),
+          ],
+
           // Personal reflection
           if (lesson.personalReflection.isNotEmpty) ...[
             _buildDetailCard(
@@ -711,6 +724,131 @@ class _LessonDetailBody extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNextFocusCard(String suggestion) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.arrow_forward_rounded,
+                  color: AppColors.primary, size: 16),
+              SizedBox(width: 6),
+              Text(
+                'Next lesson focus',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(color: AppColors.dividerDark, height: 1),
+          const SizedBox(height: 12),
+          Text(
+            suggestion,
+            style: TextStyle(
+              color: AppColors.onSurface,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCriterionRatingsCard(Map<String, int> ratings) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.checklist_rounded,
+                  color: AppColors.onSurfaceVariant, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                'Skill Ratings',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Divider(color: AppColors.divider, height: 1),
+          const SizedBox(height: 12),
+          ...ratings.entries.map((entry) {
+            final label = entry.key
+                .replaceAll('_', ' ')
+                .split(' ')
+                .map((w) => w.isEmpty
+                    ? ''
+                    : '${w[0].toUpperCase()}${w.substring(1)}')
+                .join(' ');
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: AppColors.onSurface,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: List.generate(5, (i) {
+                      return Icon(
+                        (i + 1) <= entry.value
+                            ? Icons.circle
+                            : Icons.circle_outlined,
+                        color: (i + 1) <= entry.value
+                            ? AppColors.primary
+                            : AppColors.onSurfaceVariant.withValues(alpha: 0.3),
+                        size: 10,
+                      );
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${entry.value}/5',
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 

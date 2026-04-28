@@ -211,9 +211,9 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
       FirebaseAnalytics.instance.logEvent(name: 'data_export_started');
       final uri = Uri(
         scheme: 'mailto',
-        path: 'privacy@getflightpath.app',
+        path: 'contact@edwardradford.co.uk',
         queryParameters: {
-          'subject': 'Data Request — Flight Path',
+          'subject': 'Data Export Request — Flight Path',
           'body':
               'Hi,\n\nI would like to request a copy of my data.\n\n'
               'Account UID: ${widget.uid}\n\n'
@@ -231,7 +231,7 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-                'Could not open email. Please email privacy@getflightpath.app directly.'),
+                'Email contact@edwardradford.co.uk to request your data.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -264,7 +264,7 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
             : Icon(Icons.download_rounded,
                 color: cs.onSurface.withValues(alpha: 0.6)),
         title: Text(
-          _exporting ? 'Exporting\u2026' : 'Export My Data',
+          _exporting ? 'Opening email\u2026' : 'Request Data Export',
           style: TextStyle(
             color: cs.onSurface,
             fontSize: 15,
@@ -272,7 +272,7 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
           ),
         ),
         subtitle: Text(
-          'Download a copy of all your Flight Path data',
+          'Email us at contact@edwardradford.co.uk to request a copy of your data',
           style: TextStyle(
             color: cs.onSurface.withValues(alpha: 0.6),
             fontSize: 12,

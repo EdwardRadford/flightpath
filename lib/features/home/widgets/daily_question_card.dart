@@ -3,6 +3,7 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/home/providers/daily_question_provider.dart';
@@ -78,9 +79,6 @@ class _DailyQuestionCardState extends ConsumerState<DailyQuestionCard>
       _expandController.value = 1.0;
     }
 
-    // The model already returns the display string for the correct option
-    // (e.g. 'A. Ailerons, elevator, rudder' or 'A. True'), so we can use it
-    // directly for both MC and T/F questions.
     final String correctAnswerText = question.correctAnswerText;
 
     return Container(
@@ -207,6 +205,42 @@ class _DailyQuestionCardState extends ConsumerState<DailyQuestionCard>
                       )),
                 ),
               ),
+
+            // Source exercise label + study link
+            if (state.sourceExerciseId != null) ...[
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'From ${state.sourceExerciseName ?? state.sourceExerciseId!}',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.45),
+                      fontSize: 11,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => context
+                        .push('/exercises/${state.sourceExerciseId}'),
+                    child: Text(
+                      'Study this exercise',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 12,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

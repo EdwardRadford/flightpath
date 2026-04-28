@@ -171,7 +171,7 @@ class SettingsSignOutButton extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: Text('Sign Out', style: TextStyle(color: cs.onSurface)),
         content: Text(
-          'Are you sure you want to sign out?',
+          'Any unsaved data will be lost.',
           style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),
         ),
         actions: [

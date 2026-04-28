@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
-import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
 // ---------------------------------------------------------------------------
@@ -101,8 +101,7 @@ class _QxcGuideScreenState extends ConsumerState<QxcGuideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appUser = ref.watch(appUserProvider).valueOrNull;
-    final isPremium = appUser?.isPremium ?? false;
+    final isPremium = ref.watch(premiumStatusProvider).valueOrNull ?? false;
     final cs = Theme.of(context).colorScheme;
 
     final readCount = _read.where((r) => r).length;

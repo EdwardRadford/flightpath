@@ -48,6 +48,8 @@ class Lesson {
   final bool isDayFlight; // true = day, false = night
   final String customExerciseName; // free-text when exerciseId == 'custom'
   final bool isQxc; // true when this flight is the qualifying cross-country
+  final Map<String, int>? criterionRatings; // per-criterion 1–5 ratings keyed by criterion key
+  final String nextFocusSuggestion; // AI-generated next-lesson focus
 
   const Lesson({
     required this.id,
@@ -88,6 +90,8 @@ class Lesson {
     this.isDayFlight = true,
     this.customExerciseName = '',
     this.isQxc = false,
+    this.criterionRatings,
+    this.nextFocusSuggestion = '',
   });
 
   /// Constructs a [Lesson] from a Firestore document snapshot.
@@ -137,6 +141,9 @@ class Lesson {
       isDayFlight: data['is_day_flight'] ?? true,
       customExerciseName: data['custom_exercise_name'] ?? '',
       isQxc: data['is_qxc'] ?? false,
+      criterionRatings: (data['criterion_ratings'] as Map<String, dynamic>?)
+          ?.map((k, v) => MapEntry(k, (v as num).toInt())),
+      nextFocusSuggestion: data['next_focus_suggestion'] ?? '',
     );
   }
 
@@ -216,6 +223,10 @@ class Lesson {
     if (customExerciseName.isNotEmpty)
       'custom_exercise_name': customExerciseName,
     if (isQxc) 'is_qxc': true,
+    if (criterionRatings != null && criterionRatings!.isNotEmpty)
+      'criterion_ratings': criterionRatings,
+    if (nextFocusSuggestion.isNotEmpty)
+      'next_focus_suggestion': nextFocusSuggestion,
   };
 
   /// Returns a copy of this lesson with the given fields replaced.
@@ -257,6 +268,8 @@ class Lesson {
     bool? isDayFlight,
     String? customExerciseName,
     bool? isQxc,
+    Map<String, int>? criterionRatings,
+    String? nextFocusSuggestion,
   }) {
     return Lesson(
       id: id ?? this.id,
@@ -298,6 +311,8 @@ class Lesson {
       isDayFlight: isDayFlight ?? this.isDayFlight,
       customExerciseName: customExerciseName ?? this.customExerciseName,
       isQxc: isQxc ?? this.isQxc,
+      criterionRatings: criterionRatings ?? this.criterionRatings,
+      nextFocusSuggestion: nextFocusSuggestion ?? this.nextFocusSuggestion,
     );
   }
 }

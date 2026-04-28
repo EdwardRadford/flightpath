@@ -416,7 +416,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Ask AI (full screen, accessed from Learn tab) ─────────────────────
       GoRoute(
         path: '/ask-ai',
-        builder: (context, state) => const AskAiScreen(),
+        builder: (context, state) => AskAiScreen(
+          initialMessage: state.extra is String ? state.extra as String : null,
+        ),
       ),
 
       // ── Settings (full screen, accessed via AppBar icon) ─────────────────

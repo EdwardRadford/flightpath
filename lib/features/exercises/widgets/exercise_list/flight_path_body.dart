@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 
 // ---------------------------------------------------------------------------
@@ -602,6 +604,27 @@ class _FlightPathBodyState extends State<FlightPathBody>
           child: const ExerciseListProBadge(),
         ),
       );
+      widgets.add(
+        Positioned(
+          left: cx - kNodeRadius,
+          top: cy - kNodeRadius,
+          child: IgnorePointer(
+            child: Container(
+              width: kNodeRadius * 2,
+              height: kNodeRadius * 2,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0x66000000),
+              ),
+              child: const Icon(
+                Icons.lock_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     widgets.add(
@@ -705,7 +728,15 @@ class _FlightPathBodyState extends State<FlightPathBody>
       final exNum = int.tryParse(item.exerciseId.replaceFirst('ex_', '')) ?? 0;
       final freeStart = math.max(1, widget.currentExerciseNumber - 2);
       final freeEnd = math.min(kExercises.length, widget.currentExerciseNumber + 2);
-      if (exNum < freeStart || exNum > freeEnd) return;
+      if (exNum < freeStart || exNum > freeEnd) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Upgrade to Pro to unlock all 22 exercises'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
     }
     if (item.hasSubExercises) {
       context.push(
@@ -1251,19 +1282,29 @@ class ExerciseListLoadingBody extends StatelessWidget {
   }
 }
 
-class ExerciseListErrorBody extends StatelessWidget {
+class ExerciseListErrorBody extends ConsumerWidget {
   const ExerciseListErrorBody({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Center(
-      child: Text(
-        'Unable to load exercises. Please check your connection.',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: AppColors.onSurfaceVariant,
-          fontSize: 14,
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Could not load exercises',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: () => ref.invalidate(userExercisesProvider),
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }

@@ -127,6 +127,64 @@ final skillsReadinessProvider = Provider<double?>((ref) {
   return ready / _orderedExercises.length;
 });
 
+/// Full breakdown of skills test readiness.
+///
+/// - [score] overall readiness 0.0–1.0
+/// - [ready] exercises with bestRating >= 4 (green)
+/// - [inProgress] exercises with bestRating 1–3 (amber)
+/// - [notStarted] exercises with no bestRating (grey)
+/// - [total] total exercises in the syllabus (22)
+typedef SkillsReadinessData = ({
+  double score,
+  int ready,
+  int inProgress,
+  int notStarted,
+  int total,
+});
+
+/// Returns [SkillsReadinessData] or null while data is loading.
+final skillsReadinessDataProvider = Provider<SkillsReadinessData?>((ref) {
+  final exercisesAsync = ref.watch(userExercisesProvider);
+  final exercises = exercisesAsync.valueOrNull;
+  if (exercises == null) return null;
+
+  final total = _orderedExercises.length;
+
+  final byKey = <String, UserExercise>{};
+  for (final ue in exercises) {
+    final key = ue.subExercise != null
+        ? '${ue.exerciseId}_${ue.subExercise}'
+        : ue.exerciseId;
+    byKey[key] = ue;
+  }
+
+  int ready = 0;
+  int inProgress = 0;
+  int notStarted = 0;
+
+  for (final entry in _orderedExercises) {
+    final key = entry.subExerciseId != null
+        ? '${entry.exerciseId}_${entry.subExerciseId}'
+        : entry.exerciseId;
+    final rating = byKey[key]?.bestRating;
+    if (rating == null) {
+      notStarted++;
+    } else if (rating >= 4) {
+      ready++;
+    } else {
+      inProgress++;
+    }
+  }
+
+  return (
+    score: ready / total,
+    ready: ready,
+    inProgress: inProgress,
+    notStarted: notStarted,
+    total: total,
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Due for review
 // ---------------------------------------------------------------------------
@@ -280,8 +338,7 @@ typedef QuickStats = ({
   double hoursFlown,
   int exercisesCompleted,
   int totalExercises,
-  int daysSinceLastLesson,
-  int completedLessons,
+  int lessonsLogged,
 });
 
 /// Computes quick stats from lessons and user exercises.
@@ -307,25 +364,10 @@ final quickStatsProvider = Provider<QuickStats?>((ref) {
 
   final exCompleted = exercises.where((e) => e.status.isCompleted).length;
 
-  final completedLessons =
-      lessons.where((l) => l.status == LessonStatus.completed).toList();
-  int daysSince = -1;
-  if (completedLessons.isNotEmpty) {
-    completedLessons.sort((a, b) {
-      final aDate = a.lessonDate ?? a.createdAt;
-      final bDate = b.lessonDate ?? b.createdAt;
-      return bDate.compareTo(aDate);
-    });
-    final lastDate =
-        completedLessons.first.lessonDate ?? completedLessons.first.createdAt;
-    daysSince = DateTime.now().difference(lastDate).inDays;
-  }
-
   return (
     hoursFlown: hours,
     exercisesCompleted: exCompleted,
     totalExercises: _orderedExercises.length,
-    daysSinceLastLesson: daysSince,
-    completedLessons: completedLessons.length,
+    lessonsLogged: lessons.length,
   );
 });

@@ -1,11 +1,13 @@
 // Tools tab landing screen.
-// Shows cards for each pilot tool: METAR Training, QXC Guide, Airfield Info,
-// Aircraft Data.
+// Shows cards for each pilot tool: Weather, METAR Training, QXC Guide,
+// Airfield Info, Aircraft Data. The Weather card shows an offline badge when
+// there is no network connection.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/shared/services/connectivity_service.dart';
 
 class ToolsScreen extends ConsumerWidget {
   const ToolsScreen({super.key});
@@ -13,6 +15,7 @@ class ToolsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final isOnline = ref.watch(isOnlineProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -39,12 +42,7 @@ class ToolsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              _ToolCard(
-                icon: Icons.wb_cloudy_rounded,
-                title: 'Weather Briefing',
-                description: 'Current conditions for your airfield',
-                onTap: () => context.push('/tools/weather'),
-              ),
+              _WeatherToolCard(isOnline: isOnline),
               const SizedBox(height: 12),
               _ToolCard(
                 icon: Icons.cloud_rounded,
@@ -77,6 +75,105 @@ class ToolsScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WeatherToolCard extends StatelessWidget {
+  final bool isOnline;
+
+  const _WeatherToolCard({required this.isOnline});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: () {
+        if (!isOnline) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Weather requires an internet connection.'),
+            ),
+          );
+          return;
+        }
+        context.push('/tools/weather');
+      },
+      child: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: cs.outline),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.wb_cloudy_rounded,
+                      color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Weather Briefing',
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Current conditions for your airfield',
+                        style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.55),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: cs.onSurface.withValues(alpha: 0.3),
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+          if (!isOnline)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cs.outline),
+                ),
+                child: Icon(
+                  Icons.wifi_off_rounded,
+                  size: 14,
+                  color: cs.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

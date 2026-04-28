@@ -44,6 +44,7 @@ class UserExercise {
   final bool quizPassed;
   final bool quizAttempted;
   final bool visualisationViewed;
+  final bool selfBriefCompleted;
   final DateTime? spacedRepDue;
 
   /// Per-question mastery: questionId → consecutive correct count.
@@ -70,6 +71,7 @@ class UserExercise {
     this.quizPassed = false,
     this.quizAttempted = false,
     this.visualisationViewed = false,
+    this.selfBriefCompleted = false,
     this.spacedRepDue,
     this.quizMastery = const {},
     this.checklistCompleted = const [],
@@ -119,6 +121,7 @@ class UserExercise {
       quizPassed: data['quiz_passed'] ?? false,
       quizAttempted: data['quiz_attempted'] ?? false,
       visualisationViewed: data['visualisation_viewed'] ?? false,
+      selfBriefCompleted: data['self_brief_completed'] ?? false,
       spacedRepDue: (data['spaced_rep_due'] as Timestamp?)?.toDate(),
       quizMastery: Map<String, int>.from(
         ((data['quiz_mastery'] as Map<String, dynamic>?) ?? {})
@@ -166,6 +169,7 @@ class UserExercise {
     'quiz_passed': quizPassed,
     'quiz_attempted': quizAttempted,
     'visualisation_viewed': visualisationViewed,
+    'self_brief_completed': selfBriefCompleted,
     if (spacedRepDue != null)
       'spaced_rep_due': Timestamp.fromDate(spacedRepDue!),
     if (quizMastery.isNotEmpty) 'quiz_mastery': quizMastery,
@@ -191,6 +195,7 @@ class UserExercise {
     bool? quizPassed,
     bool? quizAttempted,
     bool? visualisationViewed,
+    bool? selfBriefCompleted,
     DateTime? spacedRepDue,
     Map<String, int>? quizMastery,
     List<int>? checklistCompleted,
@@ -212,6 +217,7 @@ class UserExercise {
       quizPassed: quizPassed ?? this.quizPassed,
       quizAttempted: quizAttempted ?? this.quizAttempted,
       visualisationViewed: visualisationViewed ?? this.visualisationViewed,
+      selfBriefCompleted: selfBriefCompleted ?? this.selfBriefCompleted,
       spacedRepDue: spacedRepDue ?? this.spacedRepDue,
       quizMastery: quizMastery ?? this.quizMastery,
       checklistCompleted: checklistCompleted ?? this.checklistCompleted,

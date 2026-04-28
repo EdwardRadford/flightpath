@@ -5,8 +5,10 @@
 // of section widgets below.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:flight_path/core/constants/whats_new_data.dart';
+import 'package:flight_path/core/theme/app_icons.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/features/home/widgets/current_exercise_card.dart';
@@ -16,6 +18,7 @@ import 'package:flight_path/features/home/widgets/home_footer_cards.dart';
 import 'package:flight_path/features/home/widgets/quick_stats_row.dart';
 import 'package:flight_path/features/home/widgets/recent_activity_section.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/providers/walkthrough_provider.dart';
 import 'package:flight_path/shared/services/whats_new_service.dart';
 import 'package:flight_path/shared/widgets/app_tour_dialog.dart';
@@ -198,6 +201,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // -- Aircraft type warning banner
+                appUserAsync.maybeWhen(
+                  data: (user) {
+                    if (user != null && user.aircraftType.isEmpty) {
+                      return Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade700,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(AppIcons.warning,
+                                color: Colors.white, size: 20),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Set your aircraft type in Settings to unlock all features',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => context.push('/settings'),
+                              child: const Text(
+                                'Go to Settings',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                  orElse: () => const SizedBox.shrink(),
+                ),
+
                 const SizedBox(height: 20),
 
                 // -- 1. Greeting header
@@ -215,7 +269,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 20),
                 ],
 
-                // -- 3. Current Exercise card (replaces Next Lesson Hero)
+                // -- 3. Current Exercise card
                 CurrentExerciseCard(
                   suggestedExercise: suggestedExercise,
                   ref: ref,
@@ -261,16 +315,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 20),
 
                 // -- 10. Upgrade prompt (shown for free users only)
-                appUserAsync.when(
-                  data: (user) {
-                    if (user == null || user.isPremium) {
-                      return const SizedBox.shrink();
-                    }
-                    return const UpgradePromptCard();
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
+                if (!(ref.watch(premiumStatusProvider).valueOrNull ?? false))
+                  const UpgradePromptCard(),
 
                 const SizedBox(height: 20),
 

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:flight_path/core/theme/app_icons.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
@@ -28,11 +29,11 @@ class MainShell extends ConsumerStatefulWidget {
   static final bottomNavKey = GlobalKey();
 
   static const List<_Tab> _tabs = [
-    (path: '/home', label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home),
-    (path: '/exercises', label: 'Exercises', icon: Icons.list_outlined, activeIcon: Icons.list),
-    (path: '/logbook', label: 'Logbook', icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart_rounded),
-    (path: '/learn', label: 'Learn', icon: Icons.school_outlined, activeIcon: Icons.school_rounded),
-    (path: '/tools', label: 'Tools', icon: Icons.handyman_outlined, activeIcon: Icons.handyman_rounded),
+    (path: '/home', label: 'Home', icon: AppIcons.homeOutlined, activeIcon: AppIcons.home),
+    (path: '/exercises', label: 'Exercises', icon: AppIcons.exercisesOutlined, activeIcon: AppIcons.exercises),
+    (path: '/logbook', label: 'Logbook', icon: AppIcons.logbookOutlined, activeIcon: AppIcons.logbook),
+    (path: '/learn', label: 'Learn', icon: AppIcons.learnOutlined, activeIcon: AppIcons.learn),
+    (path: '/tools', label: 'Tools', icon: AppIcons.toolsOutlined, activeIcon: AppIcons.tools),
   ];
 
   @override
@@ -91,7 +92,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             smallSize: 7,
             backgroundColor: AppColors.primary,
             child: IconButton(
-              icon: const Icon(Icons.settings_rounded),
+              icon: const Icon(AppIcons.settings),
               tooltip: 'Settings',
               onPressed: () {
                 ref.read(updateBadgeProvider.notifier).markSeen();

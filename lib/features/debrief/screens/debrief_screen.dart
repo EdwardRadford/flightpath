@@ -7,18 +7,19 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
+import 'package:flight_path/core/constants/exercise_criteria.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/shared/models/exercise_content.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/services/subscription_service.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
 import 'package:flight_path/shared/services/connectivity_service.dart';
 import 'package:flight_path/shared/services/debrief_autosave_service.dart';
@@ -56,6 +57,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
   bool get _isEditMode => widget.existingLesson != null;
 
   int _studentRating = 3;
+  final Map<String, int> _criterionRatings = {};
   final _instructorNotesController = TextEditingController();
   final _reflectionController = TextEditingController();
   final _soloDurationController = TextEditingController();
@@ -64,8 +66,6 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
   // Duration
   int _durationHours = 1;
   int _durationMinutes = 0;
-  late final TextEditingController _hoursController;
-  late final TextEditingController _minutesController;
 
   // Additional exercises covered in this lesson
   final Set<String> _additionalExerciseIds = {};
@@ -80,8 +80,6 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
   @override
   void initState() {
     super.initState();
-    _hoursController = TextEditingController(text: '1');
-    _minutesController = TextEditingController(text: '00');
     _autosave = ref.read(debriefAutosaveServiceProvider);
 
     if (_isEditMode) {
@@ -92,9 +90,6 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
       if (lesson.lessonDuration > 0) {
         _durationHours = lesson.lessonDuration ~/ 60;
         _durationMinutes = lesson.lessonDuration % 60;
-        _hoursController.text = '$_durationHours';
-        _minutesController.text =
-            _durationMinutes.toString().padLeft(2, '0');
       }
       _additionalExerciseIds.addAll(lesson.additionalExerciseIds);
     } else {
@@ -174,9 +169,6 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
       _soloDurationController.text = draft.soloDuration;
       _durationHours = draft.durationHours;
       _durationMinutes = draft.durationMinutes;
-      _hoursController.text = '${draft.durationHours}';
-      _minutesController.text =
-          draft.durationMinutes.toString().padLeft(2, '0');
       _additionalExerciseIds
         ..clear()
         ..addAll(draft.additionalExerciseIds);
@@ -192,8 +184,6 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     _instructorNotesController.dispose();
     _reflectionController.dispose();
     _soloDurationController.dispose();
-    _hoursController.dispose();
-    _minutesController.dispose();
     super.dispose();
   }
 
@@ -310,6 +300,9 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         lessonDate: DateTime.now(),
         status: LessonStatus.completed,
         createdAt: DateTime.now(),
+        criterionRatings: _criterionRatings.isNotEmpty
+            ? Map<String, int>.from(_criterionRatings)
+            : null,
       );
 
       final lessonId = await offlineLessons.createLesson(uid, lesson);
@@ -432,24 +425,38 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         }
       }
 
-      // Fire-and-forget AI debrief
-      final userIsPremium =
-          ref.read(appUserProvider).valueOrNull?.isPremium ?? false;
+      // Fire-and-forget AI debrief \u2014 runs after navigation; errors must not
+      // surface as a save failure.
       if (lessonType == LessonType.flight &&
-          userIsPremium &&
           isOnline &&
           !lessonId.startsWith('local_')) {
-        FirebaseAnalytics.instance.logEvent(
-          name: 'ai_debrief_requested',
-          parameters: {'exercise_id': widget.exerciseId},
-        );
-        _callAiDebrief(
-          uid: uid,
-          lessonId: lessonId,
-          firestore: firestore,
-          exerciseName: exerciseFullName(widget.exerciseId),
-          ratingHistory: existingHistory,
-        );
+        () async {
+          try {
+            final userIsPremium = await SubscriptionService.isPremium();
+            if (!userIsPremium) return;
+            FirebaseAnalytics.instance.logEvent(
+              name: 'ai_debrief_requested',
+              parameters: {'exercise_id': widget.exerciseId},
+            );
+            _callAiDebrief(
+              uid: uid,
+              lessonId: lessonId,
+              firestore: firestore,
+              exerciseName: exerciseFullName(widget.exerciseId),
+              ratingHistory: existingHistory,
+            );
+            _callNextFocusAi(
+              uid: uid,
+              lessonId: lessonId,
+              firestore: firestore,
+              exerciseName: exerciseFullName(widget.exerciseId),
+              existingUE: existingUE,
+              existingHistory: existingHistory,
+            );
+          } catch (e, st) {
+            FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+          }
+        }();
       }
     } catch (e, st) {
       FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
@@ -563,6 +570,76 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         name: 'ai_debrief_failed',
         parameters: {'exercise_id': widget.exerciseId},
       );
+    }
+  }
+
+  Future<void> _callNextFocusAi({
+    required String uid,
+    required String lessonId,
+    required FirestoreService firestore,
+    required String exerciseName,
+    required UserExercise? existingUE,
+    required List<int> existingHistory,
+  }) async {
+    try {
+      final criteria = ExerciseCriteria.forExercise(widget.exerciseId);
+      final criterionLines = criteria
+          .where((c) => _criterionRatings.containsKey(c.key))
+          .map((c) => '- ${c.label}: ${_criterionRatings[c.key]}/5')
+          .join('\n');
+
+      final attemptCount = (existingUE?.timesAttempted ?? 0) + 1;
+      final bestRating = existingHistory.isNotEmpty
+          ? existingHistory.reduce((a, b) => a > b ? a : b)
+          : null;
+
+      final prompt = StringBuffer();
+      prompt.writeln(
+          'The student just completed a lesson on $exerciseName.');
+      prompt.writeln('Overall rating: $_studentRating/5.');
+      if (criterionLines.isNotEmpty) {
+        prompt.writeln('Per-criterion ratings:');
+        prompt.writeln(criterionLines);
+      }
+      prompt.writeln(
+          'Previous sessions on this exercise: $attemptCount attempt${attemptCount == 1 ? '' : 's'}${bestRating != null ? ', previous best rating $bestRating/5' : ''}.');
+      prompt.writeln(
+          'Based on this, what is the single most important thing they should focus on in their next lesson? Keep your answer to 2–3 sentences. Be specific to the maneuver, not generic.');
+
+      final callable = FirebaseFunctions.instanceFor(region: 'europe-west2')
+          .httpsCallable(
+        'getAiDebrief',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 45)),
+      );
+      final result = await callable.call({
+        'exerciseId': widget.exerciseId,
+        'lessonData': {
+          'exerciseName': exerciseName,
+          'studentRating': _studentRating,
+          'instructorNotes': _sanitise(_instructorNotesController.text).isEmpty
+              ? null
+              : _sanitise(_instructorNotesController.text),
+          'personalReflection': _sanitise(_reflectionController.text).isEmpty
+              ? null
+              : _sanitise(_reflectionController.text),
+          'criterionRatings': _criterionRatings.isNotEmpty
+              ? _criterionRatings
+              : null,
+          'ratingHistory': existingHistory,
+          'nextFocusPrompt': prompt.toString(),
+        },
+      });
+      final data = result.data as Map<dynamic, dynamic>;
+      final suggestion = (data['nextFocusSuggestion'] as String?) ??
+          (data['focus'] as String?) ??
+          '';
+      if (suggestion.isNotEmpty) {
+        await firestore.updateLesson(uid, lessonId, {
+          'next_focus_suggestion': suggestion,
+        });
+      }
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
     }
   }
 
@@ -776,6 +853,10 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
             ),
             const SizedBox(height: 24),
 
+            // Per-criterion ratings
+            ..._buildCriteriaRatingSection(),
+            const SizedBox(height: 24),
+
             // Flight duration
             if (lessonType == LessonType.flight) ...[
               _buildSectionLabel('Flight Duration'),
@@ -890,6 +971,89 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
   // Sub-widgets
   // ---------------------------------------------------------------------------
 
+  List<Widget> _buildCriteriaRatingSection() {
+    final criteria = ExerciseCriteria.forExercise(widget.exerciseId);
+    if (criteria.isEmpty) return [];
+
+    return [
+      _buildSectionLabel('Rate each skill'),
+      const SizedBox(height: 6),
+      Text(
+        'CAA assessment criteria — rate how you feel each went (optional)',
+        style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+      ),
+      const SizedBox(height: 12),
+      ...criteria.map((criterion) {
+        final current = _criterionRatings[criterion.key];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                criterion.label,
+                style: TextStyle(
+                  color: AppColors.onSurface,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: List.generate(5, (index) {
+                  final dotIndex = index + 1;
+                  final filled = current != null && dotIndex <= current;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (_criterionRatings[criterion.key] == dotIndex) {
+                          _criterionRatings.remove(criterion.key);
+                        } else {
+                          _criterionRatings[criterion.key] = dotIndex;
+                        }
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: filled
+                              ? AppColors.primary
+                              : AppColors.primary.withValues(alpha: 0.12),
+                          border: Border.all(
+                            color: filled
+                                ? AppColors.primary
+                                : AppColors.primary.withValues(alpha: 0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$dotIndex',
+                            style: TextStyle(
+                              color: filled
+                                  ? Colors.white
+                                  : AppColors.onSurfaceVariant,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+        );
+      }),
+    ];
+  }
+
   Widget _buildHeader(String exerciseName) {
     final dateStr = DateFormat('EEEE, d MMMM yyyy').format(DateTime.now());
     return Column(
@@ -980,170 +1144,62 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     );
   }
 
-  Widget _buildDurationPicker() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _durationMinutes == 0
-                ? '$_durationHours hr${_durationHours == 1 ? '' : 's'}'
-                : '$_durationHours hr${_durationHours == 1 ? '' : 's'} $_durationMinutes min',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStepperField(
-                  label: 'Hours',
-                  controller: _hoursController,
-                  value: _durationHours,
-                  min: 0,
-                  max: 8,
-                  onDecrement: () {
-                    if (_durationHours > 0) {
-                      setState(() {
-                        _durationHours--;
-                        _hoursController.text = '$_durationHours';
-                      });
-                      _onFieldChanged();
-                    }
-                  },
-                  onIncrement: () {
-                    if (_durationHours < 8) {
-                      setState(() {
-                        _durationHours++;
-                        _hoursController.text = '$_durationHours';
-                      });
-                      _onFieldChanged();
-                    }
-                  },
-                  onChanged: (v) {
-                    final n = int.tryParse(v);
-                    if (n != null && n >= 0 && n <= 8) {
-                      setState(() => _durationHours = n);
-                      _onFieldChanged();
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStepperField(
-                  label: 'Minutes',
-                  controller: _minutesController,
-                  value: _durationMinutes,
-                  min: 0,
-                  max: 59,
-                  padded: true,
-                  onDecrement: () {
-                    if (_durationMinutes > 0) {
-                      setState(() {
-                        _durationMinutes--;
-                        _minutesController.text =
-                            _durationMinutes.toString().padLeft(2, '0');
-                      });
-                      _onFieldChanged();
-                    }
-                  },
-                  onIncrement: () {
-                    if (_durationMinutes < 59) {
-                      setState(() {
-                        _durationMinutes++;
-                        _minutesController.text =
-                            _durationMinutes.toString().padLeft(2, '0');
-                      });
-                      _onFieldChanged();
-                    }
-                  },
-                  onChanged: (v) {
-                    final n = int.tryParse(v);
-                    if (n != null && n >= 0 && n <= 59) {
-                      setState(() => _durationMinutes = n);
-                      _onFieldChanged();
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+  Future<void> _pickDuration() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _durationHours, minute: _durationMinutes),
+      helpText: 'Select flight duration',
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
     );
+    if (picked != null) {
+      setState(() {
+        _durationHours = picked.hour;
+        _durationMinutes = picked.minute;
+      });
+      _onFieldChanged();
+    }
   }
 
-  Widget _buildStepperField({
-    required String label,
-    required TextEditingController controller,
-    required int value,
-    required int min,
-    required int max,
-    required VoidCallback onDecrement,
-    required VoidCallback onIncrement,
-    required ValueChanged<String> onChanged,
-    bool padded = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.onSurfaceVariant,
-            fontSize: 12,
-          ),
+  Widget _buildDurationPicker() {
+    final label = _durationMinutes == 0
+        ? '${_durationHours}hr'
+        : '${_durationHours}hr ${_durationMinutes}min';
+
+    return GestureDetector(
+      onTap: _pickDuration,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider),
         ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                icon: Icon(Icons.remove, size: 18),
-                color: AppColors.onSurfaceVariant,
-                onPressed: value > min ? onDecrement : null,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  style: TextStyle(
-                    color: AppColors.onSurface,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                  ),
-                  onChanged: onChanged,
+        child: Row(
+          children: [
+            Icon(Icons.timer_outlined,
+                color: AppColors.onSurfaceVariant, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.add, size: 18),
-                color: AppColors.onSurfaceVariant,
-                onPressed: value < max ? onIncrement : null,
-              ),
-            ],
-          ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: AppColors.onSurfaceVariant, size: 20),
+          ],
         ),
-      ],
+      ),
     );
   }
 

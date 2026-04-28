@@ -164,7 +164,7 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
 
             // Title
              Text(
-              'Unlock FlightPath Pro',
+              'Unlock Flight Path Pro',
               style: TextStyle(
                 color: AppColors.onSurface,
                 fontSize: 22,

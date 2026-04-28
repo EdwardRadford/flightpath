@@ -1,41 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/features/tools/data/aircraft_data.dart';
 import 'package:flight_path/shared/models/exercise_content.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
+import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/auth_provider.dart';
+import 'package:flight_path/shared/services/firestore_service.dart';
+import 'package:flight_path/shared/utils/exercise_helpers.dart';
 
 // ---------------------------------------------------------------------------
 // Step data class
 // ---------------------------------------------------------------------------
 
-class PrepareStepItem {
+enum _StepAction { route, weather, selfBrief }
+
+class _StepItem {
   final int stepNumber;
   final IconData icon;
   final String label;
   final bool done;
   final String route;
   final String statusLabel;
+  final _StepAction action;
 
-  const PrepareStepItem({
+  const _StepItem({
     required this.stepNumber,
     required this.icon,
     required this.label,
     required this.done,
     required this.route,
     required this.statusLabel,
+    this.action = _StepAction.route,
   });
 }
+
+/// Public alias kept for any code that references [PrepareStepItem] externally.
+typedef PrepareStepItem = _StepItem;
 
 // ---------------------------------------------------------------------------
 // Stepped prepare checklist
 // ---------------------------------------------------------------------------
 
-class SteppedPrepareChecklist extends StatelessWidget {
+class SteppedPrepareChecklist extends ConsumerStatefulWidget {
   final String compositeExerciseId;
   final LessonType lessonType;
   final UserExercise? userExercise;
   final bool quizPassed;
   final bool locked;
+  final ExerciseContent content;
 
   const SteppedPrepareChecklist({
     super.key,
@@ -43,18 +58,98 @@ class SteppedPrepareChecklist extends StatelessWidget {
     required this.lessonType,
     required this.userExercise,
     required this.quizPassed,
+    required this.content,
     this.locked = false,
   });
 
-  List<PrepareStepItem> _buildSteps() {
-    final bool briefDone = userExercise?.briefViewed ?? false;
-    final bool flashcardsDone = userExercise?.flashcardsCompleted ?? false;
-    final String briefStatusLabel = userExercise?.briefStatus ?? 'Not Viewed';
-    final String flashcardsStatusLabel =
-        userExercise?.flashcardsStatus ?? 'Not Started';
-    final String quizStatusLabel = userExercise?.quizStatus ?? 'Not Started';
+  @override
+  ConsumerState<SteppedPrepareChecklist> createState() =>
+      _SteppedPrepareChecklistState();
+}
 
-    switch (lessonType) {
+class _SteppedPrepareChecklistState
+    extends ConsumerState<SteppedPrepareChecklist> {
+  Future<void> _markWeatherChecked() async {
+    final uid = ref.read(currentUserIdProvider);
+    if (uid == null) return;
+    final (exerciseId, subExerciseId) =
+        parseExerciseId(widget.compositeExerciseId);
+    final existing = ref
+        .read(userExercisesProvider)
+        .valueOrNull
+        ?.where(
+          (ue) =>
+              ue.exerciseId == exerciseId && ue.subExercise == subExerciseId,
+        )
+        .firstOrNull;
+    if (existing == null) return;
+    final firestore = ref.read(firestoreServiceProvider);
+    await firestore.upsertUserExercise(
+      uid,
+      existing.copyWith(weatherChecked: true),
+    );
+  }
+
+  Future<void> _markSelfBriefCompleted() async {
+    final uid = ref.read(currentUserIdProvider);
+    if (uid == null) return;
+    final (exerciseId, subExerciseId) =
+        parseExerciseId(widget.compositeExerciseId);
+    final existing = ref
+        .read(userExercisesProvider)
+        .valueOrNull
+        ?.where(
+          (ue) =>
+              ue.exerciseId == exerciseId && ue.subExercise == subExerciseId,
+        )
+        .firstOrNull;
+    if (existing == null) return;
+    final firestore = ref.read(firestoreServiceProvider);
+    await firestore.upsertUserExercise(
+      uid,
+      existing.copyWith(selfBriefCompleted: true),
+    );
+  }
+
+  void _openWeather() {
+    _markWeatherChecked();
+    context.push('/tools/weather');
+  }
+
+  void _openSelfBrief() {
+    final aircraftType =
+        ref.read(appUserProvider).valueOrNull?.aircraftType ?? '';
+    final aircraft = aircraftDataForType(aircraftType);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SelfBriefModal(
+        content: widget.content,
+        aircraft: aircraft,
+        onConfirm: () {
+          _markSelfBriefCompleted();
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
+
+  List<PrepareStepItem> _buildSteps() {
+    final bool briefDone = widget.userExercise?.briefViewed ?? false;
+    final bool flashcardsDone =
+        widget.userExercise?.flashcardsCompleted ?? false;
+    final bool weatherDone = widget.userExercise?.weatherChecked ?? false;
+    final bool selfBriefDone =
+        widget.userExercise?.selfBriefCompleted ?? false;
+    final String briefStatusLabel =
+        widget.userExercise?.briefStatus ?? 'Not Viewed';
+    final String flashcardsStatusLabel =
+        widget.userExercise?.flashcardsStatus ?? 'Not Started';
+    final String quizStatusLabel =
+        widget.userExercise?.quizStatus ?? 'Not Started';
+
+    switch (widget.lessonType) {
       case LessonType.ground:
         return [
           PrepareStepItem(
@@ -62,15 +157,15 @@ class SteppedPrepareChecklist extends StatelessWidget {
             icon: Icons.menu_book_rounded,
             label: 'Brief',
             done: briefDone,
-            route: '/exercises/$compositeExerciseId/brief',
+            route: '/exercises/${widget.compositeExerciseId}/brief',
             statusLabel: briefStatusLabel,
           ),
           PrepareStepItem(
             stepNumber: 2,
             icon: Icons.edit_rounded,
             label: 'Quiz',
-            done: quizPassed,
-            route: '/exercises/$compositeExerciseId/quiz',
+            done: widget.quizPassed,
+            route: '/exercises/${widget.compositeExerciseId}/quiz',
             statusLabel: quizStatusLabel,
           ),
           PrepareStepItem(
@@ -78,7 +173,7 @@ class SteppedPrepareChecklist extends StatelessWidget {
             icon: Icons.style_rounded,
             label: 'Flashcards',
             done: flashcardsDone,
-            route: '/exercises/$compositeExerciseId/flashcards',
+            route: '/exercises/${widget.compositeExerciseId}/flashcards',
             statusLabel: flashcardsStatusLabel,
           ),
         ];
@@ -90,7 +185,7 @@ class SteppedPrepareChecklist extends StatelessWidget {
             icon: Icons.calendar_today_rounded,
             label: 'Schedule Your Lesson',
             done: false,
-            route: '/exercises/$compositeExerciseId/schedule',
+            route: '/exercises/${widget.compositeExerciseId}/schedule',
             statusLabel: 'Not Started',
           ),
         ];
@@ -102,7 +197,7 @@ class SteppedPrepareChecklist extends StatelessWidget {
             icon: Icons.menu_book_rounded,
             label: 'Brief',
             done: briefDone,
-            route: '/exercises/$compositeExerciseId/brief',
+            route: '/exercises/${widget.compositeExerciseId}/brief',
             statusLabel: briefStatusLabel,
           ),
           PrepareStepItem(
@@ -110,18 +205,47 @@ class SteppedPrepareChecklist extends StatelessWidget {
             icon: Icons.style_rounded,
             label: 'Flashcards',
             done: flashcardsDone,
-            route: '/exercises/$compositeExerciseId/flashcards',
+            route: '/exercises/${widget.compositeExerciseId}/flashcards',
             statusLabel: flashcardsStatusLabel,
           ),
           PrepareStepItem(
             stepNumber: 3,
             icon: Icons.edit_rounded,
             label: 'Quiz',
-            done: quizPassed,
-            route: '/exercises/$compositeExerciseId/quiz',
+            done: widget.quizPassed,
+            route: '/exercises/${widget.compositeExerciseId}/quiz',
             statusLabel: quizStatusLabel,
           ),
+          PrepareStepItem(
+            stepNumber: 4,
+            icon: Icons.cloud_rounded,
+            label: 'Weather',
+            done: weatherDone,
+            route: '/tools/weather',
+            statusLabel: weatherDone ? 'Checked' : 'Not Checked',
+            action: _StepAction.weather,
+          ),
+          PrepareStepItem(
+            stepNumber: 5,
+            icon: Icons.record_voice_over_rounded,
+            label: 'Self-Brief',
+            done: selfBriefDone,
+            route: '',
+            statusLabel: selfBriefDone ? 'Completed' : 'Not Started',
+            action: _StepAction.selfBrief,
+          ),
         ];
+    }
+  }
+
+  void _handleStepTap(PrepareStepItem step) {
+    switch (step.action) {
+      case _StepAction.weather:
+        _openWeather();
+      case _StepAction.selfBrief:
+        _openSelfBrief();
+      case _StepAction.route:
+        context.push(step.route);
     }
   }
 
@@ -219,19 +343,19 @@ class SteppedPrepareChecklist extends StatelessWidget {
         ...steps.map((step) {
           const viewableLabels = {'Brief', 'Visualisation'};
           final isStepLocked =
-              locked && !viewableLabels.contains(step.label);
+              widget.locked && !viewableLabels.contains(step.label);
           final isNext = !isStepLocked &&
               firstIncomplete != null &&
               step == firstIncomplete;
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: isStepLocked
-                ? LockedStepCard(step: step, totalSteps: totalCount)
-                : StepCard(
+                ? _LockedStepCard(step: step, totalSteps: totalCount)
+                : _StepCard(
                     step: step,
                     totalSteps: totalCount,
                     isNextStep: isNext,
-                    onTap: () => context.push(step.route),
+                    onTap: () => _handleStepTap(step),
                   ),
           );
         }),
@@ -243,12 +367,12 @@ class SteppedPrepareChecklist extends StatelessWidget {
               'Flashcards',
               'Schedule Your Lesson',
             }.contains(firstIncomplete.label) &&
-                locked)) ...[
+                widget.locked)) ...[
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => context.push(firstIncomplete.route),
+              onPressed: () => _handleStepTap(firstIncomplete),
               icon: const Icon(Icons.play_arrow_rounded, size: 22),
               label: Text(
                 'Continue to Step ${firstIncomplete.stepNumber}: ${firstIncomplete.label}',
@@ -277,13 +401,13 @@ class SteppedPrepareChecklist extends StatelessWidget {
 // Step card
 // ---------------------------------------------------------------------------
 
-class StepCard extends StatelessWidget {
-  final PrepareStepItem step;
+class _StepCard extends StatelessWidget {
+  final _StepItem step;
   final int totalSteps;
   final bool isNextStep;
   final VoidCallback onTap;
 
-  const StepCard({
+  const _StepCard({
     super.key,
     required this.step,
     required this.totalSteps,
@@ -436,11 +560,11 @@ class StepCard extends StatelessWidget {
 // Locked step card
 // ---------------------------------------------------------------------------
 
-class LockedStepCard extends StatelessWidget {
-  final PrepareStepItem step;
+class _LockedStepCard extends StatelessWidget {
+  final _StepItem step;
   final int totalSteps;
 
-  const LockedStepCard({
+  const _LockedStepCard({
     super.key,
     required this.step,
     required this.totalSteps,
@@ -519,6 +643,372 @@ class LockedStepCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Self-brief modal
+// ---------------------------------------------------------------------------
+
+class _SelfBriefModal extends StatefulWidget {
+  final ExerciseContent content;
+  final AircraftData? aircraft;
+  final VoidCallback onConfirm;
+
+  const _SelfBriefModal({
+    required this.content,
+    required this.aircraft,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_SelfBriefModal> createState() => _SelfBriefModalState();
+}
+
+class _SelfBriefModalState extends State<_SelfBriefModal> {
+  int _page = 0;
+
+  static const int _totalPages = 4;
+
+  String get _pageTitle => switch (_page) {
+        0 => 'Exercise',
+        1 => 'Key Speeds',
+        2 => 'Limits & Considerations',
+        _ => 'Ready to Fly',
+      };
+
+  Widget _buildPageContent() {
+    switch (_page) {
+      case 0:
+        return _BriefPageText(text: widget.content.overview);
+      case 1:
+        return _KeySpeedsPage(aircraft: widget.aircraft);
+      case 2:
+        final text = widget.content.commonMistakes.isNotEmpty
+            ? widget.content.commonMistakes
+            : widget.content.keyFocusAreas;
+        return _BriefPageText(text: text.isNotEmpty ? text : 'No specific limitations noted for this exercise.');
+      case 3:
+        return _ReadyToFlyPage(onConfirm: widget.onConfirm);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isLast = _page == _totalPages - 1;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (_, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 8),
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.record_voice_over_rounded,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Self-Brief',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            _pageTitle,
+                            style: TextStyle(
+                              color: AppColors.onSurface,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Step indicator
+                    Text(
+                      '${_page + 1} / $_totalPages',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Progress bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (_page + 1) / _totalPages,
+                    backgroundColor: AppColors.surfaceVariant,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                    minHeight: 4,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              Divider(color: AppColors.divider, height: 1),
+
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                  child: _buildPageContent(),
+                ),
+              ),
+
+              // Bottom button
+              if (!isLast)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => setState(() => _page++),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Next',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BriefPageText extends StatelessWidget {
+  final String text;
+
+  const _BriefPageText({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: AppColors.onSurface,
+        fontSize: 15,
+        height: 1.6,
+      ),
+    );
+  }
+}
+
+class _KeySpeedsPage extends StatelessWidget {
+  final AircraftData? aircraft;
+
+  const _KeySpeedsPage({required this.aircraft});
+
+  @override
+  Widget build(BuildContext context) {
+    if (aircraft == null) {
+      return Text(
+        'Set your aircraft type in your profile to see specific speeds.',
+        style: TextStyle(
+          color: AppColors.onSurfaceVariant,
+          fontSize: 14,
+          height: 1.5,
+        ),
+      );
+    }
+
+    final a = aircraft!;
+    final speeds = [
+      ('Vx — Best Angle of Climb', '${a.vx} kt'),
+      ('Vy — Best Rate of Climb', '${a.vy} kt'),
+      ('Va — Manoeuvring Speed', '${a.va} kt'),
+      ('Vfe — Max Flap Extended', '${a.vfe} kt'),
+      ('Approach Speed', '${a.approachSpeed} kt'),
+      ('VS1 — Stall (Clean)', '${a.vs1} kt'),
+      ('VS0 — Stall (Landing Config)', '${a.vs0} kt'),
+      ('Best Glide', '${a.bestGlide} kt'),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          a.displayName,
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...speeds.map(
+          (pair) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    pair.$1,
+                    style: TextStyle(
+                      color: AppColors.onSurface,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    pair.$2,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReadyToFlyPage extends StatelessWidget {
+  final VoidCallback onConfirm;
+
+  const _ReadyToFlyPage({required this.onConfirm});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppColors.success.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 40,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'I have briefed myself on this exercise and am ready to fly.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: onConfirm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(52),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text(
+              'Confirm',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

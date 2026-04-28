@@ -9,9 +9,7 @@ String _formatHoursMinutes(double hours) {
   final totalMinutes = (hours * 60).round();
   final h = totalMinutes ~/ 60;
   final m = totalMinutes % 60;
-  if (h == 0) return '${m}min';
-  if (m == 0) return '${h}hr';
-  return '${h}hr ${m}min';
+  return '${h}h ${m}m';
 }
 
 class QuickStatsRow extends StatelessWidget {
@@ -36,7 +34,7 @@ class QuickStatsRow extends StatelessWidget {
           Expanded(
             child: _StatCard(
               label: 'Exercises',
-              value: '${stats.exercisesCompleted}/${stats.totalExercises}',
+              value: '${stats.exercisesCompleted}/22',
               icon: Icons.menu_book_outlined,
               iconColor: AppColors.statExercises,
             ),
@@ -44,22 +42,10 @@ class QuickStatsRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _StatCard(
-              label: stats.daysSinceLastLesson < 0
-                  ? 'Lessons'
-                  : 'Last Lesson',
-              value: stats.daysSinceLastLesson < 0
-                  ? '${stats.completedLessons}'
-                  : stats.daysSinceLastLesson == 0
-                      ? 'Today'
-                      : '${stats.daysSinceLastLesson}d ago',
-              icon: stats.daysSinceLastLesson < 0
-                  ? Icons.check_circle_outline_rounded
-                  : Icons.schedule_rounded,
-              iconColor: stats.daysSinceLastLesson < 0
-                  ? AppColors.success
-                  : stats.daysSinceLastLesson > 14
-                      ? AppColors.warning
-                      : AppColors.success,
+              label: 'Lessons',
+              value: '${stats.lessonsLogged}',
+              icon: Icons.check_circle_outline_rounded,
+              iconColor: AppColors.success,
             ),
           ),
         ],

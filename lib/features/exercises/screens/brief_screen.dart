@@ -14,6 +14,8 @@ import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:flight_path/shared/utils/exercise_helpers.dart';
 
 // ---------------------------------------------------------------------------
@@ -44,6 +46,8 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
   bool _hasMarkedInProgress = false;
   bool _analyticsLogged = false;
   final Stopwatch _readTimer = Stopwatch();
+
+  String? _openSectionKey;
 
   @override
   void initState() {
@@ -188,6 +192,23 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
         final aircraftTip = content.tipsForAircraft(aircraftType);
         final bool showTip = aircraftTip.isNotEmpty;
 
+        final exerciseLabel = content.subExercise != null
+            ? 'Exercise ${content.subExercise}'
+            : 'Exercise ${content.exerciseNumber}';
+
+        final flashcardsAsync = ref.watch(
+          flashcardsProvider(widget.compositeExerciseId),
+        );
+        final hasFlashcards =
+            flashcardsAsync.whenOrNull(data: (list) => list.isNotEmpty) ??
+                true;
+
+        void openSection(String key) {
+          setState(() {
+            _openSectionKey = _openSectionKey == key ? null : key;
+          });
+        }
+
         return Scaffold(
           appBar: AppBar(
             title: Column(
@@ -215,9 +236,35 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
             controller: _scrollController,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
             children: [
+              // Ask AI chip
+              ActionChip(
+                avatar: const Icon(Icons.auto_awesome_rounded, size: 16),
+                label: Text('Ask AI about $exerciseLabel'),
+                onPressed: () => context.push(
+                  '/ask-ai',
+                  extra:
+                      'Tell me about $exerciseLabel: ${content.exerciseName}',
+                ),
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
+                side: BorderSide(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                ),
+                labelStyle: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 13,
+                ),
+                iconTheme: const IconThemeData(color: AppColors.primary),
+              ),
+              const SizedBox(height: 16),
+
               // 1. Overview
-              _BriefSection(
+              _AccordionSection(
+                sectionKey: 'overview',
                 title: 'Overview',
+                isOpen: _openSectionKey == 'overview',
+                onToggle: () => openSection('overview'),
                 child: Text(
                   content.overview,
                   style: TextStyle(
@@ -227,11 +274,14 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
               // 2. Aim
-              _BriefSection(
+              _AccordionSection(
+                sectionKey: 'aim',
                 title: 'Aim',
+                isOpen: _openSectionKey == 'aim',
+                onToggle: () => openSection('aim'),
                 child: Text(
                   content.aim,
                   style: TextStyle(
@@ -241,12 +291,15 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
               // 3. What to Expect
               if (content.whatToExpect.isNotEmpty) ...[
-                _BriefSection(
+                _AccordionSection(
+                  sectionKey: 'what_to_expect',
                   title: 'What to Expect',
+                  isOpen: _openSectionKey == 'what_to_expect',
+                  onToggle: () => openSection('what_to_expect'),
                   child: Text(
                     content.whatToExpect,
                     style: TextStyle(
@@ -256,23 +309,32 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
               // 4. CAA Assessment Criteria
               if (ExerciseCriteria.exerciseCriteria
                   .containsKey(widget.compositeExerciseId)) ...[
-                _CaaStandardsSection(
-                  criteria: ExerciseCriteria
-                      .exerciseCriteria[widget.compositeExerciseId]!,
+                _AccordionSection(
+                  sectionKey: 'caa_criteria',
+                  title: 'CAA Assessment Criteria',
+                  isOpen: _openSectionKey == 'caa_criteria',
+                  onToggle: () => openSection('caa_criteria'),
+                  child: _CriteriaList(
+                    criteria: ExerciseCriteria
+                        .exerciseCriteria[widget.compositeExerciseId]!,
+                  ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
               // 5. Key Focus Areas
               if (content.keyFocusAreas.isNotEmpty) ...[
-                _BriefSection(
+                _AccordionSection(
+                  sectionKey: 'key_focus',
                   title: 'Key Focus Areas',
+                  isOpen: _openSectionKey == 'key_focus',
+                  onToggle: () => openSection('key_focus'),
                   child: Text(
                     content.keyFocusAreas,
                     style: TextStyle(
@@ -282,36 +344,42 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
-              // 6. Pre-Flight Checklist
+              // 6. Pre-Flight Checklist (always open — interactive)
               if (content.preFlightChecklist.isNotEmpty) ...[
                 _InteractiveChecklist(
                   checklistText: content.preFlightChecklist,
                   compositeExerciseId: widget.compositeExerciseId,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
-              // 6. Common Mistakes
+              // 7. Common Mistakes
               if (content.commonMistakes.isNotEmpty) ...[
-                _BriefSection(
+                _AccordionSection(
+                  sectionKey: 'common_mistakes',
                   title: 'Common Mistakes',
                   icon: Icons.warning_amber_rounded,
                   iconColor: AppColors.warning,
+                  isOpen: _openSectionKey == 'common_mistakes',
+                  onToggle: () => openSection('common_mistakes'),
                   child: _BulletList(
                     text: content.commonMistakes,
                     bulletColor: AppColors.warning,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
-              // 7. One Thing to Nail
+              // 8. One Thing to Nail
               if (content.oneThingToNail.isNotEmpty) ...[
-                _BriefSection(
+                _AccordionSection(
+                  sectionKey: 'one_thing',
                   title: 'One Thing to Nail',
+                  isOpen: _openSectionKey == 'one_thing',
+                  onToggle: () => openSection('one_thing'),
                   child: Text(
                     content.oneThingToNail,
                     style: TextStyle(
@@ -321,13 +389,16 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
-              // 8. Mastery Criteria
+              // 9. Mastery Criteria
               if (content.masteryCriteria.isNotEmpty) ...[
-                _BriefSection(
+                _AccordionSection(
+                  sectionKey: 'mastery_criteria',
                   title: 'Mastery Criteria',
+                  isOpen: _openSectionKey == 'mastery_criteria',
+                  onToggle: () => openSection('mastery_criteria'),
                   child: Text(
                     content.masteryCriteria,
                     style: TextStyle(
@@ -337,37 +408,94 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
-              // 9. Aircraft-Specific Tips
+              // 10. Aircraft-Specific Tips
               if (showTip) ...[
-                _AircraftTipCard(
-                  aircraftType: aircraftType,
-                  tip: aircraftTip,
+                _AccordionSection(
+                  sectionKey: 'aircraft_tips',
+                  title: 'Aircraft Tips',
+                  icon: Icons.airplanemode_active_rounded,
+                  iconColor: AppColors.primary,
+                  isOpen: _openSectionKey == 'aircraft_tips',
+                  onToggle: () => openSection('aircraft_tips'),
+                  child: _AircraftTipBody(
+                    aircraftType: aircraftType,
+                    tip: aircraftTip,
+                  ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
-              // 10. Skills Test Standard
+              // 11. Skills Test Standard
               if (skillsTestStandards
                   .containsKey(widget.compositeExerciseId)) ...[
-                _SkillsTestStandardCard(
-                  standard:
-                      skillsTestStandards[widget.compositeExerciseId]!,
+                _AccordionSection(
+                  sectionKey: 'skills_test',
+                  title: 'Skills Test Standard',
+                  icon: Icons.school_rounded,
+                  iconColor: AppColors.primary,
+                  isOpen: _openSectionKey == 'skills_test',
+                  onToggle: () => openSection('skills_test'),
+                  child: Text(
+                    skillsTestStandards[widget.compositeExerciseId]!,
+                    style: TextStyle(
+                      color: AppColors.onSurface,
+                      fontSize: 14,
+                      height: 1.6,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
 
-              // 11. Active Recall
+              // 12. Active Recall
               _ActiveRecallCard(key: _recallKey),
 
-              // 12. Done button
+              // 13. Action buttons
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
+                  onPressed: () {
+                    FirebaseAnalytics.instance.logEvent(
+                      name: 'brief_next_tapped',
+                      parameters: {
+                        'exercise_id': widget.compositeExerciseId,
+                        'destination':
+                            hasFlashcards ? 'flashcards' : 'quiz',
+                      },
+                    );
+                    if (hasFlashcards) {
+                      context.push(
+                        '/exercises/${widget.compositeExerciseId}/flashcards',
+                      );
+                    } else {
+                      context.push(
+                        '/exercises/${widget.compositeExerciseId}/quiz',
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                  label: Text(
+                    hasFlashcards ? 'Next: Flashcards' : 'Next: Quiz',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton.icon(
                   onPressed: () {
                     FirebaseAnalytics.instance.logEvent(
                       name: 'brief_done_tapped',
@@ -379,14 +507,14 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                       Navigator.of(context).pop();
                     }
                   },
-                  icon: const Icon(Icons.check_circle_rounded, size: 20),
-                  label: const Text('Done — Back to Prepare'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                  icon: Icon(
+                    Icons.check_circle_rounded,
+                    size: 18,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  label: Text(
+                    'Done — Back to Prepare',
+                    style: TextStyle(color: AppColors.onSurfaceVariant),
                   ),
                 ),
               ),
@@ -402,15 +530,21 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
 // Widgets
 // ---------------------------------------------------------------------------
 
-class _BriefSection extends StatelessWidget {
+class _AccordionSection extends StatelessWidget {
+  final String sectionKey;
   final String title;
   final Widget child;
   final IconData? icon;
   final Color? iconColor;
+  final bool isOpen;
+  final VoidCallback onToggle;
 
-  const _BriefSection({
+  const _AccordionSection({
+    required this.sectionKey,
     required this.title,
     required this.child,
+    required this.isOpen,
+    required this.onToggle,
     this.icon,
     this.iconColor,
   });
@@ -419,38 +553,61 @@ class _BriefSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outline, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, color: iconColor ?? AppColors.primary, size: 18),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                title,
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+    return GestureDetector(
+      onTap: onToggle,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isOpen
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : cs.outline,
+            width: isOpen ? 1.5 : 0.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon,
+                        color: iconColor ?? AppColors.primary, size: 18),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: cs.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isOpen
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    color: AppColors.onSurfaceVariant,
+                    size: 22,
+                  ),
+                ],
+              ),
+            ),
+            if (isOpen) ...[
+              Divider(color: cs.outline, height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+                child: child,
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-          Divider(color: cs.outline, height: 1),
-          const SizedBox(height: 14),
-          child,
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -714,118 +871,38 @@ class _InteractiveChecklistState extends ConsumerState<_InteractiveChecklist> {
   }
 }
 
-class _AircraftTipCard extends StatelessWidget {
+class _AircraftTipBody extends StatelessWidget {
   final String aircraftType;
   final String tip;
 
-  const _AircraftTipCard({required this.aircraftType, required this.tip});
+  const _AircraftTipBody({required this.aircraftType, required this.tip});
 
   String _aircraftLabel(String type) =>
       AppConstants.aircraftTypes[type] ?? type;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.5),
-          width: 1.5,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${_aircraftLabel(aircraftType)} Tips',
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.airplanemode_active_rounded,
-                color: AppColors.primary,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${_aircraftLabel(aircraftType)} Tips',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+        const SizedBox(height: 8),
+        Text(
+          tip,
+          style: TextStyle(
+            color: AppColors.onSurface,
+            fontSize: 14,
+            height: 1.6,
           ),
-          const SizedBox(height: 10),
-          const Divider(color: AppColors.primaryBrightSubtle, height: 1),
-          const SizedBox(height: 16),
-          Text(
-            tip,
-            style: TextStyle(
-              color: AppColors.onSurface,
-              fontSize: 14,
-              height: 1.6,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SkillsTestStandardCard extends StatelessWidget {
-  final String standard;
-
-  const _SkillsTestStandardCard({required this.standard});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.4),
-          width: 1.5,
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(
-                Icons.school_rounded,
-                color: AppColors.primary,
-                size: 18,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Skills Test Standard',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Divider(color: AppColors.divider, height: 1),
-          const SizedBox(height: 16),
-          Text(
-            standard,
-            style: TextStyle(
-              color: AppColors.onSurface,
-              fontSize: 14,
-              height: 1.6,
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -928,109 +1005,69 @@ class _RecallPrompt extends StatelessWidget {
   }
 }
 
-class _CaaStandardsSection extends StatelessWidget {
+class _CriteriaList extends StatelessWidget {
   final List<ExerciseCriterion> criteria;
 
-  const _CaaStandardsSection({required this.criteria});
+  const _CriteriaList({required this.criteria});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outline, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.checklist_rounded,
-                  color: AppColors.primary, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'CAA Assessment Criteria',
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'What your instructor will assess on this exercise',
+          style: TextStyle(
+            color: AppColors.onSurfaceVariant,
+            fontSize: 12,
           ),
-          const SizedBox(height: 6),
-          Text(
-            'What your instructor will assess on this exercise',
-            style: TextStyle(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Divider(color: cs.outline, height: 1),
-          const SizedBox(height: 12),
-          ...criteria.map((c) => _CriterionRow(criterion: c)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CriterionRow extends StatelessWidget {
-  final ExerciseCriterion criterion;
-
-  const _CriterionRow({required this.criterion});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 3, right: 10),
-            child: Container(
-              width: 6,
-              height: 6,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  criterion.label,
-                  style: TextStyle(
-                    color: AppColors.onSurface,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
+        ),
+        const SizedBox(height: 12),
+        ...criteria.map((c) => Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3, right: 10),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  criterion.description,
-                  style: TextStyle(
-                    color: AppColors.onSurfaceVariant,
-                    fontSize: 13,
-                    height: 1.5,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          c.label,
+                          style: TextStyle(
+                            color: AppColors.onSurface,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          c.description,
+                          style: TextStyle(
+                            color: AppColors.onSurfaceVariant,
+                            fontSize: 13,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+                ],
+              ),
+            )),
+      ],
     );
   }
 }

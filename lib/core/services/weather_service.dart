@@ -731,12 +731,33 @@ class WeatherService {
     }
 
     try {
-      return WeatherData.fromJson(Map<String, dynamic>.from(data as Map));
+      final normalised = _deepNormalise(data);
+      if (normalised is! Map<String, dynamic>) {
+        throw const WeatherServiceException('Unexpected response shape from weather service.');
+      }
+      return WeatherData.fromJson(normalised);
     } catch (e) {
       throw WeatherServiceException(
         'Failed to map weather response to WeatherData: $e',
       );
     }
+  }
+
+  /// Recursively converts platform-channel types to JSON-compatible Dart types.
+  /// Firebase returns nested maps as Map<Object?, Object?> and lists as
+  /// List<Object?> — this normalises the entire tree to Map<String, dynamic>.
+  static dynamic _deepNormalise(dynamic value) {
+    if (value is Map) {
+      return Map<String, dynamic>.fromEntries(
+        value.entries.map(
+          (e) => MapEntry(e.key.toString(), _deepNormalise(e.value)),
+        ),
+      );
+    }
+    if (value is List) {
+      return value.map(_deepNormalise).toList();
+    }
+    return value;
   }
 
   /// Translates a [FirebaseFunctionsException] into a user-readable message.

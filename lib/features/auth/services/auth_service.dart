@@ -1,4 +1,5 @@
 // Authentication service — email/password, Google Sign-In, and password reset.
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -102,7 +103,9 @@ class AuthService {
     await NotificationService.cleanupFcm();
     try {
       await _googleSignIn.signOut();
-    } catch (_) {}
+    } catch (_) {
+      debugPrint('AuthService sign-out: $_');
+    }
     await SubscriptionService.resetUser();
     await _auth.signOut();
   }

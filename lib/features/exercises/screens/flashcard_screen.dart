@@ -236,6 +236,22 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                   icon: const Icon(Icons.shuffle_rounded),
                   tooltip: 'Shuffle cards',
                 ),
+              IconButton(
+                onPressed: () {
+                  final reviewed = _gotIt.length + _needsReview.length;
+                  context.pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '$reviewed card${reviewed == 1 ? '' : 's'} reviewed',
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.close_rounded),
+                tooltip: 'Back to exercise',
+              ),
             ],
           ),
           body: _cards.isEmpty
@@ -657,10 +673,33 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
 
           SizedBox(
             width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                context.push(
+                  '/exercises/${widget.compositeExerciseId}/quiz',
+                );
+              },
+              icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+              label: const Text('Next: Quiz'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          SizedBox(
+            width: double.infinity,
             child: TextButton(
               onPressed: () => context.pop(),
               child: Text(
-                'Done',
+                'Back to Exercise',
                 style: TextStyle(
                   color: AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w600,

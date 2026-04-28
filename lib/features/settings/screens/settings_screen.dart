@@ -6,8 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/providers/walkthrough_provider.dart';
-import 'package:flight_path/features/home/screens/home_screen.dart';
+import 'package:flight_path/shared/services/subscription_service.dart';
 import 'package:flight_path/features/settings/widgets/settings_section_header.dart';
 import 'package:flight_path/features/settings/widgets/settings_profile_section.dart';
 import 'package:flight_path/features/settings/widgets/settings_appearance_section.dart';
@@ -15,6 +16,29 @@ import 'package:flight_path/features/settings/widgets/settings_subscription_sect
 import 'package:flight_path/features/settings/widgets/settings_legal_privacy.dart';
 import 'package:flight_path/features/settings/widgets/settings_account_buttons.dart';
 import 'package:flight_path/shared/widgets/app_tour_dialog.dart';
+
+// ---------------------------------------------------------------------------
+// _GroupHeader — top-level section divider for the 4 setting groups
+// ---------------------------------------------------------------------------
+class _GroupHeader extends StatelessWidget {
+  final String label;
+
+  const _GroupHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Text(
+      label.toUpperCase(),
+      style: TextStyle(
+        color: cs.onSurface.withValues(alpha: 0.35),
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+}
 
 // ---------------------------------------------------------------------------
 // SettingsScreen
@@ -27,10 +51,37 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _restoringPurchases = false;
+
   @override
   void initState() {
     super.initState();
     FirebaseAnalytics.instance.logEvent(name: 'settings_opened');
+  }
+
+  Future<void> _restorePurchases() async {
+    if (_restoringPurchases) return;
+    setState(() => _restoringPurchases = true);
+    try {
+      final hasEntitlement = await SubscriptionService.restorePurchases();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            hasEntitlement ? 'Purchases restored' : 'Nothing to restore',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Restore failed — please try again'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _restoringPurchases = false);
+    }
   }
 
   @override
@@ -54,29 +105,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
-              // ── Profile ───────────────────────────────────────────────────
+              // ── ACCOUNT ───────────────────────────────────────────────────
+              const _GroupHeader(label: 'Account'),
+              const SizedBox(height: 10),
+
               const SettingsSectionHeader(label: 'Profile'),
               SettingsProfileSection(user: user),
               const SizedBox(height: 20),
 
-              // ── Aircraft & Training ───────────────────────────────────────
               const SettingsSectionHeader(label: 'Aircraft & Training'),
               SettingsAircraftSection(user: user),
               const SizedBox(height: 20),
 
-              // ── Progress ──────────────────────────────────────────────────
-              const SettingsSectionHeader(label: 'Training Progress'),
+              const SettingsSectionHeader(label: 'Purchases'),
               Container(
                 decoration: BoxDecoration(
                   color: cs.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ListTile(
-                  onTap: () => context.go('/progress'),
-                  leading: Icon(Icons.bar_chart_rounded,
-                      color: cs.onSurface.withValues(alpha: 0.6)),
+                  onTap: _restorePurchases,
+                  leading: _restoringPurchases
+                      ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: cs.onSurface.withValues(alpha: 0.6),
+                          ),
+                        )
+                      : Icon(Icons.restore_rounded,
+                          color: cs.onSurface.withValues(alpha: 0.6)),
                   title: Text(
-                    'View Progress',
+                    'Restore Purchases',
                     style: TextStyle(
                       color: cs.onSurface,
                       fontSize: 15,
@@ -84,43 +145,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                   subtitle: Text(
-                    'Exercise progress, hours, and syllabus overview',
+                    'Reinstate a previous lifetime purchase',
                     style: TextStyle(
                       color: cs.onSurface.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),
-                  trailing: Icon(Icons.chevron_right_rounded,
-                      color: cs.onSurface.withValues(alpha: 0.6)),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
 
-              // ── Appearance ────────────────────────────────────────────────
+              // ── APP ───────────────────────────────────────────────────────
+              const _GroupHeader(label: 'App'),
+              const SizedBox(height: 10),
+
               const SettingsSectionHeader(label: 'Appearance'),
               const SettingsAppearanceSection(),
               const SizedBox(height: 20),
 
-              // ── Accessibility ──────────────────────────────────────────────
               const SettingsSectionHeader(label: 'Accessibility'),
               const SettingsAccessibilitySection(),
               const SizedBox(height: 20),
 
-              // ── Notifications ─────────────────────────────────────────────
               const SettingsSectionHeader(label: 'Notifications'),
               const SettingsNotificationsSection(),
               const SizedBox(height: 20),
 
-              // ── Purchase (free users only) ────────────────────────────────
-              if (!(user?.isPremium ?? false)) ...[
+              if (!(ref.watch(premiumStatusProvider).valueOrNull ?? false)) ...[
                 const SettingsSectionHeader(label: 'Purchase'),
                 SettingsSubscriptionSection(user: user),
                 const SizedBox(height: 20),
               ],
 
-              const SizedBox(height: 0),
-
-              // ── Reference ─────────────────────────────────────────────────
               const SettingsSectionHeader(label: 'Reference'),
               Container(
                 decoration: BoxDecoration(
@@ -187,37 +243,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 28),
+
+              // ── TRAINING ──────────────────────────────────────────────────
+              const _GroupHeader(label: 'Training'),
+              const SizedBox(height: 10),
+
+              const SettingsSectionHeader(label: 'Training Progress'),
+              Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  onTap: () => context.go('/progress'),
+                  leading: Icon(Icons.bar_chart_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.6)),
+                  title: Text(
+                    'View Progress',
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Exercise progress, hours, and syllabus overview',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                  trailing: Icon(Icons.chevron_right_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.6)),
+                ),
+              ),
               const SizedBox(height: 20),
 
-              // ── Offline ─────────────────────────────────────────────────
-              const SettingsSectionHeader(label: 'Offline'),
+              const SettingsSectionHeader(label: 'Offline Download'),
               const SettingsOfflineDownloadTile(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
 
-              // ── Safety Disclaimer ─────────────────────────────────────────
+              // ── LEGAL & SUPPORT ───────────────────────────────────────────
+              const _GroupHeader(label: 'Legal & Support'),
+              const SizedBox(height: 10),
+
               const SettingsSectionHeader(label: 'Safety Disclaimer'),
               const SettingsDisclaimerSection(),
               const SizedBox(height: 20),
 
-              // ── Legal ──────────────────────────────────────────────────────
               const SettingsSectionHeader(label: 'Legal'),
               const SettingsLegalSection(),
               const SizedBox(height: 20),
 
-              // ── Privacy ─────────────────────────────────────────────────
               const SettingsSectionHeader(label: 'Privacy'),
               SettingsPrivacySection(uid: user?.uid ?? ''),
               const SizedBox(height: 20),
 
-              // ── Sign Out ──────────────────────────────────────────────────
-              const SettingsSignOutButton(),
-              const SizedBox(height: 12),
-
-              // ── Delete Account ────────────────────────────────────────────
-              const SettingsDeleteAccountButton(),
-              const SizedBox(height: 32),
-
-              // ── App version ───────────────────────────────────────────────
               Center(
                 child: FutureBuilder<PackageInfo>(
                   future: PackageInfo.fromPlatform(),
@@ -235,6 +317,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   },
                 ),
               ),
+              const SizedBox(height: 20),
+
+              const SettingsSignOutButton(),
+              const SizedBox(height: 12),
+
+              const SettingsDeleteAccountButton(),
+              const SizedBox(height: 32),
             ],
           );
         },

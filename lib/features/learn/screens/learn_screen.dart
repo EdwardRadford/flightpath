@@ -12,6 +12,7 @@ import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/ask_ai/providers/ask_ai_provider.dart';
 import 'package:flight_path/features/ask_ai/widgets/ask_ai_shared_widgets.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
@@ -194,7 +195,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
     final limitState = ref.watch(askAiLimitProvider);
     final limitReached = limitState.limitReached;
     final messagesRemaining = limitState.messagesRemaining;
-    final isPremium = ref.watch(appUserProvider).valueOrNull?.isPremium ?? false;
+    final isPremium = ref.watch(premiumStatusProvider).valueOrNull ?? false;
     final showRemainingHint =
         !isPremium && !limitReached && messagesRemaining < kAskAiFreeDailyLimit;
     final cs = Theme.of(context).colorScheme;

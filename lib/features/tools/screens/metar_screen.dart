@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/tools/providers/metar_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/services/avwx_service.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
@@ -438,16 +439,20 @@ class _ExampleMetarBreakdown extends StatelessWidget {
   }
 }
 
-class _SessionChip extends StatelessWidget {
+class _SessionChip extends ConsumerWidget {
   final int dailyCount;
 
   const _SessionChip({required this.dailyCount});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPremium = ref.watch(premiumStatusProvider).valueOrNull ?? false;
+    if (isPremium) return const SizedBox.shrink();
+
     final remaining = (5 - dailyCount).clamp(0, 5);
+    final used = dailyCount.clamp(0, 5);
     final text = remaining > 0
-        ? '$remaining free session${remaining == 1 ? '' : 's'} remaining today'
+        ? '$used of 5 free sessions used today'
         : 'Free daily limit reached — upgrade for unlimited sessions';
 
     return Container(

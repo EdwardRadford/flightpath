@@ -9,7 +9,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/services/subscription_service.dart';
 
 // ---------------------------------------------------------------------------
 // Scenario types
@@ -161,13 +161,11 @@ const int kRtPracticeFreeScenarios = 5;
 
 final rtPracticeProvider =
     StateNotifierProvider<RtPracticeNotifier, RtPracticeState>((ref) {
-  return RtPracticeNotifier(ref);
+  return RtPracticeNotifier();
 });
 
 class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
-  final Ref _ref;
-
-  RtPracticeNotifier(this._ref)
+  RtPracticeNotifier()
       : super(const RtPracticeState(
           currentScenario: RtScenario.radioCheck,
           messages: [],
@@ -183,9 +181,8 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
 
   /// Returns true if the user is allowed to start another scenario.
   /// Premium users always pass. Free users get [kRtPracticeFreeScenarios].
-  bool get canStartNewScenario {
-    final user = _ref.read(appUserProvider).valueOrNull;
-    if (user?.isPremium ?? false) return true;
+  Future<bool> canStartNewScenario() async {
+    if (await SubscriptionService.isPremium()) return true;
     return state.scenariosUsedThisSession < kRtPracticeFreeScenarios;
   }
 
@@ -196,7 +193,7 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
   /// Increments [scenariosUsedThisSession] only when starting a fresh scenario.
   /// Returns false if the free tier limit is reached (caller should show paywall).
   bool startScenario(RtScenario scenario) {
-    if (!canStartNewScenario) return false;
+    if (state.scenariosUsedThisSession >= kRtPracticeFreeScenarios) return false;
 
     // Persist the current session before wiping it.
     _maybeSaveCurrentSession();

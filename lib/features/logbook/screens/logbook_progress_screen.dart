@@ -749,6 +749,19 @@ class _EntriesTab extends StatelessWidget {
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
+            // Screen subtitle
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Text(
+                  'Add and review your flight entries',
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
             // Search bar
             SliverToBoxAdapter(
               child: Padding(
@@ -1801,7 +1814,7 @@ class _LogbookEntryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Date + day/night badge
+            // Date + status badge + day/night badge
             Row(
               children: [
                 Expanded(
@@ -1814,6 +1827,8 @@ class _LogbookEntryCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                _StatusBadge(status: lesson.status),
+                const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
@@ -1932,6 +1947,65 @@ class _LogbookEntryCard extends StatelessWidget {
       ),
       isScrollControlled: true,
       builder: (_) => _LogbookDetailSheet(lesson: lesson),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Status badge
+// ---------------------------------------------------------------------------
+
+class _StatusBadge extends StatelessWidget {
+  final LessonStatus status;
+
+  const _StatusBadge({required this.status});
+
+  String get _label {
+    switch (status) {
+      case LessonStatus.completed:
+        return 'Completed';
+      case LessonStatus.scheduled:
+        return 'Scheduled';
+      case LessonStatus.cancelled:
+        return 'Cancelled';
+      case LessonStatus.manualEntry:
+        return 'Manual';
+      case LessonStatus.prepared:
+        return 'Prepared';
+    }
+  }
+
+  Color get _color {
+    switch (status) {
+      case LessonStatus.completed:
+        return Colors.green.shade600;
+      case LessonStatus.scheduled:
+        return Colors.blue.shade600;
+      case LessonStatus.cancelled:
+        return Colors.grey.shade500;
+      case LessonStatus.manualEntry:
+        return Colors.green.shade600;
+      case LessonStatus.prepared:
+        return Colors.blue.shade600;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: _color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        _label,
+        style: TextStyle(
+          color: _color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

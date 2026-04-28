@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:flight_path/core/theme/app_icons.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 
 class _TourPage {
@@ -16,42 +17,49 @@ class _TourPage {
 
 const _pages = [
   _TourPage(
-    icon: Icons.waving_hand_rounded,
+    icon: AppIcons.tour,
     title: 'Welcome to Flight Path',
     description:
         'Your personal PPL(A) training companion. '
         'Let\u2019s take a quick look at what\u2019s inside.',
   ),
   _TourPage(
-    icon: Icons.home_rounded,
+    icon: AppIcons.home,
     title: 'Home',
     description:
         'Your dashboard shows your next lesson, quick stats, '
         'a daily revision question, and your recent activity.',
   ),
   _TourPage(
-    icon: Icons.list_rounded,
+    icon: AppIcons.exercises,
     title: 'Exercises',
     description:
-        'All 19 CAA exercises in order. Tap any exercise to prepare \u2014 '
-        'read the brief, watch videos, practice flashcards, and take quizzes.',
+        'All CAA exercises in order. Tap any exercise to prepare \u2014 '
+        'read the brief, practice flashcards, take quizzes, and chat with your AI instructor.',
   ),
   _TourPage(
-    icon: Icons.auto_awesome_rounded,
-    title: 'Ask AI',
-    description:
-        'Chat with your AI flight instructor. Ask about theory, procedures, '
-        'weather, or anything from your training.',
-  ),
-  _TourPage(
-    icon: Icons.menu_book_rounded,
+    icon: AppIcons.menuBook,
     title: 'Logbook',
     description:
-        'Log your lessons and track your hours. After each flight, debrief '
-        'and get AI-generated feedback on what went well and what to improve.',
+        'Log every lesson and track your hours toward CAA minimums. '
+        'After each flight, get AI-generated feedback on what went well and what to improve.',
   ),
   _TourPage(
-    icon: Icons.settings_rounded,
+    icon: AppIcons.learn,
+    title: 'Learn',
+    description:
+        'Sharpen your radio work with AI ATC roleplay across 9 real scenarios, '
+        'and decode ATIS broadcasts with guided UK examples.',
+  ),
+  _TourPage(
+    icon: AppIcons.tools,
+    title: 'Tools',
+    description:
+        'Aircraft performance data, UK airfield information, live METAR training, '
+        'a QXC planning guide, and weather briefings \u2014 all in one place.',
+  ),
+  _TourPage(
+    icon: AppIcons.settings,
     title: 'Settings',
     description:
         'Edit your profile, link your instructor, adjust accessibility, '
