@@ -499,7 +499,7 @@ class _FlightPathBodyState extends State<FlightPathBody>
     final freeStart =
         math.max(1, widget.currentExerciseNumber - 2);
     final freeEnd =
-        math.min(kExercises.length, widget.currentExerciseNumber + 2);
+        math.min(19, widget.currentExerciseNumber + 2);
     final showPro =
         !widget.isPremium && (exNum < freeStart || exNum > freeEnd);
     final isLeft = index.isEven;
@@ -725,9 +725,9 @@ class _FlightPathBodyState extends State<FlightPathBody>
 
   void _onExerciseTap(ExerciseListItem item) {
     if (!widget.isPremium) {
-      final exNum = int.tryParse(item.exerciseId.replaceFirst('ex_', '')) ?? 0;
+      final exNum = exerciseNumber(item.exerciseId);
       final freeStart = math.max(1, widget.currentExerciseNumber - 2);
-      final freeEnd = math.min(kExercises.length, widget.currentExerciseNumber + 2);
+      final freeEnd = math.min(19, widget.currentExerciseNumber + 2);
       if (exNum < freeStart || exNum > freeEnd) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -84,7 +84,11 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   }
 
   Future<void> _autoFetch() async {
-    final icao = _activeIcao;
+    // Wait for the user stream to emit before checking airfieldIcao.
+    final user = await ref.read(appUserProvider.future);
+    final icao = _state.icaoOverride?.isNotEmpty == true
+        ? _state.icaoOverride!
+        : (user?.airfieldIcao?.isNotEmpty == true ? user!.airfieldIcao : null);
     if (icao == null) return;
     await _fetch(icao);
   }
