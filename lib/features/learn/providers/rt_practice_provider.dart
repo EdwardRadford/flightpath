@@ -9,6 +9,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/services/subscription_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -161,17 +162,21 @@ const int kRtPracticeFreeScenarios = 5;
 
 final rtPracticeProvider =
     StateNotifierProvider<RtPracticeNotifier, RtPracticeState>((ref) {
-  return RtPracticeNotifier();
+  return RtPracticeNotifier(ref);
 });
 
 class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
-  RtPracticeNotifier()
+  RtPracticeNotifier(this._ref)
       : super(const RtPracticeState(
           currentScenario: RtScenario.radioCheck,
           messages: [],
           isLoading: false,
           scenariosUsedThisSession: 0,
         ));
+
+  final Ref _ref;
+
+  String get _airfieldIcao => _ref.read(appUserProvider).valueOrNull?.airfieldIcao ?? '';
 
   // ── Rate-limit guard ────────────────────────────────────────────────────
   DateTime? _lastSendTime;
@@ -307,6 +312,7 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
       final result = await callable.call<dynamic>({
         'scenario': state.currentScenario.apiValue,
         'messages': recent,
+        'airfieldIcao': _airfieldIcao,
       });
 
       final data = result.data as Map<String, dynamic>?;
@@ -388,6 +394,7 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
         'scenario': state.currentScenario.apiValue,
         'messages': recent,
         'hint': true,
+        'airfieldIcao': _airfieldIcao,
       });
 
       final data = result.data as Map<String, dynamic>?;

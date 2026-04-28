@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/shared/services/voice_service.dart';
 
 // ---------------------------------------------------------------------------
 // Static ATIS data
@@ -228,6 +229,9 @@ class AtisScreen extends ConsumerStatefulWidget {
 class _AtisScreenState extends ConsumerState<AtisScreen> {
   _AtisSessionState _session = const _AtisSessionState();
 
+  late final VoiceService _voice;
+  bool _isSpeaking = false;
+
   // Answer controllers
   late TextEditingController _runwayCtrl;
   late TextEditingController _qnhCtrl;
@@ -238,7 +242,15 @@ class _AtisScreenState extends ConsumerState<AtisScreen> {
   @override
   void initState() {
     super.initState();
+    _voice = VoiceService();
+    _voice.addListener(_onVoiceChanged);
+    _voice.init();
     _initControllers();
+  }
+
+  void _onVoiceChanged() {
+    if (!mounted) return;
+    setState(() => _isSpeaking = _voice.isSpeaking);
   }
 
   void _initControllers() {
@@ -258,11 +270,21 @@ class _AtisScreenState extends ConsumerState<AtisScreen> {
 
   @override
   void dispose() {
+    _voice.removeListener(_onVoiceChanged);
+    _voice.dispose();
     _disposeControllers();
     super.dispose();
   }
 
   _AtisExample get _current => _kAtisExamples[_session.currentIndex];
+
+  Future<void> _readAtisAloud() async {
+    if (_isSpeaking) {
+      await _voice.stopSpeaking();
+    } else {
+      await _voice.speakAtcResponse(_current.broadcast);
+    }
+  }
 
   // ── Score a set of answers ───────────────────────────────────────────────
 
@@ -320,6 +342,7 @@ class _AtisScreenState extends ConsumerState<AtisScreen> {
   }
 
   void _nextAtis() {
+    _voice.stopSpeaking();
     _disposeControllers();
     final nextIndex = (_session.currentIndex + 1) % _kAtisExamples.length;
     setState(() {
@@ -360,6 +383,16 @@ class _AtisScreenState extends ConsumerState<AtisScreen> {
                   ),
                 ),
               ),
+            ),
+          if (_voice.ttsReady)
+            IconButton(
+              onPressed: _readAtisAloud,
+              icon: Icon(
+                _isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                size: 22,
+                color: _isSpeaking ? AppColors.error : null,
+              ),
+              tooltip: _isSpeaking ? 'Stop' : 'Read ATIS aloud',
             ),
         ],
       ),

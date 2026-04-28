@@ -772,7 +772,7 @@ exports.getAiRtPractice = onCall(
     requireAppCheck(request);
     checkRateLimit(request.auth.uid);
 
-    const { scenario, messages, exerciseId, hint } = request.data || {};
+    const { scenario, messages, exerciseId, hint, airfieldIcao } = request.data || {};
 
     // --- Validate scenario ---
     const VALID_SCENARIOS = new Set([
@@ -836,6 +836,9 @@ exports.getAiRtPractice = onCall(
     // Sanitise optional exerciseId
     const safeExerciseId = exerciseId ? sanitise(String(exerciseId), 100) : null;
 
+    // Sanitise optional airfieldIcao
+    const safeAirfieldIcao = airfieldIcao ? sanitise(String(airfieldIcao).toUpperCase(), 4) : null;
+
     const apiKey = (process.env.CLAUDE_API_KEY || '').trim();
     if (!apiKey) {
       logger.error('CLAUDE_API_KEY secret is not set.');
@@ -850,7 +853,7 @@ exports.getAiRtPractice = onCall(
       radio_check:
         'The student is on the ground about to call for a radio check before engine start.',
       taxi_departure:
-        'The student has completed runup checks and is ready to taxi for departure. Runway in use is 27. QFE 1013.',
+        'The student has completed runup checks and is ready to taxi for departure.',
       joining_circuit:
         'The student is 5nm from the airfield inbound, overhead joining for the circuit at 1000ft QFE.',
       circuit_calls:
@@ -874,10 +877,15 @@ exports.getAiRtPractice = onCall(
       scenario,
       messageCount: sanitisedMessages.length,
       exerciseId: safeExerciseId,
+      airfieldIcao: safeAirfieldIcao,
       hint: !!hint,
     });
 
     const client = new Anthropic({ apiKey });
+
+    const airfieldContext = safeAirfieldIcao
+      ? `The student's home airfield is ${safeAirfieldIcao}. Use runway numbers appropriate for that airfield in scenario context. `
+      : '';
 
     // --- Hint path: coaching response, no scoring ---
     if (hint) {
@@ -890,6 +898,7 @@ exports.getAiRtPractice = onCall(
       ];
 
       const hintSystemText =
+        airfieldContext +
         'You are an RT practice coach for UK PPL(A) student pilots. ' +
         `The student is practising the following scenario: ${scenarioPreamble} ` +
         'Based on the conversation so far, give a brief hint about what the correct next radio call should be. ' +
@@ -919,6 +928,7 @@ exports.getAiRtPractice = onCall(
 
     // --- Scoring path: ATC response + structured feedback ---
     const atcSystemText =
+      airfieldContext +
       'You are an ATC controller at a generic UK grass training airfield ' +
       '(ICAO: EGXX). The station callsign is "Barton Radio" for AGCS/AFIS ' +
       'scenarios (radio check, taxi, circuit, going around) and ' +
