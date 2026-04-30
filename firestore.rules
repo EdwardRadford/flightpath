@@ -144,6 +144,17 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
+    // ai_message_counts/{uid} — server-managed daily AI message counter.
+    // Owners may read their own count (so the UI can show "X of 3 left"
+    // via a snapshot listener) but only Cloud Functions write via the
+    // Admin SDK, which bypasses these rules.
+    // -------------------------------------------------------------------------
+    match /ai_message_counts/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
     // instructor_links — server-only via Admin SDK
     // -------------------------------------------------------------------------
     match /instructor_links/{doc} {

@@ -108,15 +108,13 @@ class _MetarScreenState extends ConsumerState<MetarScreen> {
       body: SafeArea(
         child: state.isLoading
             ? _buildLoader(state.icao)
-            : state.apiKeyMissing
-                ? _buildApiKeyMissingCard(isDark)
-                : state.noDataForStation
-                    ? _buildNoDataCard(state.icao)
-                    : state.fetchError
-                        ? _buildFetchErrorCard(state.icao)
-                        : state.rawMetar != null
-                            ? _buildSessionBody(state, isDark)
-                            : const SizedBox.shrink(),
+            : state.noDataForStation
+                ? _buildNoDataCard(state.icao)
+                : state.fetchError
+                    ? _buildFetchErrorCard(state.icao)
+                    : state.rawMetar != null
+                        ? _buildSessionBody(state, isDark)
+                        : const SizedBox.shrink(),
       ),
     );
   }
@@ -134,41 +132,6 @@ class _MetarScreenState extends ConsumerState<MetarScreen> {
             'Fetching live METAR for $icao...',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-        ],
-      ),
-    );
-  }
-
-  // ── API key missing ────────────────────────────────────────────────────────
-
-  Widget _buildApiKeyMissingCard(bool isDark) {
-    return SingleChildScrollView(
-      padding: AppSpacing.pagePaddingAll,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _InfoCard(
-            borderColor: AppColors.warning,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.info_outline_rounded,
-                    color: AppColors.warning, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Live METAR fetch is not available in this build. '
-                    'Practise decoding the example below — it uses real-world format.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sectionGap),
-          _MetarCard(metar: kExampleMetar, isDark: isDark),
-          const SizedBox(height: AppSpacing.cardGap),
-          _ExampleMetarBreakdown(isDark: isDark),
         ],
       ),
     );
@@ -432,62 +395,6 @@ class _MetarCard extends StatelessWidget {
               fontSize: 14,
               height: 1.6,
               letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ExampleMetarBreakdown extends StatelessWidget {
-  final bool isDark;
-
-  const _ExampleMetarBreakdown({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-          width: 0.5,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Decoded',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 12),
-          ...kExampleMetarParsed.entries.map(
-            (e) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 88,
-                    child: Text(
-                      e.key,
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      e.value,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
@@ -928,23 +835,3 @@ class _AnswersSummary extends StatelessWidget {
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  final Widget child;
-  final Color borderColor;
-
-  const _InfoCard({required this.child, required this.borderColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: borderColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor.withValues(alpha: 0.4), width: 1),
-      ),
-      child: child,
-    );
-  }
-}

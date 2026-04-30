@@ -1,5 +1,5 @@
 // Weather service — fetches current conditions via a Firebase Cloud Function
-// that proxies the OpenWeatherMap API.
+// that proxies the AVWX API.
 import 'dart:math' as math;
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -25,7 +25,7 @@ class NoWeatherDataException extends WeatherServiceException {
 // Cloud layer model
 // ---------------------------------------------------------------------------
 
-/// A single cloud layer from the OpenWeatherMap response.
+/// A single cloud layer from the AVWX response.
 class CloudLayer {
   /// Coverage abbreviation: FEW, SCT, BKN, OVC, CLR.
   final String coverage;
@@ -130,7 +130,7 @@ class WeatherData {
   /// Human-readable weather condition, e.g. "Broken cloud".
   final String conditions;
 
-  /// OpenWeatherMap weather condition ID (for thunderstorm detection etc).
+  /// Numeric weather condition ID (for thunderstorm detection etc).
   final int conditionId;
 
   /// Temperature in degrees Celsius.
@@ -166,7 +166,7 @@ class WeatherData {
   /// Lowest cloud base in feet, or null if sky clear.
   final int? lowestCloudBaseFt;
 
-  /// OpenWeatherMap icon code, e.g. "04d".
+  /// Icon code, e.g. "04d".
   final String iconCode;
 
   /// Sunrise time (UTC), or null if unavailable.
@@ -642,7 +642,7 @@ const List<AirfieldRunway> commonUkRunways = [
 
 /// Retrieves current weather data via the `getWeather` Firebase Cloud Function.
 ///
-/// The Cloud Function proxies the OpenWeatherMap API so that the API key is
+/// The Cloud Function proxies the AVWX API so that the API key is
 /// never shipped inside the app binary.
 class WeatherService {
   /// Cloud Function instance targeting the `europe-west2` region where
@@ -704,7 +704,7 @@ class WeatherService {
       );
     }
 
-    // The Cloud Function returns the raw OpenWeatherMap JSON object.
+    // The Cloud Function returns the raw weather JSON object.
     final data = result.data;
     if (data == null) {
       throw const WeatherServiceException(

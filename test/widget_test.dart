@@ -142,4 +142,7 @@ class _StaticAskAiLimitNotifier extends StateNotifier<AskAiLimitState>
 
   @override
   Future<void> incrementMessageCount() async {}
+
+  @override
+  Future<void> markServerLimitReached() async {}
 }

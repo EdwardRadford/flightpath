@@ -288,6 +288,98 @@ function mapAnthropicError(err, genericMessage) {
 // ---------------------------------------------------------------------------
 // getWeather — REMOVED: weather functionality removed from app.
 
+// ---------------------------------------------------------------------------
+// AI message daily limit — server-enforced
+// ---------------------------------------------------------------------------
+
+/**
+ * Free-tier daily Ask-AI message cap. Mirrors `kAskAiFreeDailyLimit` in
+ * lib/features/ask_ai/providers/ask_ai_provider.dart. Update both in tandem.
+ */
+const AI_MESSAGE_DAILY_LIMIT = 3;
+
+/**
+ * Returns today's date as YYYY-MM-DD in UTC. Using UTC means the daily
+ * counter rolls over at 00:00 UTC for everyone — predictable and avoids
+ * timezone-driven race conditions across the function fleet.
+ *
+ * @returns {string}
+ */
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Returns true when the user's `users/{uid}` doc indicates premium access.
+ * Mirrors AppUser.isPremium in lib/shared/models/app_user.dart so client
+ * and server agree on what "premium" means.
+ *
+ * @param {object} userData  Firestore data from users/{uid}.
+ * @returns {boolean}
+ */
+function userIsPremium(userData) {
+  if (!userData) return false;
+  if (userData.has_purchased === true) return true;
+  if (userData.granted_access === true) return true;
+  const status = userData.subscription_status;
+  return status === 'pro' || status === 'premium' || status === 'lifetime';
+}
+
+/**
+ * Atomically reads, validates, and increments the user's daily Ask-AI
+ * message counter. Premium users bypass the cap entirely. Free users get
+ * AI_MESSAGE_DAILY_LIMIT messages per UTC day.
+ *
+ * Uses a Firestore transaction so concurrent function invocations cannot
+ * race past the cap. The same transaction reads `users/{uid}` for the
+ * premium check to keep the operation single-shot.
+ *
+ * Throws HttpsError('resource-exhausted', ...) when the cap is hit.
+ *
+ * @param {string} uid  Authenticated user's Firebase UID.
+ * @returns {Promise<void>}
+ */
+async function checkAndIncrementAiMessageCount(uid) {
+  const db = getFirestore();
+  const userRef = db.doc(`users/${uid}`);
+  const counterRef = db.doc(`ai_message_counts/${uid}`);
+  const today = todayKey();
+
+  await db.runTransaction(async (tx) => {
+    const [userSnap, counterSnap] = await Promise.all([
+      tx.get(userRef),
+      tx.get(counterRef),
+    ]);
+
+    // Premium users bypass the cap. If the user doc is missing we treat
+    // them as free — safer default.
+    if (userSnap.exists && userIsPremium(userSnap.data() || {})) {
+      return;
+    }
+
+    const data = counterSnap.exists ? (counterSnap.data() || {}) : {};
+    const sameDay = data.date === today;
+    const currentCount = sameDay ? Number(data.count || 0) : 0;
+
+    if (currentCount >= AI_MESSAGE_DAILY_LIMIT) {
+      throw new HttpsError(
+        'resource-exhausted',
+        'Daily message limit reached. Upgrade to Pro for unlimited messages.'
+      );
+    }
+
+    tx.set(
+      counterRef,
+      {
+        date: today,
+        count: currentCount + 1,
+        updated_at: FieldValue.serverTimestamp(),
+      },
+      { merge: false },
+    );
+  });
+}
+
 /**
  * Fetches a compact, PII-free summary of the student's training state from
  * Firestore: profile basics, the last ~10 lessons, and the current exercise's
@@ -711,6 +803,12 @@ exports.getAiChat = onCall(
     requireAppCheck(request);
     checkRateLimit(request.auth.uid);
 
+    // Enforce daily message cap server-side (free-tier only). Premium users
+    // bypass. Throws HttpsError('resource-exhausted') when capped — the
+    // client maps this to the limit-reached UI. Increments on success;
+    // worst case the user gets one fewer message if Anthropic later fails.
+    await checkAndIncrementAiMessageCount(request.auth.uid);
+
     const { messages, exerciseContext, debriefContext } = request.data || {};
 
     // --- Input validation ---
@@ -902,13 +1000,21 @@ exports.getAiChat = onCall(
  * Request body (JSON):
  *   {
  *     messages:        Array<{ role: 'user'|'assistant', content: string }>,
- *     exerciseContext: string | null
+ *     exerciseContext: string | null,
+ *     debriefContext:  { debriefNotes?, focusNextTime? } | null
  *   }
+ *
+ * Older builds may also send a `studentContext` field; it is ignored.
+ * Student context is now fetched server-side via fetchStudentContext(uid)
+ * to keep the cached system prompt out of client control.
  *
  * SSE events:
  *   data: {"type":"delta","text":"..."}
  *   data: {"type":"done"}
  *   data: {"type":"error","message":"..."}
+ *
+ * Non-SSE responses:
+ *   429 + { type: 'daily_limit_reached', error: ... } when free-tier cap hit.
  */
 exports.getAiChatStream = onRequest(
   {
@@ -951,8 +1057,33 @@ exports.getAiChatStream = onRequest(
       return;
     }
 
+    // --- Daily message cap (server-enforced, free-tier only) ---
+    try {
+      await checkAndIncrementAiMessageCount(uid);
+    } catch (err) {
+      // HttpsError('resource-exhausted') → 429 with a stable type so the
+      // Flutter client can switch on it and show the limit-reached UI.
+      const isLimit =
+        err && (err.code === 'resource-exhausted' ||
+                err.httpErrorCode?.status === 429);
+      if (isLimit) {
+        res.status(429).json({
+          error: 'Daily message limit reached. Upgrade to Pro for unlimited messages.',
+          type: 'daily_limit_reached',
+        });
+        return;
+      }
+      logger.error({ function: 'getAiChatStream', uid, error: err.message });
+      res.status(500).json({ error: 'Failed to validate request.' });
+      return;
+    }
+
     // --- Parse body ---
-    const { messages, exerciseContext, studentContext, debriefContext } = req.body || {};
+    // NOTE: `studentContext` is intentionally ignored. Older builds may
+    // still send it; we accept the field gracefully and discard it. The
+    // server now fetches the same data via fetchStudentContext(uid) so the
+    // client cannot inject arbitrary text into the cached system prompt.
+    const { messages, exerciseContext, debriefContext } = req.body || {};
 
     if (!Array.isArray(messages) || messages.length === 0) {
       res.status(400).json({ error: 'messages must be a non-empty array.' });
@@ -985,7 +1116,6 @@ exports.getAiChatStream = onRequest(
     }
 
     const safeContext = exerciseContext ? sanitise(String(exerciseContext), 500) : null;
-    const safeStudentContext = studentContext ? sanitise(String(studentContext), 2000) : null;
 
     const sanitiseDebriefFieldStream = (value, maxLen = 500) => {
       if (value == null) return null;
@@ -1028,11 +1158,14 @@ exports.getAiChatStream = onRequest(
       'no asterisks, no hashes, no bullet dashes, no backticks. ' +
       'Use plain sentences and line breaks only.';
 
+    // Fetch the student's training context from Firestore — same path as
+    // getAiChat. Soft-fails to null on Firestore errors so chat still
+    // works without grounding data. Server-side fetch is the single source
+    // of truth: the client cannot inject text into the cached system prompt.
+    const studentContextText = await fetchStudentContext(uid);
+
     // Build the per-call tail (exercise + debrief context). This part is
     // call-specific and intentionally kept out of the cached block.
-    // NOTE: this stream variant currently relies on a client-built
-    // studentContext string in the request body; it does not call
-    // fetchStudentContext server-side like getAiChat does.
     let perCallTail = '';
     if (safeContext) {
       perCallTail += ` The student is currently working on: ${safeContext}.`;
@@ -1051,8 +1184,8 @@ exports.getAiChatStream = onRequest(
     // Two-block system prompt — same shape as getAiChat:
     //  [0] base instructions + syllabus grounding + student context (cached)
     //  [1] per-call exercise/debrief tail (not cached)
-    const cachedBlockText = safeStudentContext
-      ? `${baseSystemPromptText}\n\n${SYLLABUS_GROUNDING_TEXT}\n\n${safeStudentContext}`
+    const cachedBlockText = studentContextText
+      ? `${baseSystemPromptText}\n\n${SYLLABUS_GROUNDING_TEXT}\n\n${studentContextText}`
       : `${baseSystemPromptText}\n\n${SYLLABUS_GROUNDING_TEXT}`;
 
     const systemBlocks = [
@@ -1072,7 +1205,11 @@ exports.getAiChatStream = onRequest(
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    logger.info('getAiChatStream called', { uid, messageCount: sanitisedMessages.length });
+    logger.info('getAiChatStream called', {
+      uid,
+      messageCount: sanitisedMessages.length,
+      hasStudentContext: studentContextText != null,
+    });
 
     const client = new Anthropic({ apiKey });
 

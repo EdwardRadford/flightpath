@@ -122,9 +122,6 @@ class MetarSessionState {
   /// True while a network fetch is in progress.
   final bool isLoading;
 
-  /// True when [AvwxService] threw a StateError (API key not configured).
-  final bool apiKeyMissing;
-
   /// True when the fetch completed but returned null (network/HTTP error).
   final bool fetchError;
 
@@ -151,7 +148,6 @@ class MetarSessionState {
     required this.icao,
     this.rawMetar,
     this.isLoading = false,
-    this.apiKeyMissing = false,
     this.fetchError = false,
     this.noDataForStation = false,
     this.questionIndex = 0,
@@ -168,7 +164,6 @@ class MetarSessionState {
     String? icao,
     String? rawMetar,
     bool? isLoading,
-    bool? apiKeyMissing,
     bool? fetchError,
     bool? noDataForStation,
     int? questionIndex,
@@ -182,7 +177,6 @@ class MetarSessionState {
       icao: icao ?? this.icao,
       rawMetar: clearMetar ? null : (rawMetar ?? this.rawMetar),
       isLoading: isLoading ?? this.isLoading,
-      apiKeyMissing: apiKeyMissing ?? this.apiKeyMissing,
       fetchError: fetchError ?? this.fetchError,
       noDataForStation: noDataForStation ?? this.noDataForStation,
       questionIndex: questionIndex ?? this.questionIndex,
@@ -250,7 +244,6 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
       sessionComplete: false,
       fetchError: false,
       noDataForStation: false,
-      apiKeyMissing: false,
       paywallRequired: false,
     );
     await fetchMetar();
@@ -281,7 +274,6 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
       clearMetar: true,
       fetchError: false,
       noDataForStation: false,
-      apiKeyMissing: false,
       questionIndex: 0,
       answers: const [],
       sessionComplete: false,
@@ -289,7 +281,6 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
     );
 
     String? raw;
-    bool apiKeyMissing = false;
     bool fetchError = false;
     bool noDataForStation = false;
 
@@ -298,9 +289,6 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
       if (raw == null) fetchError = true;
     } on NoMetarDataException {
       noDataForStation = true;
-    } on StateError catch (e) {
-      if (kDebugMode) debugPrint('MetarNotifier: $e');
-      apiKeyMissing = true;
     } catch (e) {
       if (kDebugMode) debugPrint('MetarNotifier: unexpected error — $e');
       fetchError = true;
@@ -309,7 +297,6 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
     state = state.copyWith(
       isLoading: false,
       rawMetar: raw,
-      apiKeyMissing: apiKeyMissing,
       fetchError: fetchError,
       noDataForStation: noDataForStation,
     );
@@ -352,7 +339,6 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
       sessionComplete: false,
       fetchError: false,
       noDataForStation: false,
-      apiKeyMissing: false,
       paywallRequired: false,
     );
     await fetchMetar();
@@ -677,23 +663,3 @@ final metarProvider =
   return MetarNotifier(avwx, ref, initialIcao: homeIcao);
 });
 
-// ---------------------------------------------------------------------------
-// Static example METAR (shown when API key is absent)
-// ---------------------------------------------------------------------------
-
-/// A realistic example METAR used for UI demonstration when no API key is
-/// configured. Based on a typical Cranfield (EGTC) observation.
-const String kExampleMetar =
-    'METAR EGTC 121150Z 27015KT 9999 BKN018 15/10 Q1013 NOSIG';
-
-/// Parsed explanation of [kExampleMetar] shown alongside the demo METAR.
-const Map<String, String> kExampleMetarParsed = {
-  'Station': 'EGTC — Cranfield Airport',
-  'Time': '12th at 1150Z (UTC)',
-  'Wind': '27015KT — 270° (westerly) at 15 kt',
-  'Visibility': '9999 — 10 km or more',
-  'Cloud': 'BKN018 — Broken cloud at 1800 ft',
-  'Temp/Dew': '15/10 — 15°C temperature, 10°C dew point',
-  'QNH': 'Q1013 — 1013 hPa',
-  'Trend': 'NOSIG — No significant change expected',
-};

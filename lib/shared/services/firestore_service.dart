@@ -406,58 +406,6 @@ class FirestoreService {
     return cards;
   }
 
-  /// Cached daily question result — avoids re-fetching within the same session.
-  /// Keyed by seed string (date).
-  final Map<String, QuizQuestion?> _dailyQuestionCache = {};
-
-  static const String _dailyQuestionPrefPrefix = 'daily_q_';
-
-  /// Fetches a random single quiz question, deterministic for a given [seed]
-  /// (typically a date string like "2026-03-22") so the same question is
-  /// always shown within the same day.
-  ///
-  /// Performance: On the first call of a given day, fetches the full
-  /// quiz_questions collection (one-time cost), picks a question by seed hash,
-  /// and persists the doc ID in SharedPreferences. On subsequent cold starts
-  /// for the same date, does a single doc get() — ~200× fewer reads.
-  Future<QuizQuestion?> getDailyQuestion(String seed) async {
-    // 1. In-memory cache — fastest path, no I/O.
-    if (_dailyQuestionCache.containsKey(seed)) {
-      return _dailyQuestionCache[seed];
-    }
-
-    // 2. SharedPreferences cache — survives app restarts within the same day.
-    final prefs = await SharedPreferences.getInstance();
-    final cachedDocId = prefs.getString('$_dailyQuestionPrefPrefix$seed');
-    if (cachedDocId != null) {
-      final snap = await quizQuestionsCollection.doc(cachedDocId).get();
-      if (snap.exists) {
-        final question = QuizQuestion.fromFirestore(snap);
-        _dailyQuestionCache[seed] = question;
-        return question;
-      }
-      // Cached doc ID is stale (doc deleted) — fall through to full scan.
-    }
-
-    // 3. Full scan — only runs once per day per device.
-    final qs = await quizQuestionsCollection.get();
-    if (qs.docs.isEmpty) {
-      _dailyQuestionCache[seed] = null;
-      return null;
-    }
-
-    // Use the seed's hash to pick a stable index within the collection.
-    final index = seed.hashCode.abs() % qs.docs.length;
-    final doc = qs.docs[index];
-    final question = QuizQuestion.fromFirestore(doc);
-
-    // Persist today's doc ID so tomorrow's cold start skips the full scan.
-    await prefs.setString('$_dailyQuestionPrefPrefix$seed', doc.id);
-
-    _dailyQuestionCache[seed] = question;
-    return question;
-  }
-
   // ---------------------------------------------------------------------------
   // Share Links
   // ---------------------------------------------------------------------------

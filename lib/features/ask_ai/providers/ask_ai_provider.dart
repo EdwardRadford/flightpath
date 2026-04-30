@@ -1,5 +1,14 @@
 // Ask AI daily limit provider — tracks free-tier message usage.
-// Mirrors the METAR daily limit pattern (SharedPreferences + date key).
+//
+// Source of truth is the server (Cloud Functions enforce the cap and write
+// `ai_message_counts/{uid}` in Firestore). This provider subscribes to that
+// doc so the UI shows the canonical count even after a reinstall.
+//
+// SharedPreferences is kept as an offline / pre-subscription fallback so the
+// "X of 3 left" hint is responsive on cold start before the snapshot lands.
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,7 +16,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 
 // ---------------------------------------------------------------------------
-// SharedPreferences keys (UID-scoped to prevent cross-user leakage)
+// SharedPreferences keys (UID-scoped to prevent cross-user leakage).
+// Retained as a UX fallback only — not the enforcement gate.
 // ---------------------------------------------------------------------------
 
 String _kDailyCountKey() {
@@ -21,7 +31,8 @@ String _kDailyDateKey() {
 }
 
 // ---------------------------------------------------------------------------
-// Free-tier limit
+// Free-tier limit. Mirrors AI_MESSAGE_DAILY_LIMIT in functions/index.js —
+// keep both in sync if the cap changes.
 // ---------------------------------------------------------------------------
 
 const int kAskAiFreeDailyLimit = 3;
@@ -62,9 +73,47 @@ class AskAiLimitState {
 
 class AskAiLimitNotifier extends StateNotifier<AskAiLimitState> {
   final Ref _ref;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _serverSub;
 
   AskAiLimitNotifier(this._ref) : super(const AskAiLimitState()) {
     _loadDailyCount();
+    _attachServerSubscription();
+  }
+
+  // ── Server subscription (source of truth) ─────────────────────────────────
+
+  void _attachServerSubscription() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    _serverSub?.cancel();
+    _serverSub = FirebaseFirestore.instance
+        .doc('ai_message_counts/$uid')
+        .snapshots()
+        .listen(
+      (snap) {
+        if (!snap.exists) {
+          // Doc not created yet — first call hasn't happened today. Treat
+          // as 0; SharedPreferences fallback may already show a higher
+          // count, which we override only when the server has data.
+          return;
+        }
+        final data = snap.data() ?? {};
+        final today = _todayString();
+        final docDate = data['date'] as String?;
+        final serverCount =
+            docDate == today ? (data['count'] as num?)?.toInt() ?? 0 : 0;
+        // Only mark limitReached when free user — premium check is done
+        // server-side and at canSendMessage(); UI banner driven by state.
+        state = state.copyWith(
+          dailyMessageCount: serverCount,
+          limitReached: serverCount >= kAskAiFreeDailyLimit,
+        );
+      },
+      onError: (_) {
+        // Silent — fall back to SharedPreferences UX.
+      },
+    );
   }
 
   // ── Daily usage ────────────────────────────────────────────────────────────
@@ -94,32 +143,45 @@ class AskAiLimitNotifier extends StateNotifier<AskAiLimitState> {
   }
 
   String _todayString() {
-    final now = DateTime.now();
+    // Server uses UTC; client should match so the daily reset lines up.
+    final now = DateTime.now().toUtc();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
-  /// Returns true if the user may send a message right now.
-  /// Premium users are always allowed. Free users are limited to
-  /// [kAskAiFreeDailyLimit] messages per day.
-  /// Refreshes the daily count on each call so midnight rollovers are handled
-  /// even when the app has been open continuously across the day boundary.
+  /// UX gate: returns true if the user *appears* to be allowed to send
+  /// based on the local snapshot. NOT authoritative — the server enforces
+  /// the cap and may still reject with a 429 on race conditions or a
+  /// freshly-installed client whose snapshot hasn't arrived yet.
   Future<bool> canSendMessage() async {
     await _loadDailyCount();
     if (state.dailyMessageCount < kAskAiFreeDailyLimit) return true;
-    // Use the comprehensive check: AppUser.isPremium covers granted_access +
-    // subscription_status, falling back to RevenueCat. SubscriptionService
-    // alone misses the granted_access path.
     final premium = await _ref.read(premiumStatusProvider.future);
     if (premium) return true;
     state = state.copyWith(limitReached: true);
     return false;
   }
 
-  /// Increments the daily message counter. Call after a message is sent.
+  /// Local-only increment for instant UX feedback. The Firestore listener
+  /// will overwrite this with the canonical server count shortly after.
   Future<void> incrementMessageCount() async {
     await _incrementDailyCount();
+  }
+
+  /// Called when the server returns a 429 daily_limit_reached. Forces the
+  /// state into limit-reached mode so the UI banner appears immediately.
+  Future<void> markServerLimitReached() async {
+    state = state.copyWith(
+      dailyMessageCount: kAskAiFreeDailyLimit,
+      limitReached: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _serverSub?.cancel();
+    super.dispose();
   }
 }
 

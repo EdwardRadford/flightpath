@@ -17,10 +17,6 @@ import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/ask_ai/providers/ask_ai_provider.dart';
 import 'package:flight_path/features/ask_ai/widgets/ask_ai_shared_widgets.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
-import 'package:flight_path/features/logbook/providers/logbook_provider.dart';
-import 'package:flight_path/shared/models/lesson.dart';
-import 'package:flight_path/shared/models/user_exercise.dart';
-import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/services/hive_service.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
@@ -65,7 +61,6 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
-  String _studentContext = '';
 
   DateTime? _lastSendTime;
   static const _minSendInterval = Duration(seconds: 3);
@@ -101,7 +96,15 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     if (widget.initialMessage != null && widget.debriefExerciseId == null) {
       _controller.text = widget.initialMessage!;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _buildStudentContext());
+    // Debrief mode auto-sends the opening prompt once the screen is ready.
+    // Generic mode just opens to an empty (or restored) chat.
+    if (widget.debriefExerciseId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _debriefAutoSent) return;
+        _debriefAutoSent = true;
+        _sendDebriefIntro();
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -193,137 +196,6 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     }
   }
 
-  void _buildStudentContext() {
-    if (!mounted) return;
-
-    final user = ref.read(appUserProvider).valueOrNull;
-    final userExercises = ref.read(userExercisesProvider).valueOrNull ?? [];
-    final lessons = ref.read(allLessonsProvider).valueOrNull ?? [];
-    final totals = ref.read(logbookTotalsProvider);
-
-    final lines = <String>[];
-
-    if (user != null) {
-      final firstName = user.displayName.split(' ').first;
-      if (firstName.isNotEmpty) lines.add('Name: $firstName');
-
-      final aircraftName = AppConstants.aircraftTypes[user.aircraftType];
-      if (aircraftName != null && aircraftName.isNotEmpty) {
-        lines.add('Aircraft: $aircraftName');
-      }
-
-      if (user.airfieldIcao.isNotEmpty) {
-        lines.add('Home airfield: ${user.airfieldIcao}');
-      }
-    }
-
-    if (totals.totalMinutes > 0) {
-      final h = totals.totalMinutes ~/ 60;
-      final m = totals.totalMinutes % 60;
-      lines.add('Total hours flown: ${h}h ${m.toString().padLeft(2, '0')}m');
-    }
-
-    if (totals.entryCount > 0) {
-      lines.add('Lessons logged: ${totals.entryCount}');
-    }
-
-    if (user != null) {
-      final currentExId = _currentExerciseId(user.currentExerciseNumber);
-      if (currentExId != null) {
-        final title = AppConstants.exerciseTitles[currentExId] ??
-            AppConstants.exerciseNames[currentExId];
-        if (title != null) {
-          lines.add('Current exercise: $title (Exercise ${user.currentExerciseNumber})');
-        }
-      }
-    }
-
-    final completed = userExercises
-        .where((e) => e.status.isCompleted)
-        .toList();
-    if (completed.isNotEmpty) {
-      lines.add('Completed exercises: ${completed.length}/${AppConstants.allExerciseIds.length}');
-    }
-
-    final highRated = userExercises
-        .where((e) => (e.bestRating ?? 0) >= 4)
-        .take(10)
-        .map((e) => _exerciseLabel(e.exerciseId, e.subExercise))
-        .where((s) => s.isNotEmpty)
-        .toList();
-    if (highRated.isNotEmpty) {
-      lines.add('Exercises rated 4+/5: ${highRated.join(', ')}');
-    }
-
-    final weakAreas = userExercises
-        .where((e) => (e.bestRating ?? 0) > 0 && (e.bestRating ?? 0) <= 2)
-        .map((e) => _exerciseLabel(e.exerciseId, e.subExercise))
-        .where((s) => s.isNotEmpty)
-        .toList();
-    if (weakAreas.isNotEmpty) {
-      lines.add('Weak areas (rated 1-2/5): ${weakAreas.join(', ')}');
-    }
-
-    final recentLessons = lessons
-        .where((l) =>
-            l.status != LessonStatus.cancelled &&
-            l.status != LessonStatus.scheduled &&
-            l.studentRating != null)
-        .take(3)
-        .toList();
-    if (recentLessons.isNotEmpty) {
-      final lessonSummaries = recentLessons.map((l) {
-        final label = _exerciseLabel(l.exerciseId, l.subExercise.isEmpty ? null : l.subExercise);
-        final date = l.lessonDate ?? l.createdAt;
-        final dateStr =
-            '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-        return '$label ($dateStr, ${l.studentRating}/5)';
-      }).join('; ');
-      lines.add('Last 3 lessons: $lessonSummaries');
-    }
-
-    // Debrief-mode: append exercise-specific history and notes.
-    if (widget.debriefExerciseId != null) {
-      final ue = userExercises.where((e) =>
-        e.exerciseId == widget.debriefExerciseId &&
-        e.subExercise == widget.debriefSubExercise,
-      ).firstOrNull;
-      final exLabel = _exerciseLabel(widget.debriefExerciseId!, widget.debriefSubExercise);
-
-      lines.add('---');
-      lines.add('DEBRIEF SESSION: ${exLabel.isNotEmpty ? exLabel : widget.debriefExerciseId}');
-      if (ue != null) {
-        if (ue.timesAttempted > 0) lines.add('Times flown: ${ue.timesAttempted}');
-        if (ue.ratingHistory.isNotEmpty) {
-          lines.add('Rating history: ${ue.ratingHistory.map((r) => '$r/5').join(', ')}');
-        }
-        if (ue.debriefNotes?.isNotEmpty == true) {
-          lines.add('What went well (previous): ${ue.debriefNotes}');
-        }
-        if (ue.focusNextTime?.isNotEmpty == true) {
-          lines.add('Focus area (previous): ${ue.focusNextTime}');
-        }
-        if (ue.instructorNotes?.isNotEmpty == true) {
-          lines.add('Instructor notes: ${ue.instructorNotes}');
-        }
-      }
-    }
-
-    if (lines.isEmpty) return;
-
-    if (mounted) {
-      setState(() {
-        _studentContext = 'Student profile:\n${lines.map((l) => '- $l').join('\n')}';
-      });
-    }
-
-    // Auto-send the debrief opener once context is built.
-    if (mounted && widget.debriefExerciseId != null && !_debriefAutoSent) {
-      _debriefAutoSent = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _sendDebriefIntro());
-    }
-  }
-
   String _buildDebriefPrompt() {
     final label = _exerciseLabel(
       widget.debriefExerciseId!,
@@ -366,16 +238,6 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     } finally {
       if (mounted) setState(() => _isSavingDebrief = false);
     }
-  }
-
-  String? _currentExerciseId(int exerciseNumber) {
-    final paddedNum = exerciseNumber.toString().padLeft(2, '0');
-    final baseKey = 'ex_$paddedNum';
-    if (AppConstants.exerciseTitles.containsKey(baseKey)) return baseKey;
-    for (final id in AppConstants.allExerciseIds) {
-      if (id.startsWith('ex_$paddedNum')) return id;
-    }
-    return null;
   }
 
   String _exerciseLabel(String exerciseId, String? subExercise) {
@@ -551,7 +413,6 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
 
       await _sendMessageStreaming(
         history: history,
-        studentContext: _studentContext,
         currentUser: currentUser,
       );
     } catch (e, stackTrace) {
@@ -574,7 +435,6 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
 
   Future<void> _sendMessageStreaming({
     required List<Map<String, String>> history,
-    required String studentContext,
     required User currentUser,
   }) async {
     final token = await currentUser.getIdToken(true);
@@ -594,13 +454,40 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
       final request = http.Request('POST', Uri.parse(_kStreamUrl));
       request.headers['Content-Type'] = 'application/json';
       request.headers['Authorization'] = 'Bearer $token';
+      // Server fetches student context from Firestore; client no longer
+      // sends it in the body.
       final body = <String, dynamic>{'messages': history};
-      if (studentContext.isNotEmpty) body['studentContext'] = studentContext;
       request.body = jsonEncode(body);
 
       final response = await client.send(request);
 
       if (response.statusCode != 200) {
+        // Drain the body — small JSON, safe to await — so we can detect
+        // server-side daily-limit responses and switch the UI accordingly.
+        final raw = await response.stream.bytesToString();
+        if (response.statusCode == 429) {
+          Map<String, dynamic>? parsed;
+          try {
+            final decoded = jsonDecode(raw);
+            if (decoded is Map<String, dynamic>) parsed = decoded;
+          } catch (_) {}
+          if (parsed != null && parsed['type'] == 'daily_limit_reached') {
+            await ref
+                .read(askAiLimitProvider.notifier)
+                .markServerLimitReached();
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                final idx = _streamingMessageIndex;
+                if (idx != null && _messages[idx].content.isEmpty) {
+                  _messages.removeAt(idx);
+                }
+                _streamingMessageIndex = null;
+              });
+            }
+            return;
+          }
+        }
         throw Exception('Stream request failed with status ${response.statusCode}');
       }
 
