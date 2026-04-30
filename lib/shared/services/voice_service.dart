@@ -94,8 +94,8 @@ class VoiceService extends ChangeNotifier {
     if (_ttsReady) {
       try {
         await _tts.setSpeechRate(rate);
-      } catch (_) {
-        debugPrint('VoiceService: $_');
+      } catch (e) {
+        debugPrint('VoiceService: $e');
       }
     }
   }
@@ -118,8 +118,8 @@ class VoiceService extends ChangeNotifier {
     if (!_ttsReady) return;
     try {
       await _tts.stop();
-    } catch (_) {
-      debugPrint('VoiceService: $_');
+    } catch (e) {
+      debugPrint('VoiceService: $e');
     }
     _isSpeaking = false;
     notifyListeners();
@@ -159,8 +159,8 @@ class VoiceService extends ChangeNotifier {
     if (!_sttReady) return;
     try {
       await _stt.stop();
-    } catch (_) {
-      debugPrint('VoiceService: $_');
+    } catch (e) {
+      debugPrint('VoiceService: $e');
     }
     _isListening = false;
     notifyListeners();

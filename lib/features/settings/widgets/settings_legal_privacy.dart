@@ -2,6 +2,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/shared/services/consent_service.dart';
 
 // ---------------------------------------------------------------------------
 // Safety disclaimer section
@@ -209,16 +210,11 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
 
     try {
       FirebaseAnalytics.instance.logEvent(name: 'data_export_started');
-      final uri = Uri(
-        scheme: 'mailto',
-        path: 'contact@edwardradford.co.uk',
-        queryParameters: {
-          'subject': 'Data Export Request — Flight Path',
-          'body':
-              'Hi,\n\nI would like to request a copy of my data.\n\n'
-              'Account UID: ${widget.uid}\n\n'
-              'Thank you.',
-        },
+      final uri = Uri.parse(
+        'mailto:contact@getflightpath.app'
+        '?subject=FlightPath%20data%20export%20request'
+        '&body=Hi,%0A%0AI%20would%20like%20to%20request%20a%20copy%20of%20my%20data.%0A%0A'
+        'Account%20UID:%20${widget.uid}%0A%0AThank%20you.',
       );
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
@@ -231,7 +227,7 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-                'Email contact@edwardradford.co.uk to request your data.'),
+                'Email contact@getflightpath.app to request your data.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -272,7 +268,7 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
           ),
         ),
         subtitle: Text(
-          'Email us at contact@edwardradford.co.uk to request a copy of your data',
+          'Email us at contact@getflightpath.app to request a copy of your data',
           style: TextStyle(
             color: cs.onSurface.withValues(alpha: 0.6),
             fontSize: 12,
@@ -282,6 +278,141 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
             ? null
             : Icon(Icons.chevron_right_rounded,
                 color: cs.onSurface.withValues(alpha: 0.6)),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Consent section — analytics / crashlytics / push notifications
+// ---------------------------------------------------------------------------
+
+/// Three independent toggles for the optional services gated by user consent.
+/// Tapping a toggle re-runs the activate / deactivate call immediately so the
+/// state of the underlying SDK matches the persisted preference.
+class SettingsConsentSection extends StatefulWidget {
+  const SettingsConsentSection({super.key});
+
+  @override
+  State<SettingsConsentSection> createState() => _SettingsConsentSectionState();
+}
+
+class _SettingsConsentSectionState extends State<SettingsConsentSection> {
+  bool _loading = true;
+  bool _analytics = false;
+  bool _crashlytics = false;
+  bool _notifications = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConsent();
+  }
+
+  Future<void> _loadConsent() async {
+    final analytics = await ConsentService.isGranted(ConsentKeys.analytics);
+    final crash = await ConsentService.isGranted(ConsentKeys.crashlytics);
+    final notif =
+        await ConsentService.isGranted(ConsentKeys.notifications);
+    if (!mounted) return;
+    setState(() {
+      _analytics = analytics;
+      _crashlytics = crash;
+      _notifications = notif;
+      _loading = false;
+    });
+  }
+
+  Future<void> _setConsent(String key, bool value) async {
+    setState(() {
+      if (key == ConsentKeys.analytics) _analytics = value;
+      if (key == ConsentKeys.crashlytics) _crashlytics = value;
+      if (key == ConsentKeys.notifications) _notifications = value;
+    });
+    await ConsentService.setConsent(key, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    if (_loading) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            value: _crashlytics,
+            onChanged: (v) => _setConsent(ConsentKeys.crashlytics, v),
+            activeColor: AppColors.primary,
+            title: Text(
+              'Crash reports',
+              style: TextStyle(color: cs.onSurface, fontSize: 15),
+            ),
+            subtitle: Text(
+              'Help us fix bugs you hit',
+              style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.6),
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+          ),
+          Divider(color: cs.outline, height: 1, indent: 16),
+          SwitchListTile(
+            value: _analytics,
+            onChanged: (v) => _setConsent(ConsentKeys.analytics, v),
+            activeColor: AppColors.primary,
+            title: Text(
+              'Analytics',
+              style: TextStyle(color: cs.onSurface, fontSize: 15),
+            ),
+            subtitle: Text(
+              'Help us understand which features you use most',
+              style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.6),
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+          ),
+          Divider(color: cs.outline, height: 1, indent: 16),
+          SwitchListTile(
+            value: _notifications,
+            onChanged: (v) => _setConsent(ConsentKeys.notifications, v),
+            activeColor: AppColors.primary,
+            title: Text(
+              'Push notifications',
+              style: TextStyle(color: cs.onSurface, fontSize: 15),
+            ),
+            subtitle: Text(
+              'Reminders to revise and lesson alerts',
+              style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.6),
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

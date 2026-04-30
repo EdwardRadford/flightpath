@@ -10,6 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 String _draftKey(String exerciseId) => 'debrief_draft_$exerciseId';
 
 /// A snapshot of the debrief form fields that can be persisted.
+///
+/// New logbook fields (aircraft, ICAO, dual/PIC, landings, instructor name)
+/// were added 2026-04-29 — old drafts that pre-date the migration deserialise
+/// safely because every new field has a sensible default in [fromJson].
 class DebriefDraft {
   final String exerciseId;
   final int studentRating;
@@ -19,6 +23,17 @@ class DebriefDraft {
   final int durationHours;
   final int durationMinutes;
   final List<String> additionalExerciseIds;
+
+  // ── New logbook fields (added 2026-04-29) ─────────────────────────────────
+  final String aircraftType;
+  final String registration;
+  final String departureIcao;
+  final String arrivalIcao;
+  final String pilotRole; // 'dual' | 'pic' | 'put'
+  final int landings;
+  final String instructorName;
+  final bool isDayFlight;
+
   final DateTime savedAt;
 
   DebriefDraft({
@@ -30,6 +45,14 @@ class DebriefDraft {
     required this.durationHours,
     required this.durationMinutes,
     required this.additionalExerciseIds,
+    this.aircraftType = '',
+    this.registration = '',
+    this.departureIcao = '',
+    this.arrivalIcao = '',
+    this.pilotRole = 'dual',
+    this.landings = 1,
+    this.instructorName = '',
+    this.isDayFlight = true,
     required this.savedAt,
   });
 
@@ -42,6 +65,14 @@ class DebriefDraft {
         'duration_hours': durationHours,
         'duration_minutes': durationMinutes,
         'additional_exercise_ids': additionalExerciseIds,
+        'aircraft_type': aircraftType,
+        'registration': registration,
+        'departure_icao': departureIcao,
+        'arrival_icao': arrivalIcao,
+        'pilot_role': pilotRole,
+        'landings': landings,
+        'instructor_name': instructorName,
+        'is_day_flight': isDayFlight,
         'saved_at': savedAt.toIso8601String(),
       };
 
@@ -57,6 +88,14 @@ class DebriefDraft {
       additionalExerciseIds:
           (json['additional_exercise_ids'] as List<dynamic>?)?.cast<String>() ??
               [],
+      aircraftType: json['aircraft_type'] as String? ?? '',
+      registration: json['registration'] as String? ?? '',
+      departureIcao: json['departure_icao'] as String? ?? '',
+      arrivalIcao: json['arrival_icao'] as String? ?? '',
+      pilotRole: json['pilot_role'] as String? ?? 'dual',
+      landings: json['landings'] as int? ?? 1,
+      instructorName: json['instructor_name'] as String? ?? '',
+      isDayFlight: json['is_day_flight'] as bool? ?? true,
       savedAt: json['saved_at'] != null
           ? DateTime.tryParse(json['saved_at'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -69,6 +108,11 @@ class DebriefDraft {
       personalReflection.trim().isNotEmpty ||
       soloDuration.trim().isNotEmpty ||
       additionalExerciseIds.isNotEmpty ||
+      registration.trim().isNotEmpty ||
+      departureIcao.trim().isNotEmpty ||
+      arrivalIcao.trim().isNotEmpty ||
+      instructorName.trim().isNotEmpty ||
+      aircraftType.isNotEmpty ||
       studentRating != 3;
 }
 

@@ -69,6 +69,7 @@ import '../../features/settings/screens/privacy_policy_screen.dart';
 // Learn sub-screens
 import '../../features/learn/screens/rt_practice_screen.dart';
 import '../../features/learn/screens/atis_screen.dart';
+import '../../features/learn/screens/mandatory_readback_screen.dart';
 
 // Tools sub-screens
 import '../../features/tools/screens/metar_screen.dart';
@@ -76,6 +77,17 @@ import '../../features/tools/screens/qxc_guide_screen.dart';
 import '../../features/tools/screens/airfield_screen.dart';
 import '../../features/tools/screens/aircraft_data_screen.dart';
 import '../../features/tools/screens/weather_screen.dart';
+import '../../features/tools/screens/memory_drills_screen.dart';
+import '../../features/tools/screens/emergency_drills_screen.dart';
+import '../../features/tools/screens/mock_skills_test_screen.dart';
+import '../../features/tools/screens/plog_screen.dart';
+
+// Exercise content screens
+import '../../features/exercises/screens/before_you_fly_screen.dart';
+import '../../features/exercises/screens/debrief_screen.dart' as exercise_debrief;
+import '../../features/exercises/screens/milestone_celebration_screen.dart';
+import '../../features/exercises/screens/lesson_day_screen.dart';
+import '../../features/exercises/screens/pre_solo_readiness_screen.dart';
 
 // Progress sub-screens (stub replacements)
 import '../../features/progress/screens/hours_minimums_screen.dart';
@@ -102,7 +114,26 @@ class _RouterNotifier extends ChangeNotifier {
       }
       notifyListeners();
     });
-    _ref.listen(appUserProvider, (prev, next) => notifyListeners());
+    // Only fire the redirect refresh when fields the redirect actually
+    // depends on change. Firing on every appUserProvider snapshot (e.g.
+    // when notification preferences are toggled) causes go_router's
+    // refreshListenable to collapse the imperative push stack, popping
+    // the user back to the shell's base location (/home).
+    _ref.listen(appUserProvider, (prev, next) {
+      final prevUser = prev?.valueOrNull;
+      final nextUser = next.valueOrNull;
+      // First load (null → user) and sign-out (user → null) must trigger.
+      if ((prevUser == null) != (nextUser == null)) {
+        notifyListeners();
+        return;
+      }
+      // Otherwise only the fields the redirect reads matter.
+      if (prevUser == null || nextUser == null) return;
+      if (prevUser.aircraftType.isEmpty != nextUser.aircraftType.isEmpty ||
+          prevUser.disclaimerAcknowledged != nextUser.disclaimerAcknowledged) {
+        notifyListeners();
+      }
+    });
     _ref.listen(onboardingCompleteProvider, (prev, next) => notifyListeners());
   }
 
@@ -224,7 +255,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/logbook',
-            builder: (context, state) => const LogbookScreen(),
+            builder: (context, state) {
+              final exerciseId = state.uri.queryParameters['exerciseId'];
+              return LogbookScreen(initialExerciseId: exerciseId);
+            },
           ),
           GoRoute(
             path: '/learn',
@@ -260,7 +294,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/logbook/edit',
-        builder: (context, state) => const LogbookEntryScreen(),
+        builder: (context, state) => LogbookEntryScreen(
+          existingLesson: state.extra is Lesson ? state.extra as Lesson : null,
+        ),
       ),
 
       // ── Exercise prep routes (full screen) ────────────────────────────────
@@ -317,6 +353,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/exercises/:exerciseId/before-you-fly',
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: BeforeYouFlyScreen(
+            compositeExerciseId: state.pathParameters['exerciseId']!,
+          ),
+        ),
+      ),
+      GoRoute(
         path: '/exercises/:exerciseId/flashcards',
         pageBuilder: (context, state) => slideTransition(
           state: state,
@@ -343,6 +388,31 @@ final routerProvider = Provider<GoRouter>((ref) {
             existingLesson: state.extra is Lesson ? state.extra as Lesson : null,
           ),
         ),
+      ),
+      GoRoute(
+        path: '/exercises/:exerciseId/notes',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return slideTransition(
+            state: state,
+            child: exercise_debrief.ExerciseDebriefScreen(
+              exerciseId: extra?['exerciseId'] as String? ??
+                  state.pathParameters['exerciseId']!,
+              subExercise: extra?['subExercise'] as String?,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/milestone',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final firstSolo = extra?['firstSolo'] as bool? ?? false;
+          return fadeSlideTransition(
+            state: state,
+            child: MilestoneCelebrationScreen(isFirstSolo: firstSolo),
+          );
+        },
       ),
 
       // ── Lesson detail ──────────────────────────────────────────────────────
@@ -416,33 +486,57 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Ask AI (full screen, accessed from Learn tab) ─────────────────────
       GoRoute(
         path: '/ask-ai',
-        builder: (context, state) => AskAiScreen(
-          initialMessage: state.extra is String ? state.extra as String : null,
-        ),
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is Map<String, dynamic>) {
+            return AskAiScreen(
+              debriefExerciseId: extra['exerciseId'] as String?,
+              debriefSubExercise: extra['subExercise'] as String?,
+            );
+          }
+          return AskAiScreen(
+            initialMessage: extra is String ? extra : null,
+          );
+        },
       ),
 
       // ── Settings (full screen, accessed via AppBar icon) ─────────────────
       GoRoute(
         path: '/settings',
-        builder: (context, state) => const SettingsScreen(),
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: const SettingsScreen(),
+        ),
       ),
 
       // ── Settings sub-screens ──────────────────────────────────────────────
       GoRoute(
         path: '/settings/profile',
-        builder: (context, state) => const ProfileEditScreen(),
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: const ProfileEditScreen(),
+        ),
       ),
       GoRoute(
         path: '/settings/notifications',
-        builder: (context, state) => const NotificationPreferencesScreen(),
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: const NotificationPreferencesScreen(),
+        ),
       ),
       GoRoute(
         path: '/whats-new',
-        builder: (context, state) => const WhatsNewScreen(),
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: const WhatsNewScreen(),
+        ),
       ),
       GoRoute(
         path: '/privacy-policy',
-        builder: (context, state) => const PrivacyPolicyScreen(),
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: const PrivacyPolicyScreen(),
+        ),
       ),
 
       // ── Learn sub-routes ─────────────────────────────────────────────────
@@ -454,8 +548,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/learn/atis',
         builder: (context, state) => const AtisScreen(),
       ),
+      GoRoute(
+        path: '/learn/mandatory-readback',
+        builder: (context, state) => const MandatoryReadbackScreen(),
+      ),
 
       // ── Tools sub-routes ──────────────────────────────────────────────────
+      GoRoute(
+        path: '/tools/memory-drills',
+        builder: (context, state) => const MemoryDrillsScreen(),
+      ),
+      GoRoute(
+        path: '/tools/emergency-drills',
+        builder: (context, state) => const EmergencyDrillsScreen(),
+      ),
+      GoRoute(
+        path: '/tools/mock-skills-test',
+        builder: (context, state) => const MockSkillsTestScreen(),
+      ),
       GoRoute(
         path: '/tools/weather',
         builder: (context, state) => const WeatherScreen(),
@@ -475,6 +585,31 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/tools/aircraft',
         builder: (context, state) => const AircraftDataScreen(),
+      ),
+      GoRoute(
+        path: '/tools/plog',
+        builder: (context, state) => const PlogScreen(),
+      ),
+
+      // ── Lesson day flow ───────────────────────────────────────────────────
+      GoRoute(
+        path: '/lesson-day',
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: const LessonDayScreen(),
+        ),
+      ),
+
+      // ── Pre-solo readiness check ──────────────────────────────────────────
+      GoRoute(
+        path: '/exercises/pre-solo-readiness',
+        pageBuilder: (context, state) => slideTransition(
+          state: state,
+          child: PreSoloReadinessScreen(
+            compositeExerciseId:
+                state.uri.queryParameters['exerciseId'] ?? 'ex_14',
+          ),
+        ),
       ),
 
       // ── Progress sub-routes ───────────────────────────────────────────────

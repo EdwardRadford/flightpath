@@ -30,10 +30,13 @@ class CurrentExerciseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return suggestedExercise.when(
-      data: (suggested) => _buildCard(context, suggested),
-      loading: () => _buildLoadingCard(context),
-      error: (_, __) => _buildCard(context, null),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: suggestedExercise.when(
+        data: (suggested) => _buildCard(context, suggested),
+        loading: () => _buildLoadingCard(context),
+        error: (_, __) => _buildCard(context, null),
+      ),
     );
   }
 

@@ -30,8 +30,9 @@ String _resolveRevenueCatKey() {
         'running or building the app. See CLAUDE.md "Build flags".';
     if (kDebugMode) {
       throw StateError(message);
+    } else {
+      debugPrint('SubscriptionService: $message');
     }
-    debugPrint('SubscriptionService: $message');
   }
   return key;
 }

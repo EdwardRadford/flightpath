@@ -95,37 +95,38 @@ final suggestedExerciseProvider =
     }
   }
 
-  // --- Pass 2: first notStarted or inProgress exercise ---
-  for (final entry in _orderedExercises) {
+  // --- Pass 2: the exercise AFTER the highest completed one ---
+  // Walk the syllabus from the end and find the highest index that is
+  // completed. The next exercise after that is the "current" one. If nothing
+  // is completed, start at the first exercise. If everything is completed,
+  // return null.
+  int highestCompletedIndex = -1;
+  for (int i = 0; i < _orderedExercises.length; i++) {
+    final entry = _orderedExercises[i];
     final key = compositeKey(entry.exerciseId, entry.subExerciseId);
     final ue = byKey[key];
-    if (ue == null || !ue.status.isCompleted) {
-      return (
-        exerciseId: entry.exerciseId,
-        subExerciseId: entry.subExerciseId,
-        reason: 'Continue your training',
-      );
+    if (ue != null && ue.status.isCompleted) {
+      highestCompletedIndex = i;
     }
   }
 
-  // All exercises complete.
-  return null;
+  final nextIndex = highestCompletedIndex + 1;
+  if (nextIndex >= _orderedExercises.length) {
+    // All exercises complete.
+    return null;
+  }
+
+  final next = _orderedExercises[nextIndex];
+  return (
+    exerciseId: next.exerciseId,
+    subExerciseId: next.subExerciseId,
+    reason: 'Continue your training',
+  );
 });
 
 // ---------------------------------------------------------------------------
 // Skills test readiness
 // ---------------------------------------------------------------------------
-
-/// Percentage of exercises with bestRating >= 4 (skills test ready).
-/// Returns 0.0..1.0. Returns null if exercises haven't loaded yet.
-final skillsReadinessProvider = Provider<double?>((ref) {
-  final exercisesAsync = ref.watch(userExercisesProvider);
-  final exercises = exercisesAsync.valueOrNull;
-  if (exercises == null) return null;
-
-  final ready = exercises.where((e) => (e.bestRating ?? 0) >= 4).length;
-  return ready / _orderedExercises.length;
-});
 
 /// Full breakdown of skills test readiness.
 ///
@@ -235,98 +236,6 @@ final recentLessonsProvider = StreamProvider<List<Lesson>>((ref) {
 
   final firestore = ref.watch(firestoreServiceProvider);
   return firestore.recentLessonsStream(uid, count: 5);
-});
-
-// ---------------------------------------------------------------------------
-// Rating trend insight
-// ---------------------------------------------------------------------------
-
-/// The type of trend detected for a single exercise.
-enum RatingTrendType {
-  declining,
-  stuck,
-  improving,
-  dueForReview,
-}
-
-/// Data for the single most relevant rating trend insight to show.
-typedef RatingTrendInsight = ({
-  RatingTrendType type,
-  String exerciseName,
-  String message,
-});
-
-/// Analyses [userExercisesProvider] and returns the single most relevant
-/// rating trend insight, or null if there is nothing meaningful to surface.
-///
-/// Priority: declining > stuck > improving > dueForReview.
-final ratingTrendInsightProvider = Provider<RatingTrendInsight?>((ref) {
-  final exercisesAsync = ref.watch(userExercisesProvider);
-  final exercises = exercisesAsync.valueOrNull ?? [];
-
-  if (exercises.isEmpty) return null;
-
-  RatingTrendInsight? bestDeclining;
-  RatingTrendInsight? bestStuck;
-  RatingTrendInsight? bestImproving;
-  RatingTrendInsight? bestDueForReview;
-
-  final now = DateTime.now();
-
-  for (final ue in exercises) {
-    if (ue.timesAttempted == 0) continue;
-
-    final compositeId = compositeExerciseId(ue.exerciseId, ue.subExercise);
-    final name = exerciseDisplayName(compositeId);
-
-    final history = ue.ratingHistory;
-    if (history.length >= 3) {
-      final r1 = history[history.length - 3];
-      final r2 = history[history.length - 2];
-      final r3 = history[history.length - 1];
-
-      if (r3 < r2 && r2 < r1) {
-        bestDeclining ??= (
-          type: RatingTrendType.declining,
-          exerciseName: name,
-          message:
-              '$name needs attention — your self-ratings have dropped over the last 3 lessons.',
-        );
-      } else if (r3 > r2 && r2 > r1) {
-        bestImproving ??= (
-          type: RatingTrendType.improving,
-          exerciseName: name,
-          message:
-              'Your $name scores have improved from $r1 to $r3 over your last 3 lessons — great progress!',
-        );
-      } else if (r1 == r2 && r2 == r3) {
-        bestStuck ??= (
-          type: RatingTrendType.stuck,
-          exerciseName: name,
-          message:
-              "You've rated yourself $r3/5 on $name three lessons in a row — focus on the weak areas in your next brief.",
-        );
-      }
-    }
-
-    final due = ue.spacedRepDue;
-    if (due != null && !due.isAfter(now)) {
-      final daysPast = now.difference(due).inDays;
-      final label = daysPast == 0
-          ? 'today'
-          : daysPast == 1
-              ? 'yesterday'
-              : '$daysPast days ago';
-      bestDueForReview ??= (
-        type: RatingTrendType.dueForReview,
-        exerciseName: name,
-        message:
-            '$name was due for review $label — worth revisiting before your next lesson.',
-      );
-    }
-  }
-
-  return bestDeclining ?? bestStuck ?? bestImproving ?? bestDueForReview;
 });
 
 // ---------------------------------------------------------------------------

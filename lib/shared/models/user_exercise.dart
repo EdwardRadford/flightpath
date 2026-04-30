@@ -46,6 +46,11 @@ class UserExercise {
   final bool visualisationViewed;
   final bool selfBriefCompleted;
   final DateTime? spacedRepDue;
+  final bool beforeYouFlyViewed;
+  final String? debriefNotes;
+  final String? focusNextTime;
+  final String? instructorNotes;
+  final String? aiDebriefNotes;
 
   /// Per-question mastery: questionId → consecutive correct count.
   /// A count ≥ 2 marks a question as "mastered" and deprioritises it.
@@ -73,6 +78,11 @@ class UserExercise {
     this.visualisationViewed = false,
     this.selfBriefCompleted = false,
     this.spacedRepDue,
+    this.beforeYouFlyViewed = false,
+    this.debriefNotes,
+    this.focusNextTime,
+    this.instructorNotes,
+    this.aiDebriefNotes,
     this.quizMastery = const {},
     this.checklistCompleted = const [],
   });
@@ -123,6 +133,11 @@ class UserExercise {
       visualisationViewed: data['visualisation_viewed'] ?? false,
       selfBriefCompleted: data['self_brief_completed'] ?? false,
       spacedRepDue: (data['spaced_rep_due'] as Timestamp?)?.toDate(),
+      beforeYouFlyViewed: data['before_you_fly_viewed'] ?? false,
+      debriefNotes: data['debrief_notes'],
+      focusNextTime: data['focus_next_time'],
+      instructorNotes: data['instructor_notes'],
+      aiDebriefNotes: data['ai_debrief_notes'],
       quizMastery: Map<String, int>.from(
         ((data['quiz_mastery'] as Map<String, dynamic>?) ?? {})
             .map((k, v) => MapEntry(k, (v as num).toInt())),
@@ -172,6 +187,11 @@ class UserExercise {
     'self_brief_completed': selfBriefCompleted,
     if (spacedRepDue != null)
       'spaced_rep_due': Timestamp.fromDate(spacedRepDue!),
+    'before_you_fly_viewed': beforeYouFlyViewed,
+    if (debriefNotes != null) 'debrief_notes': debriefNotes,
+    if (focusNextTime != null) 'focus_next_time': focusNextTime,
+    if (instructorNotes != null) 'instructor_notes': instructorNotes,
+    if (aiDebriefNotes != null) 'ai_debrief_notes': aiDebriefNotes,
     if (quizMastery.isNotEmpty) 'quiz_mastery': quizMastery,
     if (checklistCompleted.isNotEmpty)
       'checklist_completed': checklistCompleted,
@@ -197,6 +217,11 @@ class UserExercise {
     bool? visualisationViewed,
     bool? selfBriefCompleted,
     DateTime? spacedRepDue,
+    bool? beforeYouFlyViewed,
+    String? debriefNotes,
+    String? focusNextTime,
+    String? instructorNotes,
+    String? aiDebriefNotes,
     Map<String, int>? quizMastery,
     List<int>? checklistCompleted,
   }) {
@@ -219,6 +244,11 @@ class UserExercise {
       visualisationViewed: visualisationViewed ?? this.visualisationViewed,
       selfBriefCompleted: selfBriefCompleted ?? this.selfBriefCompleted,
       spacedRepDue: spacedRepDue ?? this.spacedRepDue,
+      beforeYouFlyViewed: beforeYouFlyViewed ?? this.beforeYouFlyViewed,
+      debriefNotes: debriefNotes ?? this.debriefNotes,
+      focusNextTime: focusNextTime ?? this.focusNextTime,
+      instructorNotes: instructorNotes ?? this.instructorNotes,
+      aiDebriefNotes: aiDebriefNotes ?? this.aiDebriefNotes,
       quizMastery: quizMastery ?? this.quizMastery,
       checklistCompleted: checklistCompleted ?? this.checklistCompleted,
     );

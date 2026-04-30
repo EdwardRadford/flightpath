@@ -20,7 +20,9 @@ class RecentActivitySection extends StatelessWidget {
       return const EmptyRecentActivity();
     }
 
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section header with "View All"
@@ -76,6 +78,7 @@ class RecentActivitySection extends StatelessWidget {
           ),
         ),
       ],
+    ),
     );
   }
 }
@@ -87,7 +90,9 @@ class EmptyRecentActivity extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Container(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
@@ -146,6 +151,7 @@ class EmptyRecentActivity extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -155,11 +161,14 @@ class RecentActivityLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+        ),
       ),
     );
   }

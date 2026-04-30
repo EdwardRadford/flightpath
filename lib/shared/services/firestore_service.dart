@@ -240,6 +240,18 @@ class FirestoreService {
     return UserExercise.fromFirestore(snap);
   }
 
+  /// Merges [data] into the UserExercise document identified by [docId].
+  /// Use this for partial field updates (e.g. debrief notes) where you do not
+  /// want to clobber unrelated fields.
+  Future<void> updateUserExerciseFields(
+    String uid,
+    String docId,
+    Map<String, dynamic> data,
+  ) async {
+    _assertValidUid(uid);
+    await exercisesCollection(uid).doc(docId).set(data, SetOptions(merge: true));
+  }
+
   /// Creates or fully replaces the UserExercise document.
   /// Uses a deterministic document ID so concurrent writes are idempotent.
   /// No userId field is written — ownership is implicit in the path.

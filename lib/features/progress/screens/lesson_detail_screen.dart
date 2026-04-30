@@ -562,7 +562,6 @@ class _LessonDetailBody extends ConsumerWidget {
             const SizedBox(height: 12),
           ],
 
-
           // Empty state if no notes
           if (lesson.instructorNotes.isEmpty &&
               lesson.personalReflection.isEmpty)

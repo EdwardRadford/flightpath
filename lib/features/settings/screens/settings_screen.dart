@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/providers/walkthrough_provider.dart';
@@ -297,8 +298,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 20),
 
               const SettingsSectionHeader(label: 'Privacy'),
+              const SettingsConsentSection(),
+              const SizedBox(height: 12),
               SettingsPrivacySection(uid: user?.uid ?? ''),
               const SizedBox(height: 20),
+
+              const SettingsSignOutButton(),
+              const SizedBox(height: 12),
+
+              const SettingsDeleteAccountButton(),
+              const SizedBox(height: 24),
 
               Center(
                 child: FutureBuilder<PackageInfo>(
@@ -310,20 +319,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ? 'Flight Path v$version'
                           : 'Flight Path',
                       style: TextStyle(
-                        color: cs.onSurface.withValues(alpha: 0.5),
+                        color: AppColors.onSurfaceVariant
+                            .withValues(alpha: 0.55),
                         fontSize: 12,
                       ),
                     );
                   },
                 ),
               ),
-              const SizedBox(height: 20),
-
-              const SettingsSignOutButton(),
-              const SizedBox(height: 12),
-
-              const SettingsDeleteAccountButton(),
-              const SizedBox(height: 32),
             ],
           );
         },

@@ -2,6 +2,7 @@
 // Used by both the standalone AskAiScreen and the embedded LearnScreen.
 import 'package:flutter/material.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/features/ask_ai/providers/ask_ai_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Chat message model
@@ -45,7 +46,7 @@ class AskAiDailyLimitBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "You've used your 5 free messages today. Upgrade for unlimited access.",
+              "You've used your $kAskAiFreeDailyLimit free messages today. Upgrade for unlimited access.",
               style: TextStyle(
                 color: AppColors.onSurface,
                 fontSize: 13,

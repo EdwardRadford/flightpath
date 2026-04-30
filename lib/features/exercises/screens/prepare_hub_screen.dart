@@ -1,5 +1,6 @@
 // Prepare hub screen — central dashboard for a single exercise showing
-// brief, quiz, visualisation, video, and schedule options.
+// the prepare checklist (brief / flashcards / before-you-fly / weather /
+// self-brief), contextual tools, lesson logging, and revision entry point.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +24,8 @@ import 'package:flight_path/features/exercises/widgets/prepare_hub/paywall_banne
 import 'package:flight_path/features/exercises/widgets/prepare_hub/prepare_hub_misc.dart';
 import 'package:flight_path/features/exercises/widgets/prepare_hub/progress_card.dart';
 import 'package:flight_path/features/exercises/widgets/prepare_hub/stepped_prepare_checklist.dart';
+import 'package:flight_path/features/exercises/widgets/prepare_hub/exercise_tools_row.dart';
+import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -198,16 +201,13 @@ class _PrepareHubBody extends StatelessWidget {
     final exerciseLabel = content.subExercise != null
         ? 'Exercise ${content.subExercise}'
         : 'Exercise ${content.exerciseNumber}';
-    final briefRoute = '/exercises/$compositeExerciseId/brief';
-    final hasFirstStep =
-        content.lessonType != LessonType.milestone;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Exercise header
+          // Exercise header
           ExerciseHeader(content: content),
           const SizedBox(height: 8),
 
@@ -215,16 +215,24 @@ class _PrepareHubBody extends StatelessWidget {
           ActionChip(
             avatar: const Icon(Icons.auto_awesome_rounded, size: 16),
             label: Text('Ask AI about $exerciseLabel'),
-            onPressed: isPremium
-                ? () => context.push(
-                      '/ask-ai',
-                      extra:
-                          'Tell me about $exerciseLabel: ${content.exerciseName}',
-                    )
-                : null,
-            backgroundColor: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest,
+            onPressed: () {
+              if (!isPremium) {
+                showPremiumPaywall(
+                  context,
+                  source: 'ask_ai_chip',
+                  freeWindowStart: freeWindowStart,
+                  freeWindowEnd: freeWindowEnd,
+                );
+                return;
+              }
+              context.push(
+                '/ask-ai',
+                extra:
+                    'Tell me about $exerciseLabel: ${content.exerciseName}',
+              );
+            },
+            backgroundColor:
+                Theme.of(context).colorScheme.surfaceContainerHighest,
             side: BorderSide(
               color: AppColors.primary.withValues(alpha: 0.3),
             ),
@@ -242,11 +250,11 @@ class _PrepareHubBody extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // 2. Progress card
+          // Progress card
           ProgressCard(userExercise: userExercise),
           const SizedBox(height: 16),
 
-          // 2b. Paywall banner + objectives preview
+          // Paywall banner + objectives preview (free users only)
           if (!isPremium) ...[
             PaywallBanner(
               freeWindowStart: freeWindowStart,
@@ -267,13 +275,36 @@ class _PrepareHubBody extends StatelessWidget {
             const SizedBox(height: 16),
           ],
 
-          // 2c. First Solo motivational section
+          // First Solo milestone block (Exercise 14 only)
           if (content.lessonType == LessonType.milestone) ...[
             const FirstSoloMotivationalSection(),
+            const SizedBox(height: 12),
+            const FirstSoloInfoCards(),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push(
+                  '/exercises/pre-solo-readiness?exerciseId=$compositeExerciseId',
+                ),
+                icon: const Icon(Icons.checklist_rounded, size: 20),
+                label: const Text('Pre-Solo Readiness Check'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(
+                    color: AppColors.primary.withValues(alpha: 0.6),
+                  ),
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
           ],
 
-          // 3. Today's Expectations — CAA assessment criteria
+          // Today's Expectations — CAA assessment criteria
           if (ExerciseCriteria.exerciseCriteria
               .containsKey(compositeExerciseId)) ...[
             _TodaysExpectationsSection(
@@ -282,7 +313,7 @@ class _PrepareHubBody extends StatelessWidget {
             const SizedBox(height: 20),
           ],
 
-          // 4. Prepare checklist
+          // Prepare checklist
           const PrepareHubSectionLabel(label: 'PREPARE'),
           const SizedBox(height: 8),
           SteppedPrepareChecklist(
@@ -293,31 +324,18 @@ class _PrepareHubBody extends StatelessWidget {
             locked: !isPremium,
             content: content,
           ),
-          if (hasFirstStep && isPremium) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => context.push(briefRoute),
-                icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                label: const Text(
-                  'Start Preparing',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-          ],
           const SizedBox(height: 28),
 
-          // 4. Log / Start button
+          // Tools row — contextual shortcuts to relevant tools for this exercise
+          const PrepareHubSectionLabel(label: 'TOOLS'),
+          const SizedBox(height: 8),
+          ExerciseToolsRow(
+            exerciseId: exerciseId,
+            isPremium: isPremium,
+          ),
+          const SizedBox(height: 20),
+
+          // Log / Start button
           LessonButton(
             compositeExerciseId: compositeExerciseId,
             exerciseId: exerciseId,
@@ -327,10 +345,18 @@ class _PrepareHubBody extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // 5. Revision mode banner
-          const PrepareHubSectionLabel(label: 'REVISION'),
+          // After-lesson actions — review past lessons or generate an AI debrief.
+          const PrepareHubSectionLabel(label: 'AFTER YOUR LESSON'),
           const SizedBox(height: 8),
-          const PrepareHubRevisionBanner(),
+          PrepareHubAfterLessonCard(
+            icon: Icons.history_rounded,
+            title: 'Review Relevant Lessons',
+            subtitle:
+                'Open the logbook filtered to lessons covering this exercise.',
+            onTap: () => context.go(
+              '/logbook?exerciseId=$compositeExerciseId',
+            ),
+          ),
         ],
       ),
     );

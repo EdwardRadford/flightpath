@@ -10,6 +10,7 @@ import 'core/utils/router.dart';
 import 'firebase_options.dart';
 import 'shared/providers/accessibility_provider.dart';
 import 'shared/providers/theme_provider.dart';
+import 'shared/services/consent_service.dart';
 import 'shared/services/hive_service.dart';
 import 'shared/services/subscription_service.dart';
 
@@ -29,7 +30,17 @@ Future<void> main() async {
         : const AppleAppAttestProvider(),
   );
 
-  // Crashlytics — pass Flutter framework errors and async zone errors.
+  // Apply persisted consent state BEFORE any optional service is wired up.
+  // Analytics + Crashlytics + FCM start in the off position (UK GDPR / PECR
+  // require opt-in for non-essential analytics + tracking). The consent
+  // dialog (shown once after the safety disclaimer is acknowledged) flips
+  // these on if the user opts in.
+  await ConsentService.applyAll();
+
+  // Crashlytics handlers must always be installed so crashes are captured
+  // the moment consent is granted — but collection itself is gated by
+  // setCrashlyticsCollectionEnabled, which ConsentService.applyAll has just
+  // set to the persisted value (defaulting to off).
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   PlatformDispatcher.instance.onError = (error, stack) {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);

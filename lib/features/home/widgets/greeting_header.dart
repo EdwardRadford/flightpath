@@ -23,7 +23,9 @@ class GreetingHeader extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final firstName = _extractFirstName(user?.displayName ?? '');
 
-    return Row(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
       children: [
         Expanded(
           child: Column(
@@ -71,6 +73,7 @@ class GreetingHeader extends StatelessWidget {
           ),
         ),
       ],
+    ),
     );
   }
 

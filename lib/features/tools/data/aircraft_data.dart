@@ -216,7 +216,7 @@ const List<AircraftData> kAircraftDataList = [
     vs1: 50,
     vs0: 44,
     approachSpeed: 63, // POH recommends 73 kt on final with flap, 63 kt over threshold
-    bestGlide: 76,
+    bestGlide: 73, // POH Vbg at MTOW
     cruiseTas: 110,
     fuelBurnGph: 8.5,
     serviceCeiling: 13000,
@@ -249,7 +249,7 @@ const List<AircraftData> kAircraftDataList = [
     vs1: 50,
     vs0: 44,
     approachSpeed: 67,
-    bestGlide: 76,
+    bestGlide: 73, // POH Vbg at MTOW (Archer); align with Warrior II
     cruiseTas: 124,
     fuelBurnGph: 9.5,
     serviceCeiling: 13650,
@@ -344,8 +344,8 @@ const List<AircraftData> kAircraftDataList = [
     vno: 140,
     va: 119, // at 1150 kg MTOW
     vfe: 106,
-    vy: 79,
-    vx: 68,
+    vy: 66, // DA40-180 AFM Vy at sea level / MTOW
+    vx: 64, // DA40-180 AFM Vx at sea level (Vx is below Vy)
     vs1: 52,
     vs0: 46,
     approachSpeed: 65,

@@ -52,12 +52,12 @@ final Map<String, List<Flashcard>> flashcardsByExercise = {
     ),
     Flashcard(
       front: 'PA-28-161 Warrior II — key speeds: VNE, VNO, VA, VFE',
-      back: 'VNE 160 KIAS (red line), VNO 129 KIAS (top of green arc), VA 113 KIAS (manoeuvring speed), VFE 111 KIAS (max flap extended). Never exceed VNE under any circumstances.',
+      back: 'VNE 160 KIAS (red line), VNO 129 KIAS (top of green arc), VA 113 KIAS (manoeuvring speed), VFE 103 KIAS (max flap extended). Never exceed VNE under any circumstances.',
       exerciseId: 'ex_01',
     ),
     Flashcard(
       front: 'PA-28-161 Warrior II — key climb/stall speeds',
-      back: 'VY 79 KIAS (best rate of climb), VX 73 KIAS (best angle of climb), VS1 57 KIAS (stall clean), VS0 49 KIAS (stall full flap), best glide 65 KIAS.',
+      back: 'VY 79 KIAS (best rate of climb), VX 63 KIAS (best angle of climb), VS1 50 KIAS (stall clean), VS0 44 KIAS (stall full flap), best glide 73 KIAS.',
       exerciseId: 'ex_01',
     ),
     Flashcard(
@@ -67,7 +67,7 @@ final Map<String, List<Flashcard>> flashcardsByExercise = {
     ),
     Flashcard(
       front: 'PA-28-161 engine and fuel selector',
-      back: 'Lycoming O-320-D3G, 160hp. Fuel selector: LEFT / RIGHT / OFF — no BOTH position. Always confirm which tank is selected before flight and switch per school SOP.',
+      back: 'Lycoming O-320-D3G, 160hp. Fuel selector: LEFT / RIGHT / BOTH / OFF (Warrior II and Archer). Some older PA-28 variants (Cherokee 140) had no BOTH position — always check your specific aircraft. Confirm the correct tank before flight and follow school SOP.',
       exerciseId: 'ex_01',
     ),
   ],
@@ -428,7 +428,7 @@ final Map<String, List<Flashcard>> flashcardsByExercise = {
 
     Flashcard(
       front: 'PA-28-161 VY and VX',
-      back: 'VY = 79 KIAS (best rate of climb — most altitude per minute). VX = 73 KIAS (best angle of climb — most altitude per unit of distance). Use VX for obstacle clearance, then transition to VY.',
+      back: 'VY = 79 KIAS (best rate of climb — most altitude per minute). VX = 63 KIAS (best angle of climb — most altitude per unit of distance). Use VX for obstacle clearance, then transition to VY.',
       exerciseId: 'ex_07',
     ),
     Flashcard(
@@ -500,7 +500,7 @@ final Map<String, List<Flashcard>> flashcardsByExercise = {
     ),
     Flashcard(
       front: 'PA-28-161 normal approach speed with full flap',
-      back: '75-80 KIAS with full flap. Vso = 49 KIAS. 1.3 × Vso = 64 KIAS minimum, but 75-80 kt allows gust margin. Always check school SOP.',
+      back: 'Vref = 1.3 × VS0 = 1.3 × 44 = 57 KIAS. Add 5 kt for gusts (half the gust factor). Target 65 kt on final; aim point speed 60 kt over threshold. Always check school SOP.',
       exerciseId: 'ex_08',
     ),
     Flashcard(
@@ -611,7 +611,7 @@ final Map<String, List<Flashcard>> flashcardsByExercise = {
 
     Flashcard(
       front: 'PA-28-161 slow flight speeds — VS0 and VS1',
-      back: 'VS0 (stall, full flap) = 49 KIAS. VS1 (stall, clean) = 57 KIAS. Slow flight typically practised at 1.1-1.2 × VS: landing config ~54-59 kt; clean ~63-68 kt.',
+      back: 'VS0 (stall, full flap) = 44 KIAS. VS1 (stall, clean) = 50 KIAS. Slow flight typically practised at 1.1-1.2 × VS: landing config ~48-53 kt; clean ~55-60 kt.',
       exerciseId: 'ex_10_10a',
     ),
     Flashcard(
@@ -626,7 +626,7 @@ final Map<String, List<Flashcard>> flashcardsByExercise = {
     ),
     Flashcard(
       front: 'Why is slow flight directly relevant to circuit flying?',
-      back: 'Circuit approach speeds (75-80 kt) are close to VS0 (49 kt). The skills of managing power, attitude, flap, and trim near the stall are directly applied on every approach and landing.',
+      back: 'Vref for circuit approach (57-65 kt) is only 30% above VS0 (44 kt). The skills of managing power, attitude, flap, and trim near the stall are directly applied on every approach and landing.',
       exerciseId: 'ex_10_10a',
     ),
     Flashcard(
@@ -688,7 +688,7 @@ final Map<String, List<Flashcard>> flashcardsByExercise = {
     ),
     Flashcard(
       front: 'PA-28-161 stall speed in a 60° banked turn',
-      back: 'VS1 = 57 KIAS. At 60° bank: LF = 2G. Stall speed = √2 × 57 = 1.41 × 57 ≈ 80 KIAS. A massive increase from the straight-and-level stall speed.',
+      back: 'VS1 = 50 KIAS. At 60° bank: LF = 2G. Stall speed = √2 × 50 = 1.41 × 50 ≈ 71 KIAS. A significant increase from the straight-and-level stall speed.',
       exerciseId: 'ex_10_10b',
     ),
     Flashcard(
@@ -897,7 +897,7 @@ final Map<String, List<Flashcard>> flashcardsByExercise = {
     ),
     Flashcard(
       front: 'Flapless circuit — speed and approach differences',
-      back: 'Approach speed: 1.3 × VS1 = 1.3 × 57 = ~74 KIAS (vs normal 75-80 with flap). Approach angle is shallower (less drag). Longer landing roll required. Touch and goes: go around must be considered early.',
+      back: 'Flapless Vref = 1.3 × VS1 = 1.3 × 50 = 65 KIAS (vs ~57-60 kt with full flap). Approach angle is shallower (less drag). Longer landing roll required. Touch and goes: go around must be considered early.',
       exerciseId: 'ex_13',
     ),
     Flashcard(

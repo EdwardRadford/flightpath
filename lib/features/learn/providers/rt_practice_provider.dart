@@ -10,7 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flight_path/shared/providers/app_user_provider.dart';
-import 'package:flight_path/shared/services/subscription_service.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Scenario types
@@ -26,7 +26,11 @@ enum RtScenario {
   matzTransit('MATZ Transit Request', 'matz_transit'),
   enRouteNavigation('En-Route Navigation Call', 'en_route_nav'),
   emergencyMayday('Emergency (MAYDAY)', 'emergency_mayday'),
-  emergencyPanPan('Emergency (PAN PAN)', 'emergency_pan');
+  emergencyPanPan('Emergency (PAN PAN)', 'emergency_pan'),
+  ctrEntry('CTR / Zone Entry Request', 'ctr_entry'),
+  basicServiceRequest('Request Basic Service', 'basic_service'),
+  transponderSquawk('Transponder Squawk Instruction', 'transponder_squawk'),
+  inboundCall('Inbound Call to Home Aerodrome', 'inbound_call');
 
   const RtScenario(this.displayName, this.apiValue);
   final String displayName;
@@ -158,7 +162,7 @@ class RtPracticeState {
 // ---------------------------------------------------------------------------
 
 /// Free tier limit: number of scenarios allowed before the paywall.
-const int kRtPracticeFreeScenarios = 5;
+const int kRtPracticeFreeScenarios = 3;
 
 final rtPracticeProvider =
     StateNotifierProvider<RtPracticeNotifier, RtPracticeState>((ref) {
@@ -187,7 +191,7 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
   /// Returns true if the user is allowed to start another scenario.
   /// Premium users always pass. Free users get [kRtPracticeFreeScenarios].
   Future<bool> canStartNewScenario() async {
-    if (await SubscriptionService.isPremium()) return true;
+    if (await _ref.read(premiumStatusProvider.future)) return true;
     return state.scenariosUsedThisSession < kRtPracticeFreeScenarios;
   }
 

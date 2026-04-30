@@ -17,29 +17,31 @@ Future<bool> showPremiumPaywall(
   String? source,
   int freeWindowStart = 1,
   int freeWindowEnd = 3,
-}) {
+}) async {
   FirebaseAnalytics.instance.logEvent(
     name: 'paywall_shown',
     parameters: {
       if (source != null) 'source': source,
     },
   );
-  return showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
-    builder: (_) => PremiumPaywallSheet(
-      freeWindowStart: freeWindowStart,
-      freeWindowEnd: freeWindowEnd,
-    ),
-  ).then((v) {
-    final purchased = v ?? false;
-    if (purchased) {
-      // Show a success confirmation. The RevenueCat webhook updates isPremium
-      // async — this snackbar bridges the gap while the stream catches up.
+  final purchased = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => PremiumPaywallSheet(
+          freeWindowStart: freeWindowStart,
+          freeWindowEnd: freeWindowEnd,
+        ),
+      ) ??
+      false;
+
+  if (purchased) {
+    // Show a success confirmation. The RevenueCat webhook updates isPremium
+    // async — this snackbar bridges the gap while the stream catches up.
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
@@ -51,16 +53,16 @@ Future<bool> showPremiumPaywall(
           duration: const Duration(seconds: 4),
         ),
       );
-    } else {
-      FirebaseAnalytics.instance.logEvent(
-        name: 'paywall_dismissed',
-        parameters: {
-          if (source != null) 'source': source,
-        },
-      );
     }
-    return purchased;
-  });
+  } else {
+    FirebaseAnalytics.instance.logEvent(
+      name: 'paywall_dismissed',
+      parameters: {
+        if (source != null) 'source': source,
+      },
+    );
+  }
+  return purchased;
 }
 
 class PremiumPaywallSheet extends StatefulWidget {
@@ -173,7 +175,7 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
             ),
             const SizedBox(height: 8),
              Text(
-              '\u00A339 \u2014 one payment, no subscription.',
+              '\u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(0)} \u2014 one payment, no subscription.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant,

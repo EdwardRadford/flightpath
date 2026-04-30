@@ -14,12 +14,14 @@ class WeatherPreviewState {
   final WeatherData? data;
   final bool loading;
   final String? error;
+  final bool noDataForStation;
   final DateTime? fetchedAt;
 
   const WeatherPreviewState({
     this.data,
     this.loading = false,
     this.error,
+    this.noDataForStation = false,
     this.fetchedAt,
   });
 
@@ -27,12 +29,14 @@ class WeatherPreviewState {
     WeatherData? data,
     bool? loading,
     String? error,
+    bool? noDataForStation,
     DateTime? fetchedAt,
   }) {
     return WeatherPreviewState(
       data: data ?? this.data,
       loading: loading ?? this.loading,
       error: error,
+      noDataForStation: noDataForStation ?? this.noDataForStation,
       fetchedAt: fetchedAt ?? this.fetchedAt,
     );
   }
@@ -56,7 +60,7 @@ class WeatherPreviewNotifier extends StateNotifier<WeatherPreviewState> {
 
   /// Automatically fetch weather for the user's airfield on first load.
   Future<void> _autoFetch() async {
-    final user = _ref.read(appUserProvider).valueOrNull;
+    final user = await _ref.read(appUserProvider.future);
     final icao = user?.airfieldIcao;
     if (icao == null || icao.isEmpty) return;
     await fetch(icao);
@@ -71,7 +75,7 @@ class WeatherPreviewNotifier extends StateNotifier<WeatherPreviewState> {
       return;
     }
 
-    state = state.copyWith(loading: true, error: null);
+    state = state.copyWith(loading: true, error: null, noDataForStation: false);
 
     try {
       final data = await _service.getWeatherForAirfield(icaoCode);
@@ -80,6 +84,8 @@ class WeatherPreviewNotifier extends StateNotifier<WeatherPreviewState> {
         loading: false,
         fetchedAt: DateTime.now(),
       );
+    } on NoWeatherDataException {
+      state = state.copyWith(loading: false, noDataForStation: true);
     } on WeatherServiceException catch (e) {
       state = state.copyWith(loading: false, error: e.message);
     } catch (e) {
@@ -92,7 +98,7 @@ class WeatherPreviewNotifier extends StateNotifier<WeatherPreviewState> {
 
   /// Force refresh, ignoring cache.
   Future<void> refresh(String icaoCode) async {
-    state = state.copyWith(loading: true, error: null);
+    state = state.copyWith(loading: true, error: null, noDataForStation: false);
     try {
       final data = await _service.getWeatherForAirfield(icaoCode);
       state = WeatherPreviewState(
@@ -100,6 +106,8 @@ class WeatherPreviewNotifier extends StateNotifier<WeatherPreviewState> {
         loading: false,
         fetchedAt: DateTime.now(),
       );
+    } on NoWeatherDataException {
+      state = state.copyWith(loading: false, noDataForStation: true);
     } on WeatherServiceException catch (e) {
       state = state.copyWith(loading: false, error: e.message);
     } catch (e) {

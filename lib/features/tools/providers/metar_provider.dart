@@ -1,19 +1,27 @@
 // METAR training state — manages ICAO selection, live fetch, question
 // progression, answer grading, session scoring, and daily free-tier gating.
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/services/avwx_service.dart';
-import 'package:flight_path/shared/services/subscription_service.dart';
 
 // ---------------------------------------------------------------------------
-// Shared preferences keys
+// Shared preferences keys (UID-scoped to prevent cross-user leakage)
 // ---------------------------------------------------------------------------
 
-const String _kDailyCountKey = 'metar_daily_count';
-const String _kDailyDateKey = 'metar_daily_date';
+String _kDailyCountKey() {
+  final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anon';
+  return 'metar_daily_count_$uid';
+}
+
+String _kDailyDateKey() {
+  final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anon';
+  return 'metar_daily_date_$uid';
+}
 
 // ---------------------------------------------------------------------------
 // AvwxService provider
@@ -120,6 +128,9 @@ class MetarSessionState {
   /// True when the fetch completed but returned null (network/HTTP error).
   final bool fetchError;
 
+  /// True when AVWX confirmed the station doesn't publish live METARs (204/404).
+  final bool noDataForStation;
+
   /// Index of the currently active question (0–4).
   final int questionIndex;
 
@@ -142,6 +153,7 @@ class MetarSessionState {
     this.isLoading = false,
     this.apiKeyMissing = false,
     this.fetchError = false,
+    this.noDataForStation = false,
     this.questionIndex = 0,
     this.answers = const [],
     this.sessionComplete = false,
@@ -158,6 +170,7 @@ class MetarSessionState {
     bool? isLoading,
     bool? apiKeyMissing,
     bool? fetchError,
+    bool? noDataForStation,
     int? questionIndex,
     List<MetarAnswerResult>? answers,
     bool? sessionComplete,
@@ -171,6 +184,7 @@ class MetarSessionState {
       isLoading: isLoading ?? this.isLoading,
       apiKeyMissing: apiKeyMissing ?? this.apiKeyMissing,
       fetchError: fetchError ?? this.fetchError,
+      noDataForStation: noDataForStation ?? this.noDataForStation,
       questionIndex: questionIndex ?? this.questionIndex,
       answers: answers ?? this.answers,
       sessionComplete: sessionComplete ?? this.sessionComplete,
@@ -186,8 +200,9 @@ class MetarSessionState {
 
 class MetarNotifier extends StateNotifier<MetarSessionState> {
   final AvwxService _avwx;
+  final Ref _ref;
 
-  MetarNotifier(this._avwx, {String initialIcao = 'EGTC'})
+  MetarNotifier(this._avwx, this._ref, {String initialIcao = 'EGTC'})
       : super(MetarSessionState(icao: initialIcao)) {
     _loadDailyCount();
   }
@@ -196,15 +211,15 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
 
   Future<void> _loadDailyCount() async {
     final prefs = await SharedPreferences.getInstance();
-    final storedDate = prefs.getString(_kDailyDateKey) ?? '';
+    final storedDate = prefs.getString(_kDailyDateKey()) ?? '';
     final today = _todayString();
     if (storedDate != today) {
       // New day — reset counter.
-      await prefs.setInt(_kDailyCountKey, 0);
-      await prefs.setString(_kDailyDateKey, today);
+      await prefs.setInt(_kDailyCountKey(), 0);
+      await prefs.setString(_kDailyDateKey(), today);
       state = state.copyWith(dailySessionCount: 0);
     } else {
-      final count = prefs.getInt(_kDailyCountKey) ?? 0;
+      final count = prefs.getInt(_kDailyCountKey()) ?? 0;
       state = state.copyWith(dailySessionCount: count);
     }
   }
@@ -212,9 +227,9 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
   Future<void> _incrementDailyCount() async {
     final prefs = await SharedPreferences.getInstance();
     final today = _todayString();
-    await prefs.setString(_kDailyDateKey, today);
-    final newCount = (prefs.getInt(_kDailyCountKey) ?? 0) + 1;
-    await prefs.setInt(_kDailyCountKey, newCount);
+    await prefs.setString(_kDailyDateKey(), today);
+    final newCount = (prefs.getInt(_kDailyCountKey()) ?? 0) + 1;
+    await prefs.setInt(_kDailyCountKey(), newCount);
     state = state.copyWith(dailySessionCount: newCount);
   }
 
@@ -234,6 +249,7 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
       answers: const [],
       sessionComplete: false,
       fetchError: false,
+      noDataForStation: false,
       apiKeyMissing: false,
       paywallRequired: false,
     );
@@ -246,9 +262,14 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
   /// Handles paywall gate: if free-tier limit reached and user is not premium,
   /// sets [paywallRequired] = true without fetching.
   Future<void> fetchMetar() async {
+    // Refresh daily count first so midnight rollovers are handled correctly.
+    await _loadDailyCount();
     // Check free tier before counting the session.
-    if (state.dailySessionCount >= 5) {
-      final premium = await SubscriptionService.isPremium();
+    if (state.dailySessionCount >= 3) {
+      // Use the comprehensive check: AppUser.isPremium covers granted_access +
+      // subscription_status, falling back to RevenueCat. SubscriptionService
+      // alone misses the granted_access path.
+      final premium = await _ref.read(premiumStatusProvider.future);
       if (!premium) {
         state = state.copyWith(paywallRequired: true);
         return;
@@ -259,6 +280,7 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
       isLoading: true,
       clearMetar: true,
       fetchError: false,
+      noDataForStation: false,
       apiKeyMissing: false,
       questionIndex: 0,
       answers: const [],
@@ -269,10 +291,13 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
     String? raw;
     bool apiKeyMissing = false;
     bool fetchError = false;
+    bool noDataForStation = false;
 
     try {
       raw = await _avwx.fetchMetar(state.icao);
       if (raw == null) fetchError = true;
+    } on NoMetarDataException {
+      noDataForStation = true;
     } on StateError catch (e) {
       if (kDebugMode) debugPrint('MetarNotifier: $e');
       apiKeyMissing = true;
@@ -286,10 +311,9 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
       rawMetar: raw,
       apiKeyMissing: apiKeyMissing,
       fetchError: fetchError,
+      noDataForStation: noDataForStation,
     );
 
-    // Only count a session when we have a real METAR to study.
-    if (raw != null) await _incrementDailyCount();
   }
 
   // ── Answer submission ──────────────────────────────────────────────────────
@@ -298,6 +322,9 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
   ///
   /// Returns the [MetarAnswerResult] so the UI can display immediate feedback.
   MetarAnswerResult submitAnswer(String studentAnswer) {
+    // Count on first answer — exits without answering don't use a session.
+    if (state.answers.isEmpty) _incrementDailyCount();
+
     final question = kMetarQuestions[state.questionIndex];
     final metar = state.rawMetar ?? '';
 
@@ -324,6 +351,7 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
       answers: const [],
       sessionComplete: false,
       fetchError: false,
+      noDataForStation: false,
       apiKeyMissing: false,
       paywallRequired: false,
     );
@@ -642,11 +670,11 @@ class MetarNotifier extends StateNotifier<MetarSessionState> {
 final metarProvider =
     StateNotifierProvider<MetarNotifier, MetarSessionState>((ref) {
   final avwx = ref.watch(avwxServiceProvider);
-  final user = ref.read(appUserProvider).valueOrNull;
-  final homeIcao = (user?.airfieldIcao != null && user!.airfieldIcao!.isNotEmpty)
-      ? user.airfieldIcao!.toUpperCase()
+  final user = ref.watch(appUserProvider).valueOrNull;
+  final homeIcao = (user != null && user.airfieldIcao.isNotEmpty)
+      ? user.airfieldIcao.toUpperCase()
       : 'EGTC';
-  return MetarNotifier(avwx, initialIcao: homeIcao);
+  return MetarNotifier(avwx, ref, initialIcao: homeIcao);
 });
 
 // ---------------------------------------------------------------------------

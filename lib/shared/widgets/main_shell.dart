@@ -14,6 +14,7 @@ import 'package:flight_path/shared/providers/update_badge_provider.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/shared/services/streak_service.dart';
 import 'package:flight_path/shared/widgets/connectivity_banner.dart';
+import 'package:flight_path/shared/widgets/consent_dialog.dart';
 
 typedef _Tab = ({String path, String label, IconData icon, IconData activeIcon});
 
@@ -51,7 +52,12 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateStreak());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateStreak();
+      // Show the first-launch consent dialog once the disclaimer has been
+      // acknowledged. ConsentService.hasBeenPrompted() guards re-display.
+      if (mounted) showConsentDialog(context);
+    });
   }
 
   void _updateStreak() {

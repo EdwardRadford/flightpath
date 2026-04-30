@@ -1,10 +1,15 @@
-// Authentication service — email/password, Google Sign-In, and password reset.
+// Authentication service — email/password, Google Sign-In, Apple Sign-In, and password reset.
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'package:flight_path/shared/services/notification_service.dart';
 import 'package:flight_path/shared/services/subscription_service.dart';
@@ -93,6 +98,66 @@ class AuthService {
     }
   }
 
+  /// Authenticates via Sign In with Apple and creates a user doc if needed.
+  Future<void> signInWithApple() async {
+    try {
+      final rawNonce = _generateNonce();
+      final hashedNonce = _sha256ofString(rawNonce);
+
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+
+      final result = await _auth.signInWithCredential(oauthCredential);
+      final user = result.user;
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'null-user',
+          message: 'Sign-in completed but no user was returned. Please try again.',
+        );
+      }
+
+      final doc = await _db.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        // Apple only returns name on first sign-in; fall back to email prefix.
+        final displayName = [
+          appleCredential.givenName,
+          appleCredential.familyName,
+        ].where((s) => s != null && s.isNotEmpty).join(' ');
+        final fallback = (user.email ?? '').split('@').first;
+        await _createUserDocument(
+          user.uid,
+          displayName.isNotEmpty ? displayName : fallback,
+          user.email ?? '',
+        );
+      }
+      await SubscriptionService.identifyUser(user.uid);
+      await FirebaseAnalytics.instance.logLogin(loginMethod: 'apple');
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) return;
+      throw FirebaseAuthException(
+        code: 'apple-signin-failed',
+        message: 'Apple Sign-In failed. Please try again.',
+      );
+    } on FirebaseAuthException {
+      rethrow;
+    } catch (_) {
+      throw FirebaseAuthException(
+        code: 'apple-signin-failed',
+        message: 'Apple Sign-In failed. Please try again.',
+      );
+    }
+  }
+
   /// Sends a password-reset email via Firebase Auth.
   Future<void> sendPasswordReset(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
@@ -103,11 +168,24 @@ class AuthService {
     await NotificationService.cleanupFcm();
     try {
       await _googleSignIn.signOut();
-    } catch (_) {
-      debugPrint('AuthService sign-out: $_');
+    } catch (e) {
+      debugPrint('AuthService sign-out: $e');
     }
     await SubscriptionService.resetUser();
     await _auth.signOut();
+  }
+
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)])
+        .join();
+  }
+
+  String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    return sha256.convert(bytes).toString();
   }
 
   Future<void> _createUserDocument(String uid, String displayName, String email) async {

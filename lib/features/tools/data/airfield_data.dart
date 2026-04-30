@@ -717,11 +717,69 @@ const List<Airfield> kAirfields = [
     hasData: true,
   ),
 
+  // EGNM is Leeds Bradford — was previously mislabelled here as Sherburn.
+  // Sherburn-in-Elmet is EGCJ and is added below.
   Airfield(
     icao: 'EGNM',
+    name: 'Leeds Bradford',
+    location: 'Yeadon, West Yorkshire',
+    // [HIGH] AIP AD 2 EGNM — elevation 681 ft AMSL (highest major UK airport)
+    elevation: 681,
+    // [HIGH] Class D CTR/CTA
+    atzDescription: 'Class D CTR/CTA — clearance required',
+    runways: [
+      // [HIGH] AIP — 14/32, 2250 m asphalt
+      AirfieldRunway(
+        designator: '14/32',
+        lengthMetres: 2250,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      // [HIGH] AIP EGNM COM
+      AirfieldFrequency(
+        name: 'Leeds Approach',
+        frequency: '134.580',
+        usage: 'Approach / Radar',
+      ),
+      AirfieldFrequency(
+        name: 'Leeds Tower',
+        frequency: '120.305',
+        usage: 'Tower',
+      ),
+      AirfieldFrequency(
+        name: 'Leeds Ground',
+        frequency: '121.805',
+        usage: 'Ground',
+      ),
+      AirfieldFrequency(
+        name: 'Leeds ATIS',
+        frequency: '118.030',
+        usage: 'ATIS',
+      ),
+    ],
+    circuitDirection: 'ATC directed — Class D; verify current',
+    circuitAltitude: 1000,
+    localRules:
+        'Major regional airport with full Class D ATC service. '
+        'Highest elevation of any major UK airport (681 ft) — density altitude matters in summer. '
+        'Significant terrain to north and west — Pennines rise rapidly. '
+        'PPL training is uncommon here; most GA traffic is transit. '
+        'Clearance required to enter CTR — listen on Approach with squawk before calling.',
+    commonStudentMistakes:
+        'Entering Class D without clearance. '
+        'Underestimating terrain rise to the west when planning a missed approach. '
+        'Not obtaining ATIS before first Approach call. '
+        'Forgetting that the high field elevation reduces takeoff performance vs. lowland fields.',
+    hasData: true,
+  ),
+
+  // Sherburn-in-Elmet — separate ICAO EGCJ (was previously confused with EGNM).
+  Airfield(
+    icao: 'EGCJ',
     name: 'Sherburn-in-Elmet',
     location: 'Sherburn-in-Elmet, North Yorkshire',
-    // [HIGH] AIP AD 2 EGNM — elevation 26 ft AMSL
+    // [HIGH] AIP AD 2 EGCJ — elevation 26 ft AMSL
     elevation: 26,
     // [HIGH] Standard 2 nm ATZ
     atzDescription: '2 nm radius, surface to 2000 ft QFE',
@@ -740,10 +798,10 @@ const List<Airfield> kAirfields = [
       ),
     ],
     frequencies: [
-      // [HIGH] AIP EGNM COM
+      // [HIGH] AIP EGCJ COM
       AirfieldFrequency(
         name: 'Sherburn Radio',
-        frequency: '122.600',
+        frequency: '122.605',
         usage: 'AGCS — all calls',
       ),
     ],
@@ -1266,43 +1324,6 @@ const List<Airfield> kAirfields = [
         'Not accounting for density altitude at 811 ft in warm conditions — longer take-off roll. '
         'Misjudging the upslope when landing RW08. '
         'Forgetting that terrain falls away sharply; early go-around commitment is essential.',
-    hasData: true,
-  ),
-
-  Airfield(
-    icao: 'EGHB',
-    name: 'Headcorn (Lashenden)',
-    location: 'Headcorn, Kent',
-    // [HIGH] AIP AD 2 EGHB — elevation 72 ft AMSL
-    elevation: 72,
-    atzDescription: '2 nm radius, surface to 2000 ft QFE',
-    runways: [
-      // [HIGH] AIP — 10/28, 870 m grass (main)
-      AirfieldRunway(
-        designator: '10/28',
-        lengthMetres: 870,
-        surface: 'Grass',
-      ),
-    ],
-    frequencies: [
-      // [HIGH] AIP EGHB COM
-      AirfieldFrequency(
-        name: 'Headcorn Radio',
-        frequency: '122.000',
-        usage: 'AGCS — all calls',
-      ),
-    ],
-    circuitDirection: 'Left hand (verify current)',
-    circuitAltitude: 1000,
-    localRules:
-        'Parachute drop zone — skydivers descend onto and around the airfield. '
-        'Check for active drop activity before joining. '
-        'Popular GA destination in the Weald of Kent. '
-        'AGCS only; announce intentions clearly.',
-    commonStudentMistakes:
-        'Joining without checking for active parachute drops overhead. '
-        'Not scanning above the aircraft for descending parachutists. '
-        'Rushing the approach when nervous about DZ activity.',
     hasData: true,
   ),
 
@@ -3209,4 +3230,760 @@ const List<Airfield> kAirfields = [
         'Not obtaining ATIS before initial Approach call.',
     hasData: true,
   ),
+
+  // ── Additional UK PPL training airfields ─────────────────────────────────
+  // Added 2026-04-29. Frequencies and elevations should be cross-checked
+  // against the current UK AIP before operational use.
+
+  Airfield(
+    icao: 'EGLD',
+    name: 'Denham',
+    location: 'Denham, Buckinghamshire',
+    // [HIGH] AIP AD 2 EGLD — elevation 249 ft AMSL
+    elevation: 249,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      // [HIGH] AIP — 06/24, 773 m asphalt (main)
+      AirfieldRunway(
+        designator: '06/24',
+        lengthMetres: 773,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      // [HIGH] AIP EGLD COM
+      AirfieldFrequency(
+        name: 'Denham Information',
+        frequency: '130.730',
+        usage: 'AFIS — all calls',
+      ),
+    ],
+    // [HIGH] LH RW06, RH RW24 (noise abatement)
+    circuitDirection: 'RW06 left hand; RW24 right hand (noise abatement)',
+    circuitAltitude: 1000,
+    localRules:
+        'Sits beneath the London TMA — base is 2500 ft. '
+        'Noise-sensitive area; strict adherence to published circuits. '
+        'Heathrow CTR is just to the south-east — do not stray. '
+        'Northolt MATZ is also nearby. '
+        'Active flying school field with mixed PPL training and corporate traffic.',
+    commonStudentMistakes:
+        'Climbing into the London TMA above 2500 ft. '
+        'Drifting south and busting Heathrow CTR. '
+        'Cutting the corner at the noise abatement turning point. '
+        'Not switching to Heathrow Special on transit — request clearance early.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGTF',
+    name: 'Fairoaks',
+    location: 'Chobham, Surrey',
+    // [HIGH] AIP AD 2 EGTF — elevation 80 ft AMSL
+    elevation: 80,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      // [HIGH] AIP — 06/24, 814 m asphalt
+      AirfieldRunway(
+        designator: '06/24',
+        lengthMetres: 814,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      // [HIGH] AIP EGTF COM
+      AirfieldFrequency(
+        name: 'Fairoaks Information',
+        frequency: '123.430',
+        usage: 'AFIS — all calls',
+      ),
+    ],
+    circuitDirection: 'RW06 right hand; RW24 left hand (noise abatement)',
+    circuitAltitude: 1000,
+    localRules:
+        'Sits inside the London CTR — clearance required to enter the zone. '
+        'Heathrow Special VFR procedures apply on most arrivals. '
+        'Surrounded by sensitive noise-abatement areas, especially near Chobham village. '
+        'PPL training and corporate traffic mix.',
+    commonStudentMistakes:
+        'Entering the London CTR without an SVFR clearance. '
+        'Not following published noise abatement turning points. '
+        'Underestimating how quickly the surrounding TMA descends.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGTR',
+    name: 'Elstree',
+    location: 'Elstree, Hertfordshire',
+    // [HIGH] AIP AD 2 EGTR — elevation 332 ft AMSL
+    elevation: 332,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      // [HIGH] AIP — 08/26, 678 m asphalt
+      AirfieldRunway(
+        designator: '08/26',
+        lengthMetres: 678,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      // [HIGH] AIP EGTR COM
+      AirfieldFrequency(
+        name: 'Elstree Radio',
+        frequency: '122.405',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'RW08 right hand; RW26 left hand (noise abatement)',
+    circuitAltitude: 1000,
+    localRules:
+        'Beneath the London TMA — base 2500 ft. '
+        'AGCS only. Short runway with displaced thresholds — review NOTAMs. '
+        'Surrounded by noise-sensitive areas. '
+        'Heathrow CTR is to the south-west.',
+    commonStudentMistakes:
+        'Climbing above 2500 ft into the London TMA. '
+        'Floating in the flare on the short runway. '
+        'Treating AGCS as ATC.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGHP',
+    name: 'Popham',
+    location: 'Popham, Hampshire',
+    // [HIGH] AIP AD 2 EGHP — elevation 550 ft AMSL
+    elevation: 550,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      // [HIGH] AIP — 03/21, 792 m grass (main)
+      AirfieldRunway(
+        designator: '03/21',
+        lengthMetres: 792,
+        surface: 'Grass',
+      ),
+      // [MEDIUM] 08/26 grass also available
+      AirfieldRunway(
+        designator: '08/26',
+        lengthMetres: 488,
+        surface: 'Grass',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Popham Radio',
+        frequency: '129.805',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand standard (verify per runway in use)',
+    circuitAltitude: 1000,
+    localRules:
+        'Popular grass field for PPL and microlight training. '
+        'AGCS only. Overhead joins standard. '
+        'Farnborough LARS West for transit advisory recommended. '
+        'Hosts regular fly-ins; expect heavy traffic on summer weekends.',
+    commonStudentMistakes:
+        'Misjudging grass surface in wet weather — much longer landing roll. '
+        'Not announcing intentions clearly on a busy frequency. '
+        'Failing to use the overhead join correctly.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGHF',
+    name: 'Lee-on-Solent',
+    location: 'Lee-on-Solent, Hampshire',
+    // [HIGH] AIP AD 2 EGHF — elevation 32 ft AMSL
+    elevation: 32,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      // [HIGH] AIP — 05/23, 813 m asphalt
+      AirfieldRunway(
+        designator: '05/23',
+        lengthMetres: 813,
+        surface: 'Asphalt',
+      ),
+      AirfieldRunway(
+        designator: '17/35',
+        lengthMetres: 714,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Solent Radio',
+        frequency: '135.705',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand standard; check runway in use',
+    circuitAltitude: 1000,
+    localRules:
+        'Former HMS Daedalus naval air station — coastal location, sea on the west. '
+        'Solent CTA above; coordinate with Solent Radar for transits. '
+        'HM Coastguard SAR helicopter operations on field. '
+        'PPL training active.',
+    commonStudentMistakes:
+        'Climbing into the Solent CTA without clearance. '
+        'Misjudging final approach over open water (height illusion). '
+        'Conflicting with SAR helicopter operations.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGHS',
+    name: 'Henstridge',
+    location: 'Henstridge, Somerset',
+    // [HIGH] AIP AD 2 EGHS — elevation 180 ft AMSL
+    elevation: 180,
+    atzDescription: 'No notified ATZ — operate on Air/Ground',
+    runways: [
+      AirfieldRunway(
+        designator: '07/25',
+        lengthMetres: 711,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Henstridge Radio',
+        frequency: '130.255',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Former WWII Royal Naval Air Station, now a private licensed aerodrome. '
+        'AGCS only. Yeovilton MATZ to the north-west — check before transit. '
+        'Quiet rural setting; good cross-country destination.',
+    commonStudentMistakes:
+        'Not requesting MATZ penetration from Yeovilton. '
+        'Treating AGCS as ATC.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGCV',
+    name: 'Sleap',
+    location: 'Sleap, Shropshire',
+    // [HIGH] AIP AD 2 EGCV — elevation 275 ft AMSL
+    elevation: 275,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      AirfieldRunway(
+        designator: '05/23',
+        lengthMetres: 887,
+        surface: 'Asphalt',
+      ),
+      AirfieldRunway(
+        designator: '10/28',
+        lengthMetres: 671,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Sleap Radio',
+        frequency: '122.455',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand standard (verify per runway in use)',
+    circuitAltitude: 1000,
+    localRules:
+        'Former WWII RAF airfield, now home to Shropshire Aero Club. '
+        'AGCS only. Shawbury MATZ is very close — coordinate transits. '
+        'Active PPL training field with good cross-country options into Wales.',
+    commonStudentMistakes:
+        'Failing to call Shawbury before the MATZ boundary. '
+        'Not appreciating how close military traffic can be. '
+        'Confusing the two intersecting runways at low level.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGCW',
+    name: 'Welshpool',
+    location: 'Welshpool, Powys',
+    // [HIGH] AIP AD 2 EGCW — elevation 233 ft AMSL
+    elevation: 233,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      AirfieldRunway(
+        designator: '04/22',
+        lengthMetres: 838,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Welshpool Radio',
+        frequency: '128.005',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Welsh borders training and touring field. '
+        'Surrounded by rising terrain — Mid-Wales mountains to the west. '
+        'AGCS only. Strong potential for orographic effects (lee waves, rotor) '
+        'in westerly winds. PPL and IMC training takes place here.',
+    commonStudentMistakes:
+        'Not factoring in terrain when planning a go-around. '
+        'Underestimating turbulence in lee of mountains. '
+        'Cloud base lowering against rising terrain — classic VFR-into-IMC trap.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGCF',
+    name: 'Sandtoft',
+    location: 'Sandtoft, North Lincolnshire',
+    // [HIGH] AIP AD 2 EGCF — elevation 11 ft AMSL
+    elevation: 11,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      AirfieldRunway(
+        designator: '05/23',
+        lengthMetres: 750,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Sandtoft Radio',
+        frequency: '130.430',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Former WWII RAF airfield. '
+        'Doncaster Sheffield (EGCN) to the south-west — note that EGCN ceased '
+        'commercial operations in November 2022 but the airspace status has '
+        'evolved; check current AIP and NOTAMs. '
+        'Robin Hood radar service may still be available — check current frequencies.',
+    commonStudentMistakes:
+        'Relying on outdated airspace information for the Doncaster area. '
+        'Flat fenland terrain — ground-feature navigation is challenging.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGNF',
+    name: 'Netherthorpe',
+    location: 'Worksop, Nottinghamshire',
+    // [HIGH] AIP AD 2 EGNF — elevation 250 ft AMSL
+    elevation: 250,
+    atzDescription: 'No notified ATZ',
+    runways: [
+      AirfieldRunway(
+        designator: '06/24',
+        lengthMetres: 460,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Netherthorpe Radio',
+        frequency: '123.280',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'One of the shortest licensed runways in the UK at 460 m — '
+        'careful technique required. AGCS only. '
+        'Doncaster Sheffield airspace to the east; East Midlands radar to the south.',
+    commonStudentMistakes:
+        'Underestimating the short runway — full short-field technique needed. '
+        'Floating in the flare on a hot day. '
+        'Treating AGCS as ATC.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGCL',
+    name: 'Fenland',
+    location: 'Spalding, Lincolnshire',
+    // [HIGH] AIP AD 2 EGCL — elevation 8 ft AMSL
+    elevation: 8,
+    atzDescription: 'No notified ATZ',
+    runways: [
+      AirfieldRunway(
+        designator: '08/26',
+        lengthMetres: 580,
+        surface: 'Grass',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Fenland Radio',
+        frequency: '122.930',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Friendly grass strip in the heart of the Fens. '
+        'AGCS only. Marham MATZ to the east; '
+        'be very aware of military fast-jet activity in the area.',
+    commonStudentMistakes:
+        'Routing through Marham MATZ without calling. '
+        'Featureless Fens terrain — keep the chart oriented. '
+        'Soft surface in wet weather.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGSR',
+    name: 'Earls Colne',
+    location: 'Earls Colne, Essex',
+    // [HIGH] AIP AD 2 EGSR — elevation 230 ft AMSL
+    elevation: 230,
+    atzDescription: 'No notified ATZ',
+    runways: [
+      AirfieldRunway(
+        designator: '06/24',
+        lengthMetres: 869,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Earls Colne Radio',
+        frequency: '122.430',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Former WWII USAAF airfield. '
+        'AGCS only. Stansted CTR is close to the south-west — do not encroach. '
+        'Active PPL training and parachuting site — check NOTAMs for parachute drops.',
+    commonStudentMistakes:
+        'Busting Stansted CTR while turning south. '
+        'Failing to check NOTAMs for parachute activity. '
+        'Treating AGCS as ATC.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGSL',
+    name: 'Andrewsfield',
+    location: 'Saling, Essex',
+    // [HIGH] AIP AD 2 EGSL — elevation 286 ft AMSL
+    elevation: 286,
+    atzDescription: 'No notified ATZ',
+    runways: [
+      AirfieldRunway(
+        designator: '09/27',
+        lengthMetres: 880,
+        surface: 'Grass',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Andrewsfield Radio',
+        frequency: '130.555',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Friendly Essex grass field — popular PPL training. '
+        'AGCS only. Stansted CTR to the south-west — close enough that careless '
+        'handling can result in a CTR bust. '
+        'Plan transits via Stansted Radar or remain south of the field initially.',
+    commonStudentMistakes:
+        'Drifting south into Stansted CTR. '
+        'Misjudging grass surface condition.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGKH',
+    name: 'Headcorn (Lashenden)',
+    location: 'Headcorn, Kent',
+    // [HIGH] AIP AD 2 EGKH — elevation 72 ft AMSL
+    elevation: 72,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      AirfieldRunway(
+        designator: '10/28',
+        lengthMetres: 880,
+        surface: 'Grass',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Headcorn Information',
+        frequency: '122.205',
+        usage: 'AFIS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Active PPL and parachuting field — daily skydiving operations. '
+        'Always check NOTAMs and call before joining for parachute activity. '
+        'AFIS service. Lydd ATZ to the south. '
+        'Vintage / warbird operations frequent.',
+    commonStudentMistakes:
+        'Joining without checking parachute drops are inactive. '
+        'Conflicting with vintage aircraft on long final.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGMD',
+    name: 'Lydd (London Ashford)',
+    location: 'Lydd, Kent',
+    // [HIGH] AIP AD 2 EGMD — elevation 13 ft AMSL
+    elevation: 13,
+    atzDescription: '2.5 nm radius, surface to 2000 ft QFE',
+    runways: [
+      AirfieldRunway(
+        designator: '03/21',
+        lengthMetres: 1505,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Lydd Approach',
+        frequency: '120.705',
+        usage: 'Approach',
+      ),
+      AirfieldFrequency(
+        name: 'Lydd Tower',
+        frequency: '128.530',
+        usage: 'Tower',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify per runway in use)',
+    circuitAltitude: 1000,
+    localRules:
+        'Coastal aerodrome with full ATC and customs/immigration facilities. '
+        'Popular departure for cross-Channel flights to France. '
+        'Manston CTR was disestablished in 2014; airspace simplified. '
+        'Significant cross-channel and helicopter SAR traffic.',
+    commonStudentMistakes:
+        'Not familiar with customs/general aviation report (GAR) requirements for cross-Channel. '
+        'Underestimating the maritime crossing fuel reserve. '
+        'Missing the over-water approach if visibility is poor.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGTO',
+    name: 'Rochester',
+    location: 'Rochester, Kent',
+    // [HIGH] AIP AD 2 EGTO — elevation 436 ft AMSL
+    elevation: 436,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      AirfieldRunway(
+        designator: '02/20',
+        lengthMetres: 808,
+        surface: 'Asphalt',
+      ),
+      AirfieldRunway(
+        designator: '16/34',
+        lengthMetres: 654,
+        surface: 'Grass',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Rochester Tower',
+        frequency: '122.255',
+        usage: 'Tower (when manned) / AFIS',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify per runway in use)',
+    circuitAltitude: 1000,
+    localRules:
+        'Active PPL training field east of London. '
+        'Tower service when active, otherwise AFIS. '
+        'London City CTR is north-west — careful routing required. '
+        'Thames Estuary controlled airspace overhead.',
+    commonStudentMistakes:
+        'Climbing into the London City CTR. '
+        'Drifting into the London TMA. '
+        'Mishandling the parallel runway choice.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGLA',
+    name: 'Bodmin',
+    location: 'Bodmin, Cornwall',
+    // [HIGH] AIP AD 2 EGLA — elevation 650 ft AMSL
+    elevation: 650,
+    atzDescription: 'No notified ATZ',
+    runways: [
+      AirfieldRunway(
+        designator: '13/31',
+        lengthMetres: 731,
+        surface: 'Grass',
+      ),
+      AirfieldRunway(
+        designator: '03/21',
+        lengthMetres: 600,
+        surface: 'Grass',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Bodmin Radio',
+        frequency: '120.305',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Cornwall Flying Club home field, on Bodmin Moor. '
+        'High elevation (650 ft) — density altitude effects in summer. '
+        'Surrounding terrain rises to over 1000 ft within a few miles. '
+        'Newquay (EGHQ) Class D nearby; St Mawgan radar available.',
+    commonStudentMistakes:
+        'Underestimating density altitude on a hot day. '
+        'Not accounting for surrounding terrain in a go-around. '
+        'Misjudging soft grass after rain.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGPG',
+    name: 'Cumbernauld',
+    location: 'Cumbernauld, North Lanarkshire',
+    // [HIGH] AIP AD 2 EGPG — elevation 350 ft AMSL
+    elevation: 350,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      AirfieldRunway(
+        designator: '08/26',
+        lengthMetres: 720,
+        surface: 'Asphalt',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Cumbernauld Information',
+        frequency: '120.605',
+        usage: 'AFIS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify per runway in use)',
+    circuitAltitude: 1000,
+    localRules:
+        'Sits between Glasgow and Edinburgh CTRs — both very close. '
+        'AFIS service. Active PPL training field. '
+        'Scottish Information / Scottish Approach for transits. '
+        'Significant terrain to north (Campsie Fells).',
+    commonStudentMistakes:
+        'Busting Glasgow or Edinburgh CTR. '
+        'Not requesting transit clearance early enough. '
+        'Underestimating terrain in poor visibility.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGPT',
+    name: 'Perth (Scone)',
+    location: 'Scone, Perth and Kinross',
+    // [HIGH] AIP AD 2 EGPT — elevation 397 ft AMSL
+    elevation: 397,
+    atzDescription: '2 nm radius, surface to 2000 ft QFE',
+    runways: [
+      AirfieldRunway(
+        designator: '03/21',
+        lengthMetres: 1006,
+        surface: 'Asphalt',
+      ),
+      AirfieldRunway(
+        designator: '10/28',
+        lengthMetres: 745,
+        surface: 'Grass',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Perth Tower',
+        frequency: '119.805',
+        usage: 'Tower / AFIS',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify per runway in use)',
+    circuitAltitude: 1000,
+    localRules:
+        'ACS Aviation — major Scottish PPL and CPL training school. '
+        'Tower / AFIS service depending on hours. '
+        'Highland terrain to the north and west. '
+        'Edinburgh / Leuchars airspace surrounds.',
+    commonStudentMistakes:
+        'Underestimating winter weather and rapid changes. '
+        'Confusing the runway choice in crosswinds. '
+        'Not checking Leuchars / Edinburgh airspace for transits.',
+    hasData: true,
+  ),
+
+  Airfield(
+    icao: 'EGNY',
+    name: 'Beverley (Linley Hill)',
+    location: 'Beverley, East Riding of Yorkshire',
+    // [MEDIUM] Elevation approx 36 ft AMSL — verify against current AIP
+    elevation: 36,
+    atzDescription: 'No notified ATZ',
+    runways: [
+      AirfieldRunway(
+        designator: '12/30',
+        lengthMetres: 715,
+        surface: 'Grass',
+      ),
+    ],
+    frequencies: [
+      AirfieldFrequency(
+        name: 'Linley Hill Radio',
+        frequency: '123.055',
+        usage: 'AGCS — all calls',
+      ),
+    ],
+    circuitDirection: 'Left hand (verify current)',
+    circuitAltitude: 1000,
+    localRules:
+        'Hull Aero Club home field — Yorkshire grass strip. '
+        'AGCS only. Humberside (EGNJ) Class D very close to the south — '
+        'do not bust the CTR. '
+        'Coastal weather effects from the Humber Estuary.',
+    commonStudentMistakes:
+        'Drifting south into Humberside CTR. '
+        'Treating AGCS as ATC.',
+    hasData: true,
+  ),
+
+  // ── Airfields flagged for status review ──────────────────────────────────
+  // EGCN (Doncaster Sheffield) — closed to commercial operations November 2022.
+  // The site reopened to general aviation in 2024 under different operations;
+  // ATC and airspace status has changed multiple times. Always check current
+  // AIP and NOTAMs before flying to/from the area. Not included as a full
+  // entry while status is in flux.
+  //
+  // Plymouth (EGHD) — closed December 2011; remains in the file as a historical
+  // entry but should be treated as inactive. Verify before any planning.
+  //
+  // Manston (EGMH, formerly Kent International) — closed 2014. CTR
+  // disestablished. Site is being redeveloped as a cargo airport but no
+  // current GA usage. Not included in this list.
 ];

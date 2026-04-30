@@ -28,3 +28,15 @@ final lessonsByExerciseProvider =
 
   return lessons.where((l) => l.exerciseId == exerciseId).toList();
 });
+
+/// Most recent non-empty instructor name across all logged lessons, or null
+/// when no lesson has one. Used by the lesson form to pre-fill the instructor
+/// field on new entries.
+final lastInstructorNameProvider = Provider<String?>((ref) {
+  final lessons = ref.watch(allLessonsProvider).valueOrNull;
+  if (lessons == null || lessons.isEmpty) return null;
+  for (final lesson in lessons) {
+    if (lesson.instructorName.trim().isNotEmpty) return lesson.instructorName;
+  }
+  return null;
+});

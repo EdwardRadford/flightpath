@@ -1,4 +1,7 @@
 // Learn tab — shows the AI Instructor chat directly, with RT Practice toggle.
+//
+// TODO(router): Add '/learn/mandatory-readback' route in router.dart pointing
+// at MandatoryReadbackScreen before releasing the readback feature.
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -117,6 +120,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
 
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
+        if (!mounted) return;
         setState(() {
           _messages.add(ChatMessage(
             role: 'assistant',
@@ -141,6 +145,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
       final aiText = data?['reply'] as String? ??
           'Sorry, I couldn\'t process that right now. Please try again.';
 
+      if (!mounted) return;
       setState(() {
         _messages.add(ChatMessage(
           role: 'assistant',
@@ -159,11 +164,10 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
       } else {
         errorMsg = e.message ?? 'AI service error. Please try again.';
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg)),
+      );
       setState(() {
         _messages.add(ChatMessage(
           role: 'assistant',
@@ -173,6 +177,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
       });
     } catch (e, stackTrace) {
       FirebaseCrashlytics.instance.recordError(e, stackTrace);
+      if (!mounted) return;
       setState(() {
         _messages.add(ChatMessage(
           role: 'assistant',
@@ -181,8 +186,10 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
         ));
       });
     } finally {
-      setState(() => _isLoading = false);
-      _scrollToBottom();
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _scrollToBottom();
+      }
     }
   }
 

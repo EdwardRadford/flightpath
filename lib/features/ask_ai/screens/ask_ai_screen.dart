@@ -22,9 +22,19 @@ import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
+import 'package:flight_path/shared/services/hive_service.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
+
+// Cap persisted history so the Hive box can't grow unbounded across sessions.
+const int _kMaxPersistedMessages = 50;
+// Hive key — namespaced by UID so different accounts on the same device get
+// separate chat histories. Falls back to `anon` for unauthenticated states.
+String _askAiHistoryKey() {
+  final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anon';
+  return 'messages_$uid';
+}
 
 const String _kStreamUrl =
     'https://europe-west2-flight-path-fed56.cloudfunctions.net/getAiChatStream';
@@ -33,7 +43,17 @@ const String _kStreamUrl =
 class AskAiScreen extends ConsumerStatefulWidget {
   final String? initialMessage;
 
-  const AskAiScreen({super.key, this.initialMessage});
+  /// When set, the screen opens in debrief mode — primes the AI with
+  /// exercise-specific context and auto-sends the opening prompt.
+  final String? debriefExerciseId;
+  final String? debriefSubExercise;
+
+  const AskAiScreen({
+    super.key,
+    this.initialMessage,
+    this.debriefExerciseId,
+    this.debriefSubExercise,
+  });
 
   @override
   ConsumerState<AskAiScreen> createState() => _AskAiScreenState();
@@ -51,6 +71,8 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
   static const _minSendInterval = Duration(seconds: 3);
   String? _lastUserMessage;
   bool _hasError = false;
+  bool _debriefAutoSent = false;
+  bool _isSavingDebrief = false;
 
   // Streaming
   int? _streamingMessageIndex;
@@ -69,10 +91,106 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
       duration: const Duration(milliseconds: 800),
     );
     _initStt();
-    if (widget.initialMessage != null) {
+    // Restore persisted chat history before anything else, so the user sees
+    // their previous conversation immediately when re-entering the screen.
+    // Skipped for debrief sessions — those are intentionally fresh.
+    if (widget.debriefExerciseId == null) {
+      _loadPersistedHistory();
+    }
+    // Only pre-fill the text field for generic links — debrief mode auto-sends.
+    if (widget.initialMessage != null && widget.debriefExerciseId == null) {
       _controller.text = widget.initialMessage!;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _buildStudentContext());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hive persistence
+  //
+  // Stored shape (single key per user, JSON-encoded):
+  //   [{"role": "user"|"assistant", "content": "...", "timestamp": <ms>}, ...]
+  // Resilient: any read failure is logged and silently swallowed so the
+  // screen always opens with at least an empty list.
+  // ---------------------------------------------------------------------------
+
+  void _loadPersistedHistory() {
+    try {
+      final raw = HiveService().askAiHistoryBox.get(_askAiHistoryKey());
+      if (raw == null || raw.isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return;
+      final restored = <ChatMessage>[];
+      for (final entry in decoded) {
+        if (entry is! Map) continue;
+        final role = entry['role'];
+        final content = entry['content'];
+        final ts = entry['timestamp'];
+        if (role is! String || content is! String) continue;
+        if (role != 'user' && role != 'assistant') continue;
+        if (content.isEmpty) continue;
+        final timestamp = ts is int
+            ? DateTime.fromMillisecondsSinceEpoch(ts)
+            : DateTime.now();
+        restored.add(ChatMessage(
+          role: role,
+          content: content,
+          timestamp: timestamp,
+        ));
+      }
+      if (restored.isEmpty) return;
+      // Trim to cap before showing.
+      if (restored.length > _kMaxPersistedMessages) {
+        restored.removeRange(0, restored.length - _kMaxPersistedMessages);
+      }
+      if (mounted) {
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(restored);
+        });
+        _scrollToBottom();
+      } else {
+        _messages
+          ..clear()
+          ..addAll(restored);
+      }
+    } catch (e, stack) {
+      debugPrint('AskAi: failed to restore chat history: $e');
+      FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
+    }
+  }
+
+  Future<void> _persistHistory() async {
+    // Debrief sessions are ephemeral — never write them to disk.
+    if (widget.debriefExerciseId != null) return;
+    try {
+      // Only persist completed (non-empty) messages — skip the placeholder
+      // bubble that streaming uses while a delta is in flight.
+      final source = _messages.where((m) => m.content.isNotEmpty).toList();
+      final start = source.length > _kMaxPersistedMessages
+          ? source.length - _kMaxPersistedMessages
+          : 0;
+      final encoded = jsonEncode(
+        source.sublist(start).map((m) => {
+              'role': m.role,
+              'content': m.content,
+              'timestamp': m.timestamp.millisecondsSinceEpoch,
+            }).toList(),
+      );
+      await HiveService().askAiHistoryBox.put(_askAiHistoryKey(), encoded);
+    } catch (e, stack) {
+      debugPrint('AskAi: failed to persist chat history: $e');
+      FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
+    }
+  }
+
+  Future<void> _clearPersistedHistory() async {
+    try {
+      await HiveService().askAiHistoryBox.delete(_askAiHistoryKey());
+    } catch (e, stack) {
+      debugPrint('AskAi: failed to clear chat history: $e');
+      FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
+    }
   }
 
   void _buildStudentContext() {
@@ -164,12 +282,89 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
       lines.add('Last 3 lessons: $lessonSummaries');
     }
 
+    // Debrief-mode: append exercise-specific history and notes.
+    if (widget.debriefExerciseId != null) {
+      final ue = userExercises.where((e) =>
+        e.exerciseId == widget.debriefExerciseId &&
+        e.subExercise == widget.debriefSubExercise,
+      ).firstOrNull;
+      final exLabel = _exerciseLabel(widget.debriefExerciseId!, widget.debriefSubExercise);
+
+      lines.add('---');
+      lines.add('DEBRIEF SESSION: ${exLabel.isNotEmpty ? exLabel : widget.debriefExerciseId}');
+      if (ue != null) {
+        if (ue.timesAttempted > 0) lines.add('Times flown: ${ue.timesAttempted}');
+        if (ue.ratingHistory.isNotEmpty) {
+          lines.add('Rating history: ${ue.ratingHistory.map((r) => '$r/5').join(', ')}');
+        }
+        if (ue.debriefNotes?.isNotEmpty == true) {
+          lines.add('What went well (previous): ${ue.debriefNotes}');
+        }
+        if (ue.focusNextTime?.isNotEmpty == true) {
+          lines.add('Focus area (previous): ${ue.focusNextTime}');
+        }
+        if (ue.instructorNotes?.isNotEmpty == true) {
+          lines.add('Instructor notes: ${ue.instructorNotes}');
+        }
+      }
+    }
+
     if (lines.isEmpty) return;
 
     if (mounted) {
       setState(() {
         _studentContext = 'Student profile:\n${lines.map((l) => '- $l').join('\n')}';
       });
+    }
+
+    // Auto-send the debrief opener once context is built.
+    if (mounted && widget.debriefExerciseId != null && !_debriefAutoSent) {
+      _debriefAutoSent = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _sendDebriefIntro());
+    }
+  }
+
+  String _buildDebriefPrompt() {
+    final label = _exerciseLabel(
+      widget.debriefExerciseId!,
+      widget.debriefSubExercise,
+    );
+    final name = label.isNotEmpty ? label : 'this exercise';
+    return 'I\'d like a debrief on $name. Use my notes and lesson history from your '
+        'context to give me a structured debrief directly — what went well, what to '
+        'improve, and what to focus on next time. Only ask me a follow-up question '
+        'if you genuinely need more information that isn\'t in my context. Maximum '
+        '2 questions if you do ask. Most of the time you should be able to debrief '
+        'me without asking anything.';
+  }
+
+  Future<void> _sendDebriefIntro() async {
+    if (!mounted) return;
+    _controller.text = _buildDebriefPrompt();
+    await _sendMessage();
+  }
+
+  Future<void> _saveDebriefToNotes() async {
+    final lastAi = _messages.lastWhere(
+      (m) => m.role == 'assistant' && m.content.isNotEmpty,
+      orElse: () => ChatMessage(role: '', content: '', timestamp: DateTime.now()),
+    );
+    if (lastAi.role.isEmpty || lastAi.content.isEmpty) return;
+    setState(() => _isSavingDebrief = true);
+    try {
+      await saveAiDebrief(
+        ref,
+        widget.debriefExerciseId!,
+        widget.debriefSubExercise,
+        lastAi.content,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Debrief saved to exercise notes')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSavingDebrief = false);
     }
   }
 
@@ -316,6 +511,9 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
       _hasError = false;
     });
     _scrollToBottom();
+    // Persist the user's message immediately so it survives even if the
+    // AI request fails or the user leaves the screen mid-flight.
+    unawaited(_persistHistory());
 
     await ref.read(askAiLimitProvider.notifier).incrementMessageCount();
 
@@ -452,6 +650,8 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
             });
             _scrollToBottom();
           }
+          // Persist the completed assistant reply.
+          unawaited(_persistHistory());
           break;
         } else if (type == 'error') {
           final msg = event['message'] as String? ??
@@ -473,6 +673,8 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
             });
             _scrollToBottom();
           }
+          // Persist so the error reply isn't lost on navigation.
+          unawaited(_persistHistory());
           break;
         }
       }
@@ -525,8 +727,9 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
               tooltip: 'Clear conversation',
-              onPressed: () {
+              onPressed: () async {
                 setState(() => _messages.clear());
+                await _clearPersistedHistory();
               },
             ),
         ],
@@ -641,6 +844,37 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
                   fontSize: 12,
                 ),
                 textAlign: TextAlign.center,
+              ),
+            ),
+
+          // ── Debrief save banner ─────────────────────────────────
+          if (widget.debriefExerciseId != null &&
+              _messages.any(
+                  (m) => m.role == 'assistant' && m.content.isNotEmpty))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: OutlinedButton.icon(
+                onPressed: _isSavingDebrief ? null : _saveDebriefToNotes,
+                icon: _isSavingDebrief
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.bookmark_add_outlined, size: 16),
+                label: Text(
+                  _isSavingDebrief
+                      ? 'Saving...'
+                      : 'Save debrief to exercise notes',
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side:
+                      BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                  minimumSize: const Size.fromHeight(44),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ),
 

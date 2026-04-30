@@ -10,10 +10,12 @@ import 'logbook_progress_screen.dart';
 /// Legacy alias — routes and imports that reference [LogbookScreen] will
 /// transparently use the combined [LogbookProgressScreen].
 class LogbookScreen extends ConsumerWidget {
-  const LogbookScreen({super.key});
+  final String? initialExerciseId;
+
+  const LogbookScreen({super.key, this.initialExerciseId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const LogbookProgressScreen();
+    return LogbookProgressScreen(initialExerciseId: initialExerciseId);
   }
 }

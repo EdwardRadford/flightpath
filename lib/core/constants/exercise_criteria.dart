@@ -203,7 +203,7 @@ class ExerciseCriteria {
         key: 'maintaining_altitude',
         label: 'Maintaining Altitude',
         description:
-            'Maintains altitude within ±100ft using attitude and power adjustments',
+            'Maintains altitude within ±150 ft using attitude and power adjustments',
       ),
       ExerciseCriterion(
         key: 'cruise_speed_changes',
@@ -237,7 +237,7 @@ class ExerciseCriteria {
         key: 'normal_climb',
         label: 'Normal Climb (Vy)',
         description:
-            'Maintains best rate of climb speed (Vy) ±5kt and heading ±10° throughout the climb',
+            'Maintains best rate of climb speed (Vy) +15/−5 kt and heading ±10° throughout the climb',
       ),
       ExerciseCriterion(
         key: 'best_angle_climb',
@@ -265,13 +265,13 @@ class ExerciseCriteria {
         key: 'glide_descent',
         label: 'Glide Descent',
         description:
-            'Enters and maintains a glide at the recommended glide speed ±5kt; applies carb heat',
+            'Enters and maintains a glide at the recommended glide speed +15/−5 kt; applies carb heat',
       ),
       ExerciseCriterion(
         key: 'powered_descent',
         label: 'Powered Descent',
         description:
-            'Sets target rate of descent using power; maintains speed ±5kt and heading ±10°',
+            'Sets target rate of descent using power; maintains speed +15/−5 kt and heading ±10°',
       ),
       ExerciseCriterion(
         key: 'levelling_off',
@@ -291,6 +291,12 @@ class ExerciseCriteria {
         description:
             'Uses flap stages correctly to increase descent angle while controlling speed',
       ),
+      ExerciseCriterion(
+        key: 'sideslipping',
+        label: 'Sideslipping',
+        description:
+            'Demonstrates sideslip entry and maintenance: bank into wind, opposite rudder; uses sideslip to steepen descent angle without increasing speed; recovers cleanly to straight flight',
+      ),
     ],
 
     // ── Ex 9: Turning ───────────────────────────────────────────────────
@@ -299,7 +305,7 @@ class ExerciseCriteria {
         key: 'medium_level_turns',
         label: 'Medium Level Turns (30°)',
         description:
-            'Enters, maintains, and rolls out of 30° bank turns; maintains altitude ±100ft and speed ±5kt',
+            'Enters, maintains, and rolls out of 30° bank turns; maintains altitude ±150 ft and speed ±5kt',
       ),
       ExerciseCriterion(
         key: 'coordination',
@@ -449,6 +455,12 @@ class ExerciseCriteria {
         description:
             'Follows published departure route; makes correct R/T calls; joins circuit at correct height',
       ),
+      ExerciseCriterion(
+        key: 'efato_rto',
+        label: 'EFATO and Rejected Take-off',
+        description:
+            'Knows the EFATO decision point (typically 500 ft AGL or Vr); if engine fails before decision: close throttle, brake, maintain directional control; if airborne: maintain climb attitude, complete drills, do not turn back below 1000 ft AAL',
+      ),
     ],
 
     // ── Ex 13: Circuit, Approach and Landing ────────────────────────────
@@ -475,7 +487,7 @@ class ExerciseCriteria {
         key: 'landing',
         label: 'Landing Technique',
         description:
-            'Executes round-out, hold-off, and touchdown: main wheels first, on centreline, within 200m of aiming point',
+            'Executes round-out, hold-off, and touchdown: main wheels first, on centreline, within the first third of the runway',
       ),
       ExerciseCriterion(
         key: 'crosswind_landing',
@@ -517,6 +529,18 @@ class ExerciseCriteria {
         description:
             'Demonstrates calm, confident manner and good airmanship; safe decision-making throughout',
       ),
+      ExerciseCriterion(
+        key: 'rt_proficiency',
+        label: 'RT Proficiency',
+        description:
+            'Demonstrates satisfactory RT proficiency: correct call-sign use, proper readback of ATC instructions, accurate position and intentions. CAP 1298 requires RT competency to be confirmed before first solo authorisation',
+      ),
+      ExerciseCriterion(
+        key: 'post_solo_consolidation',
+        label: 'Post-solo Consolidation Content',
+        description:
+            'After first solo, revisit: leaving the circuit, local area procedures, map reading, use of the compass, use of radio navigation aids for homing, re-joining the circuit. CAP 1298 lists these as required content during the solo consolidation phase',
+      ),
     ],
 
     // ── Ex 15: Advanced Turning ─────────────────────────────────────────
@@ -525,7 +549,7 @@ class ExerciseCriteria {
         key: 'steep_level_turns',
         label: 'Steep Level Turns (45°)',
         description:
-            'Enters, maintains, and rolls out of 45° bank turns; altitude ±100ft, speed ±10kt, bank ±5°',
+            'Enters, maintains, and rolls out of 45° bank turns; altitude ±150 ft, speed ±15 kt, bank ±5°',
       ),
       ExerciseCriterion(
         key: 'back_pressure_power',
@@ -717,8 +741,94 @@ class ExerciseCriteria {
       ),
     ],
 
-    // ── Ex 19: Night Flying ─────────────────────────────────────────────
+    // ── Ex 18D: Cross-Country Navigation ───────────────────────────────────
+    'ex_18_18d': [
+      ExerciseCriterion(
+        key: 'solo_planning',
+        label: 'Solo Route Planning',
+        description:
+            'Plans a cross-country route without instructor assistance: selects turning points, measures tracks and distances from 1:500,000 chart, calculates headings (W/V applied), ETAs, and fuel required for all legs plus reserves',
+      ),
+      ExerciseCriterion(
+        key: 'self_briefing',
+        label: 'Self-briefing',
+        description:
+            'Obtains and interprets own weather forecast (TAF/METAR), NOTAMs, and ATIS for all aerodromes. Identifies any airspace conflicts on the planned route and considers need for a VFR flight plan',
+      ),
+      ExerciseCriterion(
+        key: 'nav_tolerance',
+        label: 'Navigation to Tolerance',
+        description:
+            'Arrives at each turning point within 3 nm and within 3 minutes of planned ETA. Heading held within +/- 5 degrees; altitude within +/- 150 ft of planned cruise level throughout',
+      ),
+      ExerciseCriterion(
+        key: 'unfamiliar_aerodromes',
+        label: 'Arrival at Unfamiliar Aerodromes',
+        description:
+            'Identifies and joins the circuit at each intermediate aerodrome correctly. Obtains ATIS or listens out before joining; makes correct radio calls; completes full-stop landing and logs arrival time',
+      ),
+      ExerciseCriterion(
+        key: 'fuel_management',
+        label: 'Fuel and Endurance Management',
+        description:
+            'Checks fuel state at each turning point and confirms endurance to next destination. Remains aware of fuel remaining vs planned consumption; decides to refuel en route if required',
+      ),
+      ExerciseCriterion(
+        key: 'postflight_review',
+        label: 'Post-flight Review',
+        description:
+            'Completes pilot logbook entry with route, times, and flight conditions. Compares planned vs actual ETAs and groundspeed; identifies cause of any discrepancies for future flights',
+      ),
+    ],
+
+    // ── Ex 18E: Navigation Emergencies ─────────────────────────────────────
+    'ex_18_18e': [
+      ExerciseCriterion(
+        key: 'diversion',
+        label: 'In-flight Diversion',
+        description:
+            'Plans and executes diversion to alternate: selects alternate, measures new track with finger/ruler, estimates heading allowing for wind, calculates time and fuel, navigates to alternate without getting behind the aircraft',
+      ),
+      ExerciseCriterion(
+        key: 'lost_procedure',
+        label: 'Lost Procedure (LDST)',
+        description:
+            'Follows LDST when uncertain of position: Look (identify landmarks, check fuel/time), Decide (orbit if needed, climb if safe), Squawk (7700 if emergency, or request VDF/QDM), Talk (call ATC — position uncertain, request assistance)',
+      ),
+      ExerciseCriterion(
+        key: 'radio_failure',
+        label: 'Radio Failure Procedure',
+        description:
+            'Follows radio failure procedure: check volume/squelch/frequency, try alternative frequency (121.5 MHz), try alternative radio if fitted, squawk 7600, proceed to destination VFR, comply with light signals, land and report to ATC',
+      ),
+      ExerciseCriterion(
+        key: 'instrument_failure',
+        label: 'Partial Panel — Instrument Failure',
+        description:
+            'Identifies a failed instrument and continues to navigate using remaining instruments. Knows typical failure modes: static system blockage (altimeter, ASI, VSI all fail together), vacuum pump failure (AI, DI fail). Maintains control using standby instruments and cross-check',
+      ),
+      ExerciseCriterion(
+        key: 'fuel_emergency',
+        label: 'Fuel Emergency Decision-making',
+        description:
+            'Calculates fuel remaining and time to destination; declares PAN PAN or MAYDAY as appropriate if fuel becomes critical (minimum 30-minute VFR reserve). Diverts to nearest suitable aerodrome rather than pressing on',
+      ),
+      ExerciseCriterion(
+        key: 'weather_deterioration',
+        label: 'Unexpected Weather Deterioration',
+        description:
+            'Makes timely go/no-go decision when conditions deteriorate below planned minima. Options: climb above cloud (if SVFR/IMC rated and authorised), turn back, divert to aerodrome with better conditions, make precautionary landing. Never continues VFR flight into IMC',
+      ),
+    ],
+
+    // ── Ex 19: Basic Instrument Flying / Night Rating ────────────────────
     'ex_19': [
+      ExerciseCriterion(
+        key: 'basic_instrument_context',
+        label: 'Basic Instrument Flight Context',
+        description:
+            'CAP 1298 Exercise 19 covers Basic Instrument Flight: straight and level, climbs, descents, and 180° turns by sole reference to instruments (simulated IMC). The UK PPL Skills Test includes a 180° instrument turn (Standards Document 19(A) s3f). The Night Rating is a separate qualification requiring additional dual and solo hours; it is not the same as Exercise 19 and may be completed alongside or after the base PPL',
+      ),
       ExerciseCriterion(
         key: 'night_preparation',
         label: 'Night Flying Preparation',

@@ -19,6 +19,7 @@ import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/shared/services/pdf_export_service.dart';
 import 'package:flight_path/shared/utils/exercise_helpers.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
+import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers (from original logbook_screen.dart)
@@ -93,7 +94,12 @@ class _Phase {
 // ---------------------------------------------------------------------------
 
 class LogbookProgressScreen extends ConsumerStatefulWidget {
-  const LogbookProgressScreen({super.key});
+  /// Optional composite exercise id to pre-filter the entries tab to.
+  /// When set, the screen opens on the Entries tab with only matching lessons
+  /// shown — used by the prepare hub "Review Relevant Lessons" card.
+  final String? initialExerciseId;
+
+  const LogbookProgressScreen({super.key, this.initialExerciseId});
 
   @override
   ConsumerState<LogbookProgressScreen> createState() =>
@@ -122,6 +128,10 @@ class _LogbookProgressScreenState extends ConsumerState<LogbookProgressScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // Pre-apply exercise filter when the screen is opened with one.
+    if (widget.initialExerciseId != null) {
+      _selectedExerciseId = widget.initialExerciseId;
+    }
     FirebaseAnalytics.instance.logEvent(
       name: 'logbook_progress_viewed',
       parameters: {'tab_name': 'entries'},
@@ -1293,6 +1303,7 @@ class _SyllabusTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesAsync = ref.watch(userExercisesProvider);
+    final appUser = ref.watch(appUserProvider).valueOrNull;
 
     return exercisesAsync.when(
       loading: () => const Center(
@@ -1472,8 +1483,19 @@ class _SyllabusTab extends ConsumerWidget {
                       return Column(
                         children: [
                           InkWell(
-                            onTap: () => context
-                                .push('/exercises/$routeId'),
+                            onTap: () {
+                              final hasAccess = appUser?.canAccessExercise(routeId) ?? true;
+                              if (!hasAccess) {
+                                showPremiumPaywall(
+                                  context,
+                                  source: 'syllabus_tab',
+                                  freeWindowStart: appUser?.freeWindowStart ?? 1,
+                                  freeWindowEnd: appUser?.freeWindowEnd ?? 3,
+                                );
+                                return;
+                              }
+                              context.push('/exercises/$routeId');
+                            },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 14),

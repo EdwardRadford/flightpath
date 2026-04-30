@@ -15,7 +15,7 @@ import 'package:flight_path/shared/utils/exercise_helpers.dart';
 // Step data class
 // ---------------------------------------------------------------------------
 
-enum _StepAction { route, weather, selfBrief }
+enum _StepAction { route, weather, selfBrief, beforeYouFly }
 
 class _StepItem {
   final int stepNumber;
@@ -116,6 +116,10 @@ class _SteppedPrepareChecklistState
     context.push('/tools/weather');
   }
 
+  void _openBeforeYouFly() {
+    context.push('/exercises/${widget.compositeExerciseId}/before-you-fly');
+  }
+
   void _openSelfBrief() {
     final aircraftType =
         ref.read(appUserProvider).valueOrNull?.aircraftType ?? '';
@@ -139,6 +143,8 @@ class _SteppedPrepareChecklistState
     final bool briefDone = widget.userExercise?.briefViewed ?? false;
     final bool flashcardsDone =
         widget.userExercise?.flashcardsCompleted ?? false;
+    final bool beforeYouFlyDone =
+        widget.userExercise?.beforeYouFlyViewed ?? false;
     final bool weatherDone = widget.userExercise?.weatherChecked ?? false;
     final bool selfBriefDone =
         widget.userExercise?.selfBriefCompleted ?? false;
@@ -179,6 +185,57 @@ class _SteppedPrepareChecklistState
         ];
 
       case LessonType.milestone:
+        // Exercise 14 (First Solo) is a milestone but students still need to
+        // complete the full flight prep flow. Return the same steps as a
+        // standard flight lesson. Other milestone exercises (none today, but
+        // future-proof) keep the lightweight "Schedule Your Lesson" step.
+        if (widget.compositeExerciseId == 'ex_14') {
+          return [
+            PrepareStepItem(
+              stepNumber: 1,
+              icon: Icons.menu_book_rounded,
+              label: 'Brief',
+              done: briefDone,
+              route: '/exercises/${widget.compositeExerciseId}/brief',
+              statusLabel: briefStatusLabel,
+            ),
+            PrepareStepItem(
+              stepNumber: 2,
+              icon: Icons.style_rounded,
+              label: 'Flashcards',
+              done: flashcardsDone,
+              route: '/exercises/${widget.compositeExerciseId}/flashcards',
+              statusLabel: flashcardsStatusLabel,
+            ),
+            PrepareStepItem(
+              stepNumber: 3,
+              icon: Icons.flight_takeoff_rounded,
+              label: 'Before You Fly',
+              done: beforeYouFlyDone,
+              route: '/exercises/${widget.compositeExerciseId}/before-you-fly',
+              statusLabel: beforeYouFlyDone ? 'Viewed' : 'Not Started',
+              action: _StepAction.beforeYouFly,
+            ),
+            PrepareStepItem(
+              stepNumber: 4,
+              icon: Icons.cloud_rounded,
+              label: 'Weather',
+              done: weatherDone,
+              route: '/tools/weather',
+              statusLabel: weatherDone ? 'Checked' : 'Not Checked',
+              action: _StepAction.weather,
+            ),
+            PrepareStepItem(
+              stepNumber: 5,
+              icon: Icons.record_voice_over_rounded,
+              label: 'Self-Brief',
+              done: selfBriefDone,
+              route: '',
+              statusLabel: selfBriefDone ? 'Completed' : 'Not Started',
+              action: _StepAction.selfBrief,
+            ),
+          ];
+        }
         return [
           PrepareStepItem(
             stepNumber: 1,
@@ -210,11 +267,12 @@ class _SteppedPrepareChecklistState
           ),
           PrepareStepItem(
             stepNumber: 3,
-            icon: Icons.edit_rounded,
-            label: 'Quiz',
-            done: widget.quizPassed,
-            route: '/exercises/${widget.compositeExerciseId}/quiz',
-            statusLabel: quizStatusLabel,
+            icon: Icons.flight_takeoff_rounded,
+            label: 'Before You Fly',
+            done: beforeYouFlyDone,
+            route: '/exercises/${widget.compositeExerciseId}/before-you-fly',
+            statusLabel: beforeYouFlyDone ? 'Viewed' : 'Not Started',
+            action: _StepAction.beforeYouFly,
           ),
           PrepareStepItem(
             stepNumber: 4,
@@ -244,6 +302,8 @@ class _SteppedPrepareChecklistState
         _openWeather();
       case _StepAction.selfBrief:
         _openSelfBrief();
+      case _StepAction.beforeYouFly:
+        _openBeforeYouFly();
       case _StepAction.route:
         context.push(step.route);
     }
@@ -341,7 +401,7 @@ class _SteppedPrepareChecklistState
 
         // Step list
         ...steps.map((step) {
-          const viewableLabels = {'Brief', 'Visualisation'};
+          const viewableLabels = {'Brief'};
           final isStepLocked =
               widget.locked && !viewableLabels.contains(step.label);
           final isNext = !isStepLocked &&
@@ -408,7 +468,6 @@ class _StepCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _StepCard({
-    super.key,
     required this.step,
     required this.totalSteps,
     required this.isNextStep,
@@ -565,7 +624,6 @@ class _LockedStepCard extends StatelessWidget {
   final int totalSteps;
 
   const _LockedStepCard({
-    super.key,
     required this.step,
     required this.totalSteps,
   });
@@ -601,7 +659,6 @@ class _LockedStepCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          const SizedBox(width: 12),
 
           // Label (greyed)
           Expanded(

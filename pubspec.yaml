@@ -1,7 +1,7 @@
 name: flight_path
 description: "UK PPL(A) student pilot lesson companion app."
 publish_to: 'none'
-version: 1.0.6+11
+version: 1.0.6+12
 
 environment:
   sdk: ^3.6.0
@@ -39,6 +39,10 @@ dependencies:
 
   # Google Sign-In
   google_sign_in: ^6.3.0
+
+  # Sign In with Apple (required by App Store if any third-party login is offered)
+  sign_in_with_apple: ^6.0.0
+  crypto: ^3.0.3
 
   # Deep linking
   app_links: ^6.4.0

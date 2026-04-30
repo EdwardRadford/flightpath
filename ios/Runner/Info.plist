@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Flight Path uses your microphone for RT practice radio calls. The microphone is only active when you start a practice session.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Flight Path transcribes your radio calls to check phraseology against CAA standards. Transcriptions are processed on-device or sent to Apple's speech service.</string>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>

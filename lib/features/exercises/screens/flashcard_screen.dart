@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/shared/models/exercise_content.dart';
 import 'package:flight_path/shared/models/flashcard.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
@@ -450,6 +451,15 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
     final total = _gotIt.length + _needsReview.length;
     final pct = total > 0 ? (_gotIt.length / total * 100).round() : 0;
 
+    // Show "Next: Before You Fly" only for flight lessons — for ground
+    // lessons, flashcards is the terminal prepare step.
+    final (exId, subExId) = parseExerciseId(widget.compositeExerciseId);
+    final lessonType = ref
+        .read(exerciseContentProvider((exId, subExId)))
+        .valueOrNull
+        ?.lessonType;
+    final showNextStep = lessonType == LessonType.flight;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
       child: Column(
@@ -632,16 +642,19 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
           ],
 
           // Action buttons
-          if (_needsReview.isNotEmpty)
+          if (showNextStep) ...[
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _retryNeedsReview,
-                icon: const Icon(Icons.refresh_rounded),
-                label: Text(
-                    'Retry ${_needsReview.length} Card${_needsReview.length == 1 ? '' : 's'}'),
+                onPressed: () {
+                  context.pushReplacement(
+                    '/exercises/${widget.compositeExerciseId}/before-you-fly',
+                  );
+                },
+                icon: const Icon(Icons.flight_takeoff_rounded),
+                label: const Text('Next: Before You Fly'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.warning,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -649,6 +662,43 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                   ),
                 ),
               ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          if (_needsReview.isNotEmpty)
+            SizedBox(
+              width: double.infinity,
+              child: showNextStep
+                  ? OutlinedButton.icon(
+                      onPressed: _retryNeedsReview,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: Text(
+                          'Retry ${_needsReview.length} Card${_needsReview.length == 1 ? '' : 's'}'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.warning,
+                        side: BorderSide(
+                            color: AppColors.warning.withValues(alpha: 0.6)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: _retryNeedsReview,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: Text(
+                          'Retry ${_needsReview.length} Card${_needsReview.length == 1 ? '' : 's'}'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.warning,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
             ),
 
           const SizedBox(height: 10),
@@ -661,29 +711,6 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
               label: const Text('Start Over'),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: AppColors.divider),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                context.push(
-                  '/exercises/${widget.compositeExerciseId}/quiz',
-                );
-              },
-              icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-              label: const Text('Next: Quiz'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

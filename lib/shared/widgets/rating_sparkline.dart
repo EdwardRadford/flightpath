@@ -1,6 +1,7 @@
 // Simple sparkline widget for rating history.
 // Shows a line graph of past ratings, equally spaced horizontally.
 // Color: AppColors.primary. Dot at the last point.
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
@@ -34,8 +35,11 @@ class _SparklinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (ratings.length < 2) return;
 
-    final minVal = ratings.reduce((a, b) => a < b ? a : b).toDouble();
-    final maxVal = ratings.reduce((a, b) => a > b ? a : b).toDouble();
+    // Materialise as double so .reduce dispatches on List<double> regardless
+    // of the runtime element type (List<int> vs List<num>).
+    final values = ratings.map((r) => r.toDouble()).toList();
+    final minVal = values.reduce(math.min);
+    final maxVal = values.reduce(math.max);
     final range = maxVal - minVal;
 
     // Avoid division by zero when all values are the same.
@@ -57,8 +61,8 @@ class _SparklinePainter extends CustomPainter {
     final drawHeight = size.height - verticalPadding * 2;
 
     Offset toOffset(int index) {
-      final x = size.width * index / (ratings.length - 1);
-      final normalized = (ratings[index].toDouble() - minVal) / effectiveRange;
+      final x = size.width * index / (values.length - 1);
+      final normalized = (values[index] - minVal) / effectiveRange;
       // Flip: high rating → top of canvas.
       final y = verticalPadding + drawHeight * (1 - normalized);
       return Offset(x, y);
@@ -66,13 +70,13 @@ class _SparklinePainter extends CustomPainter {
 
     final path = Path();
     path.moveTo(toOffset(0).dx, toOffset(0).dy);
-    for (int i = 1; i < ratings.length; i++) {
+    for (int i = 1; i < values.length; i++) {
       path.lineTo(toOffset(i).dx, toOffset(i).dy);
     }
     canvas.drawPath(path, linePaint);
 
     // Dot at last point.
-    final last = toOffset(ratings.length - 1);
+    final last = toOffset(values.length - 1);
     canvas.drawCircle(last, 3.5, dotPaint);
   }
 

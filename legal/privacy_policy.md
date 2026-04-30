@@ -1,140 +1,157 @@
 # Privacy Policy
 
 **Flight Path**
-Last updated: 23 March 2026
+Last updated: 30 April 2026
 
 ## 1. Introduction
 
-Flight Path ("the App") is developed and operated by Eddie Radford, a sole developer based in the United Kingdom ("we", "us", "our"). We are committed to protecting your privacy and handling your personal data in accordance with the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
+Flight Path ("the App") is developed and operated by Edward Radford, a sole developer based in the United Kingdom ("we", "us", "our"). This Privacy Policy explains what personal data we collect, why we collect it, who processes it on our behalf, and your rights under the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
 
-This Privacy Policy explains what data we collect, how we use it, who we share it with, and your rights regarding your personal data.
-
-**Important:** This app is a training aid only and does not replace professional flight instruction. Always follow your instructor's guidance and current CAA regulations.
+The App is a training aid for student pilots working through the UK CAA PPL(A) syllabus. It does not replace professional flight instruction. Always follow your instructor's guidance and current CAA regulations.
 
 ## 2. Data Controller
 
-Eddie Radford
-Email: eddie@yowzer.co.uk
+Edward Radford
+Email: contact@getflightpath.app
+Privacy queries: privacy@getflightpath.app
 
-## 3. Data We Collect
+## 3. Data we collect
 
-We collect the following personal data when you use the App:
-
-### 3.1 Account Information
+### 3.1 Account information (you provide)
 - Full name
 - Email address
+- Encrypted password (handled by Firebase Authentication — we never see the plaintext)
 
-### 3.2 Training Profile
+### 3.2 Training profile (you provide)
 - Aircraft type (e.g. Cessna 152, PA-28)
 - Flight school name
 - Home airfield ICAO code
 
-### 3.3 Lesson and Training Data
-- Lesson logs (dates, durations, ratings, notes)
-- Quiz scores and quiz history
+### 3.3 Generated through use of the App
+- Lesson logs: dates, durations, exercise IDs, ratings, notes, personal reflections
+- Exercise progress, completion status, and rating history
 - Flashcard progress
-- Flight hours (total and per exercise)
-- Exercise completion status and progress
-- Personal reflections and debrief notes
-- Rating history per exercise
+- AI chat history with the in-app AI instructor (stored locally in Hive on your device, with the most recent training-context lessons synced to Firestore)
+- AI lesson debrief outputs (returned by Anthropic's Claude API and saved against the lesson)
+- Subscription status (whether you hold the £39 lifetime "Pro" entitlement)
 
-### 3.4 Location Data
-- Approximate location is used solely to retrieve local weather data (via OpenWeatherMap) for pre-flight weather briefings. Location data is not stored on our servers.
+### 3.4 Automatically collected
+- Firebase Analytics events: anonymised usage patterns such as screens visited and features used
+- Firebase Crashlytics: crash reports including device model, OS version, and stack traces
+- Firebase Cloud Messaging token: a device-specific token used to deliver push notifications
+- Firebase App Check token: a short-lived attestation that the request came from a legitimate copy of the App
 
-### 3.5 Device and Usage Data
-- Firebase Analytics events (anonymised usage patterns such as screens visited and features used)
-- Crash reports via Firebase Crashlytics (device model, OS version, stack traces)
-- Firebase Cloud Messaging token (for push notifications)
+## 4. What we don't collect
 
-## 4. How We Use Your Data
+To be explicit, the App does **not** collect:
 
-We use your personal data for the following purposes:
+- Location data, GPS coordinates, or geolocation of any kind. Weather lookups use ICAO codes you type in, not your location.
+- Biometric data (Face ID / Touch ID is handled by your device's operating system and never leaves it).
+- Payment card numbers. Purchases are processed by Apple, Google, and RevenueCat — we only see the resulting subscription status.
+- Photos, contacts, calendar entries, or any other device data outside the App.
+- Audio recordings. The microphone is used only for live speech-to-text transcription during RT Practice (see section 6) and no audio is stored or transmitted to us.
 
-| Purpose | Legal Basis (UK GDPR) |
+## 5. How and why we use your data
+
+| Purpose | Legal basis (UK GDPR Art. 6) |
 |---|---|
-| Providing the App's core features (lesson tracking, quizzes, progress) | Performance of contract (Art. 6(1)(b)) |
-| Generating AI-powered lesson debriefs | Legitimate interest (Art. 6(1)(f)) |
-| Sending push notifications (lesson reminders, spaced repetition) | Consent (Art. 6(1)(a)) |
-| Weather briefings based on location | Consent (Art. 6(1)(a)) |
-| Improving the App through analytics | Legitimate interest (Art. 6(1)(f)) |
-| Diagnosing crashes and bugs | Legitimate interest (Art. 6(1)(f)) |
-| Managing your subscription | Performance of contract (Art. 6(1)(b)) |
+| Operating the App's core features (lesson tracking, progress, flashcards) | Performance of contract — Art. 6(1)(b) |
+| Generating AI lesson debriefs and AI chat responses | Legitimate interest — Art. 6(1)(f) |
+| Sending push notifications (lesson reminders, spaced repetition) | Consent — Art. 6(1)(a) |
+| Improving the App through anonymised analytics | Legitimate interest — Art. 6(1)(f) |
+| Diagnosing crashes and bugs | Legitimate interest — Art. 6(1)(f) |
+| Managing your subscription and entitlement | Performance of contract — Art. 6(1)(b) |
+| Verifying requests come from a legitimate App install (App Check) | Legitimate interest — Art. 6(1)(f) |
 
-## 5. Third-Party Services
+## 6. Microphone and speech recognition
 
-We use the following third-party services to operate the App. Each processes data as described below:
+The App requests microphone access **only** when you open the RT Practice screen. When you tap to speak:
 
-### 5.1 Firebase (Google LLC)
-- **Services used:** Firebase Authentication, Cloud Firestore, Cloud Functions, Analytics, Crashlytics, Cloud Messaging
-- **Data processed:** Account credentials, all training data, anonymised analytics events, crash reports, push notification tokens
-- **Data location:** Google Cloud servers, EU region where available
-- **Privacy policy:** https://firebase.google.com/support/privacy
+- Your speech is transcribed locally by your device's operating system (Apple Speech Recognition on iOS, Google Speech-to-Text on Android). On modern devices this transcription typically runs on-device; on older devices the OS may briefly send audio to Apple or Google for processing under their respective privacy policies.
+- The resulting **text** is compared against the expected radiotelephony phrase to score your readback.
+- Audio is **never** recorded, stored, or transmitted to our servers, to Anthropic, or to any other third party.
+- The Text-to-Speech voice that reads ATC calls aloud uses your device's built-in TTS engine. No data leaves the device.
 
-### 5.2 Anthropic (Claude AI)
-- **Service used:** Claude API for AI-powered lesson debriefs
-- **Data processed:** Exercise name, student and instructor ratings, instructor notes, personal reflections, quiz scores, and rating history are sent to Anthropic's Claude API to generate personalised debrief feedback
-- **Data retention:** Anthropic does not store personal data beyond the duration of processing the API request. No personal identifiers (name, email) are included in API calls
-- **Privacy policy:** https://www.anthropic.com/privacy
+You can revoke microphone permission at any time in your device's system settings. The rest of the App will continue to work — only RT Practice voice features will be disabled.
 
-### 5.3 RevenueCat
-- **Service used:** In-app purchase and subscription management
-- **Data processed:** Anonymous user ID, purchase receipts, subscription status
-- **Privacy policy:** https://www.revenuecat.com/privacy
+## 7. Third-party processors
 
-### 5.4 OpenWeatherMap
-- **Service used:** Weather data for pre-flight briefings
-- **Data processed:** Approximate location coordinates (latitude/longitude) to retrieve local weather. No personal identifiers are sent
-- **Privacy policy:** https://openweather.co.uk/privacy-policy
+We use the following third-party services to operate the App. Each one only receives the data needed for its specific job.
 
-## 6. Data Storage and Security
+### 7.1 Google Firebase (Google LLC / Google Ireland Ltd)
+Authentication, Cloud Firestore, Cloud Functions, Analytics, Crashlytics, Cloud Messaging, App Check. Stores your account, training data, anonymised analytics, crash reports, and push tokens. EU-region servers used where available.
+Privacy policy: https://firebase.google.com/support/privacy
 
-- Your data is stored in Firebase Cloud Firestore, hosted on Google Cloud infrastructure, using EU-based regions where available.
-- Data is encrypted in transit (TLS) and at rest (AES-256) by Google Cloud.
-- Access to the Firebase project is restricted to the developer only.
-- We do not sell, rent, or trade your personal data to any third party.
+### 7.2 Anthropic PBC
+Powers the AI lesson debrief and the in-app AI instructor chat. We send your exercise name, ratings, instructor notes, personal reflections, and recent chat messages to the Claude API via our Cloud Functions. **No personal identifiers (name, email, user ID) are included in the prompts.** Anthropic does not train its models on data submitted through its commercial API and does not retain prompts beyond what is needed to serve the request, per Anthropic's Trust Center and commercial terms.
+Privacy policy: https://www.anthropic.com/legal/privacy
+Trust portal: https://trust.anthropic.com
 
-## 7. Data Retention
+### 7.3 RevenueCat, Inc.
+Manages the £39 lifetime in-app purchase and the "Pro" entitlement. Receives an anonymous user ID, purchase receipts, and subscription status. Does not receive your name or email.
+Privacy policy: https://www.revenuecat.com/privacy
 
-- Your personal data is retained for as long as your account exists.
-- When you delete your account (via Settings > Delete Account), all associated data is permanently removed from our systems, including Firestore documents and your Firebase Authentication record.
-- Anonymised analytics data may be retained by Google Analytics after account deletion.
+### 7.4 AVWX Inc.
+Aviation weather API used to fetch live METAR data when you enter an ICAO code in the Weather or METAR tools. The Cloud Function sends only the ICAO code (e.g. "EGTC") to AVWX. **No personal data, location, or user identifier is sent.**
+Privacy policy: https://avwx.rest/
 
-## 8. Your Rights (UK GDPR, Articles 13-22)
+### 7.5 Apple App Store / Google Play
+Process the actual lifetime purchase under their own terms. We never see your card details — only the resulting receipt, via RevenueCat.
+Apple: https://www.apple.com/legal/privacy
+Google: https://policies.google.com/privacy
 
-Under the UK GDPR, you have the following rights:
+## 8. Data storage and security
 
-- **Right of access (Art. 15):** You can request a copy of all personal data we hold about you. Use the "Export My Data" feature in Settings to download your data at any time.
-- **Right to rectification (Art. 16):** You can update your personal information via Settings > Edit Profile at any time.
-- **Right to erasure (Art. 17):** You can delete your account and all associated data via Settings > Delete Account, or by contacting us.
-- **Right to data portability (Art. 20):** You can export your data in a machine-readable format using the "Export My Data" feature.
-- **Right to restrict processing (Art. 18):** You can request that we limit how we process your data by contacting us.
-- **Right to object (Art. 21):** You can object to processing based on legitimate interest by contacting us.
-- **Right to withdraw consent:** Where processing is based on consent (e.g. push notifications, location), you can withdraw consent at any time via your device settings or the App's notification settings.
+- Account data and training records are stored in Cloud Firestore on Google Cloud infrastructure, in EU regions where available.
+- Data is encrypted in transit (TLS 1.2+) and at rest (AES-256) by Google Cloud.
+- All Cloud Functions require a valid Firebase Authentication token and a valid App Check token.
+- The Anthropic and AVWX API keys are held as Firebase Function secrets and never shipped inside the App binary.
+- Access to the Firebase project is restricted to the developer.
 
-To exercise any of these rights, contact us at eddie@yowzer.co.uk. We will respond within one calendar month.
+## 9. Data retention
 
-## 9. Children's Privacy
+- Your data is retained for as long as your account is active.
+- When you delete your account from inside the App (Settings → Delete Account), our `deleteUserAccount` Cloud Function permanently removes your Firestore documents, your Firebase Authentication record, your AI chat history, and your subscription record from RevenueCat — typically within seconds and at the latest within 30 days.
+- Anonymised analytics events that are no longer linked to your account may be retained by Google Analytics under their standard retention period.
+- Local data on your device (cached briefs, flashcards, AI chat history in Hive) is removed when you uninstall the App or sign out and clear app data.
 
-Flight Path is not directed at children under the age of 16. We do not knowingly collect personal data from children under 16. If you believe we have inadvertently collected data from a child under 16, please contact us at eddie@yowzer.co.uk and we will promptly delete it.
+## 10. Your rights (UK GDPR, Articles 13–22)
 
-## 10. International Data Transfers
+You have the right to:
 
-Your data may be processed by third-party services (Google, Anthropic, RevenueCat) in countries outside the United Kingdom. Where this occurs, appropriate safeguards are in place, including Standard Contractual Clauses (SCCs) and adequacy decisions, to ensure your data is protected in accordance with UK GDPR requirements.
+- **Access (Art. 15)** — request a copy of the personal data we hold about you.
+- **Rectification (Art. 16)** — update your profile in Settings → Edit Profile, or ask us to correct anything you can't change yourself.
+- **Erasure (Art. 17)** — delete your account in Settings → Delete Account, or contact us.
+- **Portability (Art. 20)** — request your data in a machine-readable format.
+- **Restriction (Art. 18)** — ask us to limit how we process your data.
+- **Objection (Art. 21)** — object to processing based on legitimate interest.
+- **Withdraw consent** — disable push notifications or revoke microphone access at any time in your device settings.
 
-## 11. Changes to This Policy
+To exercise any of these rights, email privacy@getflightpath.app. We will respond within 30 calendar days.
 
-We may update this Privacy Policy from time to time. We will notify you of significant changes via the App or by email. The "Last updated" date at the top of this policy indicates when it was last revised.
+## 11. Children
 
-## 12. Complaints
+The App is intended for student pilots and is not directed at children under the age of 16. The minimum age aligns with the typical first-solo age in UK PPL training. We do not knowingly collect personal data from anyone under 16. If you believe we have inadvertently collected data from a child under 16, please contact privacy@getflightpath.app and we will delete it promptly.
 
-If you are not satisfied with how we handle your data, you have the right to lodge a complaint with the Information Commissioner's Office (ICO):
+## 12. International data transfers
+
+Some processors (Anthropic, RevenueCat, AVWX) operate from outside the United Kingdom. Where personal data is transferred internationally, we rely on the safeguards built into those providers' standard agreements — Standard Contractual Clauses (SCCs) and the UK addendum, or applicable adequacy decisions — so that the level of protection remains equivalent to UK GDPR.
+
+## 13. Changes to this policy
+
+We may update this Privacy Policy as the App evolves. The "Last updated" date at the top of the policy reflects when it was last revised. Material changes will be communicated in-app or by email.
+
+## 14. Complaints
+
+If you are not satisfied with how we handle your data, you have the right to lodge a complaint with the UK Information Commissioner's Office (ICO):
 
 - Website: https://ico.org.uk
 - Telephone: 0303 123 1113
 
-## 13. Contact Us
+## 15. Contact
 
-If you have any questions about this Privacy Policy or your personal data, please contact:
+For any privacy question or to exercise your rights:
 
-Eddie Radford
-Email: eddie@yowzer.co.uk
+Edward Radford
+Email: privacy@getflightpath.app
+General contact: contact@getflightpath.app

@@ -3,18 +3,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
-
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/services/weather_service.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/features/home/providers/weather_preview_provider.dart';
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
+import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/utils/exercise_helpers.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
-/// Shows a nudge to complete a post-lesson debrief when the user hasn't
+/// Shows a nudge to complete post-lesson notes when the user hasn't
 /// debriefed in more than 3 days (or has never debriefed).
 class DebriefNudgeCard extends ConsumerWidget {
   const DebriefNudgeCard({super.key});
@@ -36,9 +38,111 @@ class DebriefNudgeCard extends ConsumerWidget {
 
     if (!needsNudge) return const SizedBox.shrink();
 
+    final userExercises = ref.watch(userExercisesProvider).valueOrNull ?? [];
+    final UserExercise? mostRecent = userExercises.isEmpty
+        ? null
+        : userExercises
+            .where((ue) => ue.lastAttempted != null)
+            .fold<UserExercise?>(null, (best, ue) {
+              if (best == null) return ue;
+              return ue.lastAttempted!.isAfter(best.lastAttempted!) ? ue : best;
+            });
+
     final cs = Theme.of(context).colorScheme;
 
-    return Container(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: GestureDetector(
+      onTap: () {
+        if (mostRecent == null) {
+          context.push('/exercises');
+          return;
+        }
+        final composite =
+            compositeExerciseId(mostRecent.exerciseId, mostRecent.subExercise);
+        context.push(
+          '/exercises/$composite/notes',
+          extra: {
+            'exerciseId': mostRecent.exerciseId,
+            'subExercise': mostRecent.subExercise,
+          },
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: cs.outline),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.rate_review_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Debrief your last lesson',
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'It only takes 2 minutes',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.55),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: cs.onSurface.withValues(alpha: 0.3),
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    ),
+    );
+  }
+}
+
+/// Shows exercises that are past their spaced-repetition due date.
+/// Hidden when no exercises are due.
+class DueForReviewCard extends ConsumerWidget {
+  const DueForReviewCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dueList = ref.watch(dueForReviewProvider);
+    if (dueList.isEmpty) return const SizedBox.shrink();
+
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -46,56 +150,68 @@ class DebriefNudgeCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: cs.outline),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.rate_review_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Debrief your last lesson',
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  'It only takes 2 minutes',
-                  style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.55),
-                    fontSize: 12,
-                  ),
+                child: const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.warning,
+                  size: 20,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 14),
+              Text(
+                'Due for review',
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => context.push('/exercises'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text('Start'),
-          ),
+          const SizedBox(height: 12),
+          ...dueList.map((entry) {
+            final composite =
+                compositeExerciseId(entry.exerciseId, entry.subExercise);
+            return InkWell(
+              onTap: () => context.push('/exercises/$composite'),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        entry.displayName,
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.3),
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ],
       ),
+    ),
     );
   }
 }
@@ -111,7 +227,9 @@ class StreakCard extends ConsumerWidget {
     final streak = user.studyStreak;
     final cs = Theme.of(context).colorScheme;
 
-    return Container(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -162,6 +280,7 @@ class StreakCard extends ConsumerWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -173,7 +292,9 @@ class AskAiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return GestureDetector(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: GestureDetector(
       onTap: () => context.push('/ask-ai'),
       child: Container(
         width: double.infinity,
@@ -230,79 +351,7 @@ class AskAiCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Tappable card that opens the native share sheet so the user can
-/// recommend FlightPath to fellow student pilots.
-class ShareCard extends StatelessWidget {
-  const ShareCard({super.key});
-
-  static const _shareText =
-      "I'm using Flight Path Training to study for my PPL — give it a try: https://getflightpath.app";
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: () => SharePlus.instance.share(ShareParams(text: _shareText)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: cs.outline),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.ios_share_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Enjoying Flight Path Training?',
-                    style: TextStyle(
-                      color: cs.onSurface,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Share with other student pilots',
-                    style: TextStyle(
-                      color: cs.onSurface.withValues(alpha: 0.55),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: cs.onSurface.withValues(alpha: 0.3),
-              size: 22,
-            ),
-          ],
-        ),
-      ),
+    ),
     );
   }
 }
@@ -319,8 +368,65 @@ class WeatherPreviewCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(weatherPreviewProvider);
 
-    // Loading or error — no skeleton, no crash
-    if (state.loading || state.data == null) return const SizedBox.shrink();
+    // Loading — no skeleton
+    if (state.loading) return const SizedBox.shrink();
+
+    // Non-reporting station — show a minimal tap-through card
+    if (state.noDataForStation) {
+      final icao = ref.watch(appUserProvider).valueOrNull?.airfieldIcao ?? '';
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: GestureDetector(
+        onTap: () => context.push('/tools/weather'),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.wb_cloudy_outlined, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      icao.isNotEmpty ? icao.toUpperCase() : 'Weather',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    Text(
+                      'No live data — tap to check nearby',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+            ],
+          ),
+        ),
+      ),
+      );
+    }
+
+    // Error or no data — hide
+    if (state.data == null) return const SizedBox.shrink();
 
     final data = state.data!;
     final cs = Theme.of(context).colorScheme;
@@ -335,7 +441,9 @@ class WeatherPreviewCard extends ConsumerWidget {
     // Get the ICAO from the appUserProvider — same source the provider used
     final icao = ref.watch(appUserProvider).valueOrNull?.airfieldIcao ?? '';
 
-    return GestureDetector(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: GestureDetector(
       onTap: () => context.push('/tools/weather'),
       child: Container(
         width: double.infinity,
@@ -435,6 +543,7 @@ class WeatherPreviewCard extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -447,7 +556,9 @@ class UpgradePromptCard extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final user = ref.watch(appUserProvider).valueOrNull;
 
-    return Container(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -535,6 +646,7 @@ class UpgradePromptCard extends ConsumerWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

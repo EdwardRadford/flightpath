@@ -10,30 +10,30 @@
 const Map<String, String> skillsTestStandards = {
   // ── Ex 06: Straight and Level Flight ──────────────────────────────────────
   'ex_06':
-      'Maintain straight and level flight within ±100 ft of the selected altitude '
-      'and ±10° of the selected heading. Airspeed should be held within ±10 kt. '
+      'Maintain straight and level flight within ±150 ft of the selected altitude '
+      'and ±10° of the selected heading. Airspeed should be held within ±15 kt. '
       'Demonstrate smooth, coordinated use of controls with proper lookout and '
       'scanning technique. Use trim correctly to relieve all control pressure.',
 
   // ── Ex 07: Climbing ───────────────────────────────────────────────────────
   'ex_07':
-      'Establish a climb at the correct attitude and airspeed (within ±10 kt of '
+      'Establish a climb at the correct attitude and airspeed (+15 / −5 kt of '
       'best rate or best angle as appropriate). Maintain coordinated flight '
-      'throughout. Level off at a pre-selected altitude within ±100 ft using a '
+      'throughout. Level off at a pre-selected altitude within ±150 ft using a '
       'timely attitude change. Apply carburettor heat correctly and complete '
       'after-climb checks.',
 
   // ── Ex 08: Descending ─────────────────────────────────────────────────────
   'ex_08':
       'Establish a descent (powered and glide) with airspeed controlled within '
-      '±10 kt of the selected speed. Maintain coordinated flight and appropriate '
-      'lookout. Level off at the cleared altitude within ±100 ft. Apply '
+      '+15 / −5 kt of the selected speed. Maintain coordinated flight and appropriate '
+      'lookout. Level off at the cleared altitude within ±150 ft. Apply '
       'carburettor heat as required and complete the relevant checks.',
 
   // ── Ex 09: Turning ────────────────────────────────────────────────────────
   'ex_09':
-      'Perform medium turns maintaining altitude within ±100 ft and airspeed '
-      'within ±10 kt. Roll out on pre-selected headings within ±10°. Demonstrate '
+      'Perform medium turns maintaining altitude within ±150 ft and airspeed '
+      'within ±15 kt. Roll out on pre-selected headings within ±10°. Demonstrate '
       'coordinated use of all controls throughout; no skid or slip evident. '
       'Complete clearing turns before commencing any manoeuvre.',
 
@@ -41,7 +41,7 @@ const Map<String, String> skillsTestStandards = {
   'ex_10_10a':
       'Demonstrate controlled flight at airspeeds close to the stall '
       '(approximately 1.2 Vs). Maintain heading within ±10° and altitude within '
-      '±100 ft. Show effective use of power and positive control inputs. '
+      '±150 ft. Show effective use of power and positive control inputs. '
       'Correctly identify the onset of pre-stall buffet and transition to recovery '
       'before a full stall develops.',
 
@@ -70,11 +70,11 @@ const Map<String, String> skillsTestStandards = {
       'the runway, and rotate at Vr. Establish a positive climb at Vx or Vy as '
       'appropriate. Track the extended runway centreline and maintain climb '
       'heading within ±5°. Complete after-take-off checks and level off at '
-      'circuit height.',
+      'circuit height. In the event of a rejected take-off or EFATO, immediately close the throttle, apply maximum braking, and maintain directional control; if airborne, maintain climb attitude and complete drills before turning back.',
 
   // ── Ex 13: Circuit, Approach and Landing ─────────────────────────────────
   'ex_13':
-      'Fly a well-shaped circuit at the correct altitude (±100 ft) and position. '
+      'Fly a well-shaped circuit at the correct altitude (±150 ft) and position. '
       'Fly a stabilised approach at the target speed (±5 kt) on the correct '
       'glide path. Use flap in accordance with the checklist. Touch down in the '
       'designated touchdown zone on the main wheels, within the first third of '
@@ -83,15 +83,15 @@ const Map<String, String> skillsTestStandards = {
 
   // ── Ex 15: Advanced Turning ───────────────────────────────────────────────
   'ex_15':
-      'Perform steep turns at 45° bank angle, maintaining altitude within ±100 ft '
-      'and airspeed within ±10 kt. Roll out on the entry heading within ±10°. '
+      'Perform steep turns through at least 360° at 45° bank angle, maintaining altitude within ±150 ft '
+      'and airspeed within ±15 kt. Roll out on the entry heading within ±10°. '
       'Demonstrate awareness of increased load factor and the accelerated stall '
       'speed. Show smooth, coordinated control throughout with effective lookout.',
 
   // ── Ex 16: Forced Landing Without Power ──────────────────────────────────
   'ex_16':
       'On a simulated engine failure, immediately adopt the best glide attitude '
-      'and airspeed (within ±10 kt), select a suitable field (considering size, '
+      'and airspeed (+15 / −5 kt), select a suitable field (considering size, '
       'surface, slope, obstacles, and wind), and complete engine failure drills '
       'systematically. Fly a circuit to arrive over the field threshold at the '
       'correct height to land within the first third. Announce the go-around at '
@@ -113,9 +113,9 @@ const Map<String, String> skillsTestStandards = {
       'Plan and execute a cross-country flight (minimum 150 nm total, at least '
       '3 legs, with two full-stop landings at different aerodromes from departure). '
       'Maintain heading within ±5°, altitude within '
-      '±100 ft, and accurate time tracking. Use a 1:500,000 topographic chart '
+      '±150 ft, and accurate time tracking. Use a 1:500,000 topographic chart '
       'and dead reckoning to identify turning points. Arrive at destination '
-      'within ±5 min of ETA. Demonstrate FREDA checks, correct radio '
+      'within 3 minutes of ETA. Demonstrate FREDA checks, correct radio '
       'communication, and appropriate lost-procedure if disorientated.',
 
   // ── Ex 18B: Navigation at Lower Levels ───────────────────────────────────
@@ -134,4 +134,14 @@ const Map<String, String> skillsTestStandards = {
       'identify the aid, apply drift corrections, and maintain track within ±5°. '
       'Show correct interpretation of instrument indications and awareness of '
       'the aid\'s range and accuracy limitations.',
+
+  // ── Ex 18E: Navigation Emergencies ────────────────────────────────────────
+  'ex_18_18e':
+      'When given a simulated navigation emergency, respond promptly and systematically. '
+      'For diversions: select a suitable alternate, measure the new track, calculate a heading '
+      'and ETA, and navigate to the alternate without getting behind the aircraft. '
+      'For lost procedure: climb if safe, identify landmarks, call ATC (121.5 MHz or nearest '
+      'ATSU), squawk 7700 if emergency. For radio failure: try all frequencies, squawk 7600, '
+      'proceed to destination VFR, comply with light signals at the aerodrome. '
+      'The examiner assesses decision-making quality and systematic application of procedures.',
 };

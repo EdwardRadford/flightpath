@@ -120,31 +120,6 @@ class _ConnectivityBannerState extends ConsumerState<ConnectivityBanner> {
   }
 }
 
-/// Small sync status icon for use in app bars. Shows the number of pending
-/// sync operations as a badge over a cloud icon.
-class SyncStatusIcon extends ConsumerWidget {
-  const SyncStatusIcon({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final pendingCount = ref.watch(pendingSyncCountProvider);
-
-    if (pendingCount == 0) return const SizedBox.shrink();
-
-    return Semantics(
-      label: '$pendingCount item${pendingCount == 1 ? '' : 's'} pending sync',
-      child: Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: Badge(
-          label: Text('$pendingCount'),
-          backgroundColor: AppColors.warning,
-          child: const Icon(Icons.cloud_upload_outlined, size: 22),
-        ),
-      ),
-    );
-  }
-}
-
 /// Wraps a screen body with a [ConnectivityBanner] at the top.
 /// Use this on full-screen routes outside the [MainShell] that need
 /// offline awareness (e.g. debrief, logbook entry).

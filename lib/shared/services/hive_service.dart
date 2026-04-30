@@ -26,6 +26,7 @@ class HiveService {
   static const String _cacheTimestampsBoxName = 'cache_timestamps';
   static const String _offlineWriteQueueBoxName = 'offlineWriteQueue';
   static const String _offlineLessonDraftsBoxName = 'offlineLessonDrafts';
+  static const String _askAiHistoryBoxName = 'ask_ai_history';
 
   // ---------------------------------------------------------------------------
   // Initialisation (call once in main.dart before runApp)
@@ -54,6 +55,9 @@ class HiveService {
     if (!Hive.isBoxOpen(_offlineLessonDraftsBoxName)) {
       await Hive.openBox<String>(_offlineLessonDraftsBoxName);
     }
+    if (!Hive.isBoxOpen(_askAiHistoryBoxName)) {
+      await Hive.openBox<String>(_askAiHistoryBoxName);
+    }
   }
 
   // Accessors — always safe after init() has been awaited.
@@ -70,6 +74,14 @@ class HiveService {
   /// The offline lesson drafts box (keyed by local lesson ID).
   Box<String> get offlineLessonDraftsBox =>
       Hive.box<String>(_offlineLessonDraftsBoxName);
+
+  /// The Ask AI chat history box. Stores a single JSON-encoded list of
+  /// `{role, content, timestamp}` records under the key `messages` so the
+  /// chat survives navigation away from the screen. Per-user separation is
+  /// not required — the Hive directory is wiped on sign-out elsewhere — but
+  /// the key is namespaced for clarity.
+  Box<String> get askAiHistoryBox =>
+      Hive.box<String>(_askAiHistoryBoxName);
 
   // ---------------------------------------------------------------------------
   // Cache operations

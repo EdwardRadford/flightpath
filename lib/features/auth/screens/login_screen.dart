@@ -1,6 +1,7 @@
-// Login screen — email/password and Google Sign-In authentication.
+// Login screen — email/password, Google Sign-In, and Sign In with Apple.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -87,6 +88,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted && !isCancelled) {
         _showError('Google sign-in failed. Please try again.');
       }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _signInWithApple() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authServiceProvider).signInWithApple();
+    } on FirebaseAuthException catch (e) {
+      if (mounted) _showError(AuthService.friendlyError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -215,6 +227,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
+                if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _loading ? null : _signInWithApple,
+                    icon: const _AppleIcon(),
+                    label: const Text('Continue with Apple'),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -310,6 +337,16 @@ class _GoogleIcon extends StatelessWidget {
         painter: _GoogleGPainter(),
       ),
     );
+  }
+}
+
+class _AppleIcon extends StatelessWidget {
+  const _AppleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurface;
+    return Icon(Icons.apple, size: 22, color: color);
   }
 }
 

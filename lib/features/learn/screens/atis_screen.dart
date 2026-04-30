@@ -67,7 +67,7 @@ const List<_AtisExample> _kAtisExamples = [
     windExplanation:
         'Surface wind 260 degrees at 15 knots. Roughly aligned with runway 26 — light headwind on departure.',
     vfrExplanation:
-        'Visibility 10 km+, cloud base 1800 ft with FEW coverage — well clear of the 1,500 ft VMC minima and 5 km visibility needed for Class G VFR.',
+        'Visibility 10 km+, cloud base 1800 ft with FEW coverage — comfortably above VFR minima. Note SERA.5005: in Class G below 3,000 ft AMSL (or 1,000 ft AGL, whichever higher) the visibility minimum drops to 1,500 m provided you fly at/below 140 KIAS, in sight of the surface, and clear of cloud. Above that band you need 5 km and 1,500 m horizontal / 1,000 ft vertical cloud separation.',
     identExplanation:
         'The identifier is "Alpha" — you must report "information Alpha" on first contact with Cranfield.',
   ),
@@ -89,7 +89,7 @@ const List<_AtisExample> _kAtisExamples = [
     windExplanation:
         'Wind 200/08 — 20 degrees off runway 19, light crosswind component. Within limits for most training aircraft.',
     vfrExplanation:
-        'Marginal — technically legal but high risk. Visibility 5 km satisfies the SERA.5005 minimum and BKN at 1,200 ft is above the 1,000 ft below-cloud requirement for Class G VFR. However, the low cloud base leaves minimal margin and light drizzle could reduce visibility further. Most instructors would advise against solo flight in these conditions.',
+        'Marginal — technically legal but high risk. Visibility 5 km satisfies the SERA.5005 upper-band minimum (you are likely above 1,000 ft AGL once airborne); below 3,000 ft AMSL / 1,000 ft AGL the visibility minimum can drop to 1,500 m at/below 140 KIAS, clear of cloud, in sight of surface. BKN at 1,200 ft is above the 1,000 ft below-cloud requirement. However, the low cloud base leaves minimal margin and light drizzle could reduce visibility further. Most instructors would advise against solo flight in these conditions.',
     identExplanation:
         'The identifier is "Bravo" — always pass the current information letter on first contact.',
   ),
@@ -111,7 +111,7 @@ const List<_AtisExample> _kAtisExamples = [
     windExplanation:
         'Wind 230/12 — roughly aligned with runway 21, light headwind. Good conditions.',
     vfrExplanation:
-        'SKC (Sky Clear) and visibility 10 km+ — excellent VFR conditions, well above minimums.',
+        'SKC (Sky Clear) and visibility 10 km+ — excellent VFR conditions, comfortably above SERA.5005 minimums in any Class G band.',
     identExplanation:
         'Information Charlie — pass "information Charlie" on first contact.',
   ),
@@ -133,7 +133,7 @@ const List<_AtisExample> _kAtisExamples = [
     windExplanation:
         'Wind 090/20G28 — a direct crosswind on runway 27 at 20 knots gusting 28. Exceeds crosswind limits for most training aircraft. Consider delaying departure.',
     vfrExplanation:
-        'Not VFR-legal. Overcast at 800 ft is below the 1,500 ft cloud clearance requirement for Class G VFR. Combined with gusty crosswind and moderate turbulence — this is a no-go for student pilots.',
+        'Not VFR-legal at circuit height. Overcast at 800 ft means clear-of-cloud and 1,000 ft AGL clearance cannot be maintained simultaneously above the airfield (Wellesbourne elevation ~159 ft, so cloud base ~640 ft AGL). Combined with gusty crosswind and moderate turbulence — a clear no-go for student pilots.',
     identExplanation:
         'Information Delta — always report the current ATIS letter on first contact so ATC knows you have the latest information.',
   ),
@@ -155,7 +155,7 @@ const List<_AtisExample> _kAtisExamples = [
     windExplanation:
         'Wind 050/10 — closely aligned with runway 05, light headwind. Ideal conditions.',
     vfrExplanation:
-        'VFR legal. Visibility 8 km (above the 5 km minimum) and SCATTERED at 2,500 ft (above the 1,500 ft requirement). Haze noted — keep a good lookout.',
+        'VFR legal. Visibility 8 km comfortably exceeds the 5 km Class G minimum applicable above 3,000 ft AMSL / 1,000 ft AGL (and the 1,500 m low-level minimum at/below that band). SCATTERED at 2,500 ft gives plenty of cloud separation. Haze noted — keep a good lookout.',
     identExplanation:
         'Information Echo — pass on first contact. If ATIS has updated since you listened, ATC will give you the latest.',
   ),
@@ -177,7 +177,7 @@ const List<_AtisExample> _kAtisExamples = [
     windExplanation:
         'Wind 250/25G35 — strong gusting crosswind on runway 22. Well above crosswind limits for training aircraft.',
     vfrExplanation:
-        'Absolutely not VFR-legal. Visibility 2 km in fog (far below the 5 km minimum) and overcast at 200 ft. Instrument conditions. Do not depart VFR.',
+        'Absolutely not VFR-legal. Visibility 2 km in fog is above the 1,500 m low-level minimum on paper, but overcast at 200 ft means you cannot remain clear of cloud in sight of the surface. Even the relaxed low-level Class G rule (1,500 m vis at/below 140 KIAS, clear of cloud, in sight of surface) cannot be met. Instrument conditions. Do not depart VFR.',
     identExplanation:
         'Information Foxtrot — in IMC/IFR conditions this is even more critical as ATC needs confirmation you have current weather.',
   ),
@@ -402,7 +402,7 @@ class _AtisScreenState extends ConsumerState<AtisScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── ATIS broadcast ─────────────────────────────────────────
-            _AtisCard(example: ex),
+            _AtisCard(key: ValueKey(ex.identifier), example: ex),
             const SizedBox(height: 24),
 
             // ── Questions ─────────────────────────────────────────────
@@ -531,12 +531,19 @@ class _AtisScreenState extends ConsumerState<AtisScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// ATIS card
+// ATIS card — broadcast text hidden by default; revealed on tap
 // ---------------------------------------------------------------------------
 
-class _AtisCard extends StatelessWidget {
+class _AtisCard extends StatefulWidget {
   final _AtisExample example;
-  const _AtisCard({required this.example});
+  const _AtisCard({super.key, required this.example});
+
+  @override
+  State<_AtisCard> createState() => _AtisCardState();
+}
+
+class _AtisCardState extends State<_AtisCard> {
+  bool _revealed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -561,7 +568,7 @@ class _AtisCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'INFO ${example.identifier.toUpperCase()}',
+                  'INFO ${widget.example.identifier.toUpperCase()}',
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontSize: 11,
@@ -572,7 +579,7 @@ class _AtisCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                example.airfield,
+                widget.example.airfield,
                 style: TextStyle(
                   color: AppColors.onSurface,
                   fontSize: 14,
@@ -582,15 +589,53 @@ class _AtisCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            example.broadcast,
-            style: TextStyle(
-              color: AppColors.onSurface,
-              fontSize: 14,
-              height: 1.6,
-              fontFamily: 'monospace',
+          if (!_revealed) ...[
+            Text(
+              'Listen to the ATIS using the speaker button above, then answer the questions below.',
+              style: TextStyle(
+                color: AppColors.onSurfaceVariant,
+                fontSize: 13,
+                height: 1.5,
+              ),
             ),
-          ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => setState(() => _revealed = true),
+              child: Text(
+                'Show transcript',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                  decorationColor: AppColors.primary,
+                ),
+              ),
+            ),
+          ] else ...[
+            Text(
+              widget.example.broadcast,
+              style: TextStyle(
+                color: AppColors.onSurface,
+                fontSize: 14,
+                height: 1.6,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => setState(() => _revealed = false),
+              child: Text(
+                'Hide transcript',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 12,
+                  decoration: TextDecoration.underline,
+                  decorationColor: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

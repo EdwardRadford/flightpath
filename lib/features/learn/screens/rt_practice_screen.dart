@@ -1469,25 +1469,47 @@ class _HistoryScoreBadge extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// ATIS link footer
+// Quick links footer — ATIS + CAP 413 readbacks
 // ---------------------------------------------------------------------------
 
 class _AtisLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.divider)),
       ),
-      child: TextButton.icon(
-        onPressed: () => context.push('/learn/atis'),
-        icon: const Icon(Icons.radio_rounded, size: 16),
-        label: const Text('Practice ATIS'),
-        style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          TextButton.icon(
+            onPressed: () => context.push('/learn/atis'),
+            icon: const Icon(Icons.radio_rounded, size: 16),
+            label: const Text('Practice ATIS'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              textStyle:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 20,
+            color: AppColors.divider,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          TextButton.icon(
+            onPressed: () => context.push('/learn/mandatory-readback'),
+            icon: const Icon(Icons.checklist_rounded, size: 16),
+            label: const Text('CAP 413 Readbacks'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              textStyle:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }

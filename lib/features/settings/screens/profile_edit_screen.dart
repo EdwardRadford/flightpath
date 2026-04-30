@@ -161,7 +161,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   controller: _displayNameController,
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
-                    labelText: 'Your name',
                     prefixIcon: Icon(Icons.person_outline_rounded),
                   ),
                   validator: (v) {
@@ -205,7 +204,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   controller: _flightSchoolController,
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
-                    labelText: 'Flight school',
                     hintText: 'e.g. Bournemouth Flying Club',
                     prefixIcon: Icon(Icons.school_outlined),
                   ),
@@ -227,7 +225,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     _UpperCaseTextFormatter(),
                   ],
                   decoration: const InputDecoration(
-                    labelText: 'Home airfield (ICAO code)',
                     prefixIcon: Icon(Icons.flight_land_rounded),
                     counterText: '',
                   ),

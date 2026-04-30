@@ -1,19 +1,33 @@
-// Weather briefing screen — shows current conditions for the user's airfield.
-//
-// NOTE: This screen calls the `getWeather` Cloud Function via [WeatherService].
-// That function was removed from functions/index.js. Until it is re-deployed
-// (see functions/index.js — `getWeather` was previously present and removed),
-// fetches will return a FirebaseFunctionsException and the screen will show the
-// error state with a retry button. No data will be available in the interim.
+// Weather briefing screen — shows current conditions for the user's airfield
+// via the getWeather Cloud Function (AVWX METAR proxy, europe-west2).
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/core/services/weather_service.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
+import 'package:flight_path/shared/widgets/premium_paywall.dart';
+
+// ---------------------------------------------------------------------------
+// Daily limit (UID-scoped to prevent cross-user leakage)
+// ---------------------------------------------------------------------------
+
+String _kWeatherDailyCount() {
+  final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anon';
+  return 'weather_briefing_daily_count_$uid';
+}
+
+String _kWeatherDailyDate() {
+  final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anon';
+  return 'weather_briefing_daily_date_$uid';
+}
+const int kWeatherFreeDailyLimit = 3;
 
 // ---------------------------------------------------------------------------
 // Local state — ICAO override + fetch result
@@ -24,6 +38,7 @@ class _WeatherState {
   final bool loading;
   final WeatherData? data;
   final String? error;
+  final bool noDataForStation;
   final DateTime? fetchedAt;
 
   const _WeatherState({
@@ -31,6 +46,7 @@ class _WeatherState {
     this.loading = false,
     this.data,
     this.error,
+    this.noDataForStation = false,
     this.fetchedAt,
   });
 
@@ -41,6 +57,7 @@ class _WeatherState {
     WeatherData? data,
     String? error,
     bool clearError = false,
+    bool? noDataForStation,
     DateTime? fetchedAt,
   }) {
     return _WeatherState(
@@ -48,6 +65,7 @@ class _WeatherState {
       loading: loading ?? this.loading,
       data: data ?? this.data,
       error: clearError ? null : (error ?? this.error),
+      noDataForStation: noDataForStation ?? this.noDataForStation,
       fetchedAt: fetchedAt ?? this.fetchedAt,
     );
   }
@@ -68,10 +86,40 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   final WeatherService _service = WeatherService();
   _WeatherState _state = const _WeatherState();
 
+  // True once a fetch has been counted for this screen session.
+  bool _sessionCounted = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _autoFetch());
+  }
+
+  // ── Daily limit helpers ───────────────────────────────────────────────────
+
+  String _todayString() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<bool> _checkLimit() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = _todayString();
+    final storedDate = prefs.getString(_kWeatherDailyDate()) ?? '';
+    final count = storedDate == today ? (prefs.getInt(_kWeatherDailyCount()) ?? 0) : 0;
+    if (count < kWeatherFreeDailyLimit) return true;
+    return ref.read(premiumStatusProvider.future);
+  }
+
+  Future<void> _incrementDailyCount() async {
+    if (_sessionCounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final today = _todayString();
+    final storedDate = prefs.getString(_kWeatherDailyDate()) ?? '';
+    final current = storedDate == today ? (prefs.getInt(_kWeatherDailyCount()) ?? 0) : 0;
+    await prefs.setString(_kWeatherDailyDate(), today);
+    await prefs.setInt(_kWeatherDailyCount(), current + 1);
+    _sessionCounted = true;
   }
 
   String? get _activeIcao {
@@ -88,18 +136,32 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     final user = await ref.read(appUserProvider.future);
     final icao = _state.icaoOverride?.isNotEmpty == true
         ? _state.icaoOverride!
-        : (user?.airfieldIcao?.isNotEmpty == true ? user!.airfieldIcao : null);
+        : (user?.airfieldIcao.isNotEmpty == true ? user!.airfieldIcao : null);
     if (icao == null) return;
     await _fetch(icao);
   }
 
   Future<void> _fetch(String icao) async {
+    // Gate: only check the limit before counting a new session.
+    if (!_sessionCounted) {
+      final allowed = await _checkLimit();
+      if (!allowed) {
+        if (!mounted) return;
+        final purchased = await showPremiumPaywall(
+          context,
+          source: 'weather_briefing_daily_limit',
+        );
+        if (!purchased || !mounted) return;
+      }
+    }
+
     setState(() {
-      _state = _state.copyWith(loading: true, clearError: true);
+      _state = _state.copyWith(loading: true, clearError: true, noDataForStation: false);
     });
     try {
       final data = await _service.getWeatherForAirfield(icao);
       if (!mounted) return;
+      await _incrementDailyCount();
       setState(() {
         _state = _WeatherState(
           icaoOverride: _state.icaoOverride,
@@ -107,6 +169,11 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
           data: data,
           fetchedAt: DateTime.now(),
         );
+      });
+    } on NoWeatherDataException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _state = _state.copyWith(loading: false, noDataForStation: true, error: e.message);
       });
     } on WeatherServiceException catch (e) {
       if (!mounted) return;
@@ -202,6 +269,20 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     );
   }
 
+  // Known non-reporting airfields → nearest station that publishes weather.
+  static const Map<String, String> _nearestReporting = {
+    'EGBT': 'EGTC', // Turweston → Cranfield (~7 nm)
+    'EGBS': 'EGCW', // Shobdon → Welshpool (~24 nm)
+    'EGLS': 'EGHI', // Old Sarum → Southampton (~18 nm)
+    'EGSG': 'EGSS', // Stapleford → Stansted (~14 nm)
+    'EGHO': 'EGHI', // Thruxton → Southampton (~18 nm)
+    'EGTB': 'EGUB', // Wycombe Air Park → Benson (~11 nm)
+    'EGLM': 'EGLF', // White Waltham → Farnborough (~12 nm)
+    'EGHR': 'EGKA', // Goodwood → Shoreham (~12 nm)
+    'EGCB': 'EGCC', // Barton → Manchester (~8 nm)
+    'EGCF': 'EGNM', // Sherburn-in-Elmet → Leeds Bradford (~15 nm)
+  };
+
   Widget _buildBody(String? displayIcao, bool isDark) {
     // No airfield set and no override
     if (displayIcao == null && !_state.loading) {
@@ -217,6 +298,10 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 
     if (_state.loading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_state.noDataForStation && displayIcao != null) {
+      return _buildNoDataCard(displayIcao);
     }
 
     if (_state.error != null) {
@@ -241,6 +326,51 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
       isDark: isDark,
       fetchedAt: _state.fetchedAt,
       onChangeIcao: _showIcaoDialog,
+    );
+  }
+
+  Widget _buildNoDataCard(String icao) {
+    final fallback = _nearestReporting[icao.toUpperCase()];
+    return Center(
+      child: Padding(
+        padding: AppSpacing.pageHorizontal,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.wb_cloudy_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '$icao doesn\'t publish live weather',
+              style: Theme.of(context).textTheme.titleSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              fallback != null
+                  ? 'This airfield has no automated weather reporting. Try $fallback nearby.'
+                  : 'This airfield has no automated weather reporting. Enter a nearby reporting airfield using the ICAO code.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            if (fallback != null)
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _state = _state.copyWith(icaoOverride: fallback);
+                  });
+                  _fetch(fallback);
+                },
+                icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                label: Text('Check $fallback instead'),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -317,45 +447,78 @@ class _WeatherContentState extends State<_WeatherContent> {
     final cs = Theme.of(context).colorScheme;
     final ageText = _ageText(widget.fetchedAt);
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Tappable ICAO chip
-        GestureDetector(
-          onTap: widget.onChangeIcao,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.4),
-                width: 1,
+        // ICAO chip + age text
+        Row(
+          children: [
+            // Tappable ICAO chip
+            GestureDetector(
+              onTap: widget.onChangeIcao,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.icao,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: AppColors.primary,
+                            letterSpacing: 1.5,
+                          ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.edit_rounded, size: 14, color: AppColors.primary),
+                  ],
+                ),
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.icao,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.primary,
-                        letterSpacing: 1.5,
-                      ),
-                ),
-                const SizedBox(width: 6),
-                const Icon(Icons.edit_rounded, size: 14, color: AppColors.primary),
-              ],
+            const SizedBox(width: 12),
+            if (ageText != null)
+              Text(
+                ageText,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.5),
+                    ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        // Route Planner shortcut
+        SizedBox(
+          height: 40,
+          child: OutlinedButton.icon(
+            onPressed: () => context.push('/tools/plog'),
+            icon: const Icon(Icons.route_rounded, size: 16),
+            label: const Text('Route Planner (PLOG)'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: BorderSide(
+                color: AppColors.primary.withValues(alpha: 0.5),
+                width: 1,
+              ),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        if (ageText != null)
-          Text(
-            ageText,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurface.withValues(alpha: 0.5),
-                ),
-          ),
       ],
     );
   }

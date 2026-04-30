@@ -6,17 +6,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flight_path/core/constants/whats_new_data.dart';
 import 'package:flight_path/core/theme/app_icons.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/features/home/widgets/current_exercise_card.dart';
-import 'package:flight_path/features/home/widgets/daily_question_card.dart';
 import 'package:flight_path/features/home/widgets/greeting_header.dart';
 import 'package:flight_path/features/home/widgets/home_footer_cards.dart';
+import 'package:flight_path/features/home/widgets/lesson_day_card.dart';
 import 'package:flight_path/features/home/widgets/quick_stats_row.dart';
 import 'package:flight_path/features/home/widgets/recent_activity_section.dart';
+import 'package:flight_path/features/home/widgets/recency_warning_card.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/providers/walkthrough_provider.dart';
@@ -252,16 +254,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   orElse: () => const SizedBox.shrink(),
                 ),
 
-                const SizedBox(height: 20),
-
                 // -- 1. Greeting header
                 appUserAsync.when(
                   data: (user) => GreetingHeader(user: user),
                   loading: () => const GreetingHeader(user: null),
                   error: (_, __) => const GreetingHeader(user: null),
                 ),
-
-                const SizedBox(height: 20),
 
                 // -- 2. Quick Stats Row
                 if (quickStats != null) ...[
@@ -275,14 +273,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ref: ref,
                 ),
 
-                const SizedBox(height: 20),
+                // -- 3a. Recency warning (hidden when not applicable)
+                const RecencyWarningCard(),
 
-                // -- 4. Daily Question
-                const DailyQuestionCard(),
+                // -- 3b. Lesson day card
+                const LessonDayCard(),
 
-                const SizedBox(height: 20),
+                // -- 4. Weather preview card
+                const WeatherPreviewCard(),
 
-                // -- 5. Recent Activity (limited to 3)
+                // -- 5. Due for review
+                const DueForReviewCard(),
+
+                // -- 6. Debrief nudge (shown when > 3 days since last debrief)
+                const DebriefNudgeCard(),
+
+                // -- 7. Ask AI card
+                const AskAiCard(),
+
+                // -- 9. Recent Activity (limited to 3)
                 recentAsync.when(
                   data: (lessons) => RecentActivitySection(
                     lessons: lessons.take(3).toList(),
@@ -292,36 +301,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const RecentActivitySection(lessons: []),
                 ),
 
-                const SizedBox(height: 20),
-
-                // -- 6. Weather preview
-                const WeatherPreviewCard(),
-
-                const SizedBox(height: 20),
-
-                // -- 7. Debrief nudge (shown when > 3 days since last debrief)
-                const DebriefNudgeCard(),
-
-                const SizedBox(height: 20),
-
-                // -- 8. Streak card
+                // -- 10. Streak card
                 const StreakCard(),
 
-                const SizedBox(height: 20),
-
-                // -- 9. Ask AI card
-                const AskAiCard(),
-
-                const SizedBox(height: 20),
-
-                // -- 10. Upgrade prompt (shown for free users only)
+                // -- 11. Upgrade prompt (shown for free users only)
                 if (!(ref.watch(premiumStatusProvider).valueOrNull ?? false))
                   const UpgradePromptCard(),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // -- 11. Share card
-                const ShareCard(),
+                // -- 12. Feedback link
+                Center(
+                  child: GestureDetector(
+                    onTap: () => launchUrl(
+                      Uri.parse(
+                        'mailto:contact@getflightpath.app'
+                        '?subject=FlightPath%20Feedback',
+                      ),
+                    ),
+                    child: Text(
+                      'Send feedback',
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant
+                            .withValues(alpha: 0.55),
+                        fontSize: 13,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.onSurfaceVariant
+                            .withValues(alpha: 0.35),
+                      ),
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 32),
               ],

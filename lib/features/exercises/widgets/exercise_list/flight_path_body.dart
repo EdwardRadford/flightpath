@@ -129,12 +129,14 @@ const List<ExerciseListItem> kExercises = [
       (subId: '18a', subName: '18A \u2013 Navigation'),
       (subId: '18b', subName: '18B \u2013 Nav at Lower Levels'),
       (subId: '18c', subName: '18C \u2013 Radio Navigation'),
+      (subId: '18d', subName: '18D \u2013 Cross-Country Nav'),
+      (subId: '18e', subName: '18E \u2013 Nav Emergencies'),
     ],
   ),
   ExerciseListItem(
     exerciseId: 'ex_19',
-    name: 'Exercise 19 \u2013 Night Flying (if applicable)',
-    shortName: 'Night Flying',
+    name: 'Exercise 19 \u2013 Basic Instrument Flying / Night Rating',
+    shortName: 'Inst & Night',
   ),
 ];
 
@@ -235,18 +237,27 @@ int exerciseNumber(String exerciseId) {
 }
 
 int findCurrentExerciseIndex(List<UserExercise> userExercises) {
+  // Returns the index AFTER the highest exercise marked done — where "done"
+  // covers both ExerciseStatus.completedSatisfactory and
+  // completedUnsatisfactory (both map to NodeStatus.completed or .mastered
+  // via nodeStatus()).
+  // - If nothing is done yet: returns 0 (start at the first exercise).
+  // - If the last exercise in kExercises is done: clamps to the last index.
+  int highestDone = -1;
   for (int i = 0; i < kExercises.length; i++) {
     final item = kExercises[i];
     final status = item.hasSubExercises
         ? aggregateStatus(
             userExercises, item.exerciseId, item.subExercises)
         : nodeStatus(findExerciseInList(userExercises, item.exerciseId));
-    if (status == NodeStatus.inProgress ||
-        status == NodeStatus.notStarted) {
-      return i;
+    if (status == NodeStatus.completed || status == NodeStatus.mastered) {
+      highestDone = i;
     }
   }
-  return kExercises.length - 1;
+  if (highestDone < 0) return 0;
+  final next = highestDone + 1;
+  if (next >= kExercises.length) return kExercises.length - 1;
+  return next;
 }
 
 // ---------------------------------------------------------------------------
@@ -259,20 +270,53 @@ const double kVerticalSpacing = 130.0;
 const double kHorizontalPadding = 48.0;
 const double kSubExerciseOffsetY = 54.0;
 const double kSubExerciseSpacingX = 80.0;
+// Vertical spacing between rows when sub-exercises overflow into a 2-column grid.
+const double kSubRowSpacing = 80.0;
+// Horizontal distance between the two columns in the 2-column sub-exercise grid.
+const double kSubColSpacing = 80.0;
 
-// Returns the X centre for sub-exercise [si] of [subCount], given the parent
-// centre [parentCx] and canvas [screenWidth]. For 3+ subs the cluster shifts
-// inward so all nodes AND their labels (76px wide) remain on-screen.
+// Returns the X centre for sub-exercise [si] of [subCount] in the original
+// single-row horizontal layout (used only when subCount <= 2).
 double _computeSubCx(
     double parentCx, int si, int subCount, double screenWidth) {
   final spacing = subCount > 2 ? 100.0 : kSubExerciseSpacingX;
   final halfSpan = (subCount - 1) / 2 * spacing;
-  // Shrink cluster centre so the outermost label edges sit 4px inside screen.
   const labelHalfWidth = 38.0;
   final minCx = kSubNodeRadius + 4.0 + halfSpan + labelHalfWidth;
   final maxCx = screenWidth - kSubNodeRadius - 4.0 - halfSpan - labelHalfWidth;
   final clusterCx = parentCx.clamp(minCx, maxCx);
   return clusterCx + (si - (subCount - 1) / 2) * spacing;
+}
+
+// Returns the (cx, cy) position for sub-exercise [si] of [subCount].
+// For 1–2 subs: original horizontal layout.
+// For 3+ subs: 2-column grid centred on the parent node.
+({double cx, double cy}) _computeSubPosition(
+    double parentCx, double parentCy, int si, int subCount, double screenWidth) {
+  if (subCount <= 2) {
+    return (
+      cx: _computeSubCx(parentCx, si, subCount, screenWidth),
+      cy: parentCy + kSubExerciseOffsetY,
+    );
+  }
+  final int row = si ~/ 2;
+  final int col = si % 2;
+  final bool isLastOdd = subCount.isOdd && si == subCount - 1;
+  final double subCx =
+      isLastOdd ? parentCx : parentCx + (col - 0.5) * kSubColSpacing;
+  final double subCy = parentCy + kSubExerciseOffsetY + row * kSubRowSpacing;
+  return (cx: subCx, cy: subCy);
+}
+
+// Number of grid rows needed to display [subCount] sub-exercises in 2 columns.
+int _subRowsNeeded(int subCount) => subCount <= 2 ? 1 : (subCount + 1) ~/ 2;
+
+// Extra vertical canvas height required for [item]'s sub-exercise grid rows
+// beyond the first (which fits within the default kVerticalSpacing).
+double _exerciseExtraHeight(ExerciseListItem item) {
+  if (!item.hasSubExercises) return 0;
+  final extraRows = _subRowsNeeded(item.subExercises.length) - 1;
+  return extraRows * kSubRowSpacing;
 }
 
 // ---------------------------------------------------------------------------
@@ -345,7 +389,7 @@ class _FlightPathBodyState extends State<FlightPathBody>
 
   void _scrollToCurrent() {
     final currentIndex = findCurrentExerciseIndex(widget.userExercises);
-    final targetY = _topPadding + currentIndex * kVerticalSpacing - 100;
+    final targetY = _nodeCentreY(currentIndex) - kNodeRadius - 100;
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         targetY.clamp(
@@ -365,15 +409,21 @@ class _FlightPathBodyState extends State<FlightPathBody>
   }
 
   double _nodeCentreY(int index) {
-    return _topPadding + index * kVerticalSpacing + kNodeRadius;
+    double y = _topPadding + kNodeRadius;
+    for (int i = 0; i < index; i++) {
+      y += kVerticalSpacing + _exerciseExtraHeight(kExercises[i]);
+    }
+    return y;
   }
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
     final currentIndex = findCurrentExerciseIndex(widget.userExercises);
-    final totalHeight =
-        _topPadding + kExercises.length * kVerticalSpacing + 100;
+    final totalHeight = _topPadding + 100 +
+        kExercises.fold<double>(
+          0,
+          (sum, item) => sum + kVerticalSpacing + _exerciseExtraHeight(item),
+        );
 
     int completedCount = 0;
     for (final item in kExercises) {
@@ -444,32 +494,39 @@ class _FlightPathBodyState extends State<FlightPathBody>
           ),
 
         Expanded(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            child: SizedBox(
-              width: width,
-              height: totalHeight,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: ExcludeSemantics(
-                      child: CustomPaint(
-                        painter: FlightPathPainter(
-                          exercises: kExercises,
-                          userExercises: widget.userExercises,
-                          nodeXCalculator: (i) => _nodeCentreX(i, width),
-                          nodeYCalculator: _nodeCentreY,
-                          currentIndex: currentIndex,
+          child: LayoutBuilder(
+            builder: (_, constraints) {
+              final width = constraints.maxWidth > 0
+                  ? constraints.maxWidth
+                  : MediaQuery.of(context).size.width;
+              return SingleChildScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(),
+                child: SizedBox(
+                  width: width,
+                  height: totalHeight,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ExcludeSemantics(
+                          child: CustomPaint(
+                            painter: FlightPathPainter(
+                              exercises: kExercises,
+                              userExercises: widget.userExercises,
+                              nodeXCalculator: (i) => _nodeCentreX(i, width),
+                              nodeYCalculator: _nodeCentreY,
+                              currentIndex: currentIndex,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      for (int i = 0; i < kExercises.length; i++)
+                        ..._buildExerciseNode(i, width, currentIndex),
+                    ],
                   ),
-                  for (int i = 0; i < kExercises.length; i++)
-                    ..._buildExerciseNode(i, width, currentIndex),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -627,6 +684,35 @@ class _FlightPathBodyState extends State<FlightPathBody>
       );
     }
 
+    // Spaced-rep due badge — bottom-right of node
+    if (!item.hasSubExercises) {
+      final ue = findExerciseInList(widget.userExercises, item.exerciseId);
+      final dueDate = ue?.spacedRepDue;
+      if (dueDate != null && dueDate.isBefore(DateTime.now())) {
+        widgets.add(
+          Positioned(
+            left: cx + kNodeRadius - 6,
+            top: cy + kNodeRadius - 6,
+            child: IgnorePointer(
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: const BoxDecoration(
+                  color: AppColors.warning,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.refresh_rounded,
+                  color: Colors.white,
+                  size: 10,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
     widgets.add(
       Positioned(
         left: labelLeft,
@@ -664,14 +750,18 @@ class _FlightPathBodyState extends State<FlightPathBody>
     final widgets = <Widget>[];
     final subCount = item.subExercises.length;
 
+    // Sub-exercises (10a/10b, 18a/18b/18c) are always premium-only.
+    final showSubPro = !widget.isPremium;
+
     for (int si = 0; si < subCount; si++) {
       final sub = item.subExercises[si];
       final ue = findExerciseInList(
           widget.userExercises, item.exerciseId, sub.subId);
       final subStatus = nodeStatus(ue);
 
-      final subCx = _computeSubCx(cx, si, subCount, screenWidth);
-      final subCy = cy + kSubExerciseOffsetY;
+      final pos = _computeSubPosition(cx, cy, si, subCount, screenWidth);
+      final subCx = pos.cx;
+      final subCy = pos.cy;
 
       widgets.add(
         Positioned(
@@ -689,6 +779,37 @@ class _FlightPathBodyState extends State<FlightPathBody>
           ),
         ),
       );
+
+      if (showSubPro) {
+        widgets.add(
+          Positioned(
+            left: subCx + kSubNodeRadius - 10,
+            top: subCy - kSubNodeRadius - 2,
+            child: const ExerciseListProBadge(),
+          ),
+        );
+        widgets.add(
+          Positioned(
+            left: subCx - kSubNodeRadius,
+            top: subCy - kSubNodeRadius,
+            child: IgnorePointer(
+              child: Container(
+                width: kSubNodeRadius * 2,
+                height: kSubNodeRadius * 2,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x66000000),
+                ),
+                child: const Icon(
+                  Icons.lock_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
 
       widgets.add(
         Positioned(
@@ -744,18 +865,13 @@ class _FlightPathBodyState extends State<FlightPathBody>
 
   void _onSubExerciseTap(ExerciseListItem item, String subId) {
     if (!widget.isPremium) {
-      final exNum = exerciseNumber(item.exerciseId);
-      final freeStart = math.max(1, widget.currentExerciseNumber - 2);
-      final freeEnd = math.min(19, widget.currentExerciseNumber + 2);
-      if (exNum < freeStart || exNum > freeEnd) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Upgrade to Pro to unlock all 22 exercises'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-        return;
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Upgrade to Pro to unlock all 22 exercises'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
     }
     context.push('/exercises/${item.exerciseId}_$subId');
   }
@@ -1204,8 +1320,9 @@ class FlightPathPainter extends CustomPainter {
       final ue = findExerciseInList(userExercises, item.exerciseId, sub.subId);
       final subStatus = nodeStatus(ue);
 
-      final subCx = _computeSubCx(cx, si, subCount, screenWidth);
-      final subCy = cy + kSubExerciseOffsetY;
+      final pos = _computeSubPosition(cx, cy, si, subCount, screenWidth);
+      final subCx = pos.cx;
+      final subCy = pos.cy;
 
       final branchPath = Path();
       branchPath.moveTo(cx, cy + kNodeRadius);

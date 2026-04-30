@@ -110,11 +110,13 @@ class _MetarScreenState extends ConsumerState<MetarScreen> {
             ? _buildLoader(state.icao)
             : state.apiKeyMissing
                 ? _buildApiKeyMissingCard(isDark)
-                : state.fetchError
-                    ? _buildFetchErrorCard(state.icao)
-                    : state.rawMetar != null
-                        ? _buildSessionBody(state, isDark)
-                        : const SizedBox.shrink(),
+                : state.noDataForStation
+                    ? _buildNoDataCard(state.icao)
+                    : state.fetchError
+                        ? _buildFetchErrorCard(state.icao)
+                        : state.rawMetar != null
+                            ? _buildSessionBody(state, isDark)
+                            : const SizedBox.shrink(),
       ),
     );
   }
@@ -203,6 +205,61 @@ class _MetarScreenState extends ConsumerState<MetarScreen> {
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Retry'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── No METAR data for station ──────────────────────────────────────────────
+
+  // Known non-reporting airfields → nearest station that publishes METARs.
+  static const Map<String, String> _nearestReporting = {
+    'EGBT': 'EGTC', // Turweston → Cranfield (~7 nm)
+    'EGBS': 'EGCW', // Shobdon → Welshpool (~24 nm)
+    'EGLS': 'EGHI', // Old Sarum → Southampton (~18 nm)
+    'EGSG': 'EGSS', // Stapleford → Stansted (~14 nm)
+    'EGHO': 'EGHI', // Thruxton → Southampton (~18 nm)
+    'EGTB': 'EGUB', // Wycombe Air Park → Benson (~11 nm)
+    'EGLM': 'EGLF', // White Waltham → Farnborough (~12 nm)
+    'EGHR': 'EGKA', // Goodwood → Shoreham (~12 nm)
+    'EGCB': 'EGCC', // Barton → Manchester (~8 nm)
+    'EGCF': 'EGNM', // Sherburn-in-Elmet → Leeds Bradford (~15 nm)
+  };
+
+  Widget _buildNoDataCard(String icao) {
+    final fallback = _nearestReporting[icao.toUpperCase()];
+    return Center(
+      child: Padding(
+        padding: AppSpacing.pageHorizontal,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wb_cloudy_outlined,
+                size: 48,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+            const SizedBox(height: 16),
+            Text(
+              '$icao doesn\'t publish live METARs',
+              style: Theme.of(context).textTheme.titleSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              fallback != null
+                  ? 'This airfield has no automated weather reporting. Try $fallback nearby.'
+                  : 'This airfield has no automated weather reporting. Use the picker to switch to a nearby reporting airfield.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            if (fallback != null)
+              ElevatedButton.icon(
+                onPressed: () =>
+                    ref.read(metarProvider.notifier).selectIcao(fallback),
+                icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                label: Text('Use $fallback instead'),
+              ),
           ],
         ),
       ),

@@ -15,11 +15,13 @@ import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/constants/exercise_criteria.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
+import 'package:flight_path/features/lesson_log/widgets/lesson_form.dart';
 import 'package:flight_path/shared/models/exercise_content.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
-import 'package:flight_path/shared/services/subscription_service.dart';
+import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
 import 'package:flight_path/shared/services/connectivity_service.dart';
 import 'package:flight_path/shared/services/debrief_autosave_service.dart';
@@ -53,45 +55,53 @@ class DebriefScreen extends ConsumerStatefulWidget {
 
 class _DebriefScreenState extends ConsumerState<DebriefScreen> {
   final _formKey = GlobalKey<FormState>();
+  late final LessonFormController _form;
 
   bool get _isEditMode => widget.existingLesson != null;
 
-  int _studentRating = 3;
-  final Map<String, int> _criterionRatings = {};
-  final _instructorNotesController = TextEditingController();
-  final _reflectionController = TextEditingController();
-  final _soloDurationController = TextEditingController();
   bool _paywallLogged = false;
-
-  // Duration
-  int _durationHours = 1;
-  int _durationMinutes = 0;
-
-  // Additional exercises covered in this lesson
-  final Set<String> _additionalExerciseIds = {};
-
   bool _saving = false;
   bool _draftSaved = false;
   Timer? _savedIndicatorTimer;
 
   // Autosave
   late final DebriefAutosaveService _autosave;
+  bool _formInstructorPrefilled = false;
 
   @override
   void initState() {
     super.initState();
     _autosave = ref.read(debriefAutosaveServiceProvider);
+    _form = LessonFormController();
 
     if (_isEditMode) {
       final lesson = widget.existingLesson!;
-      _studentRating = lesson.studentRating ?? 3;
-      _instructorNotesController.text = lesson.instructorNotes;
-      _reflectionController.text = lesson.personalReflection;
+      _form.studentRating = lesson.studentRating ?? 3;
+      _form.instructorNotes.text = lesson.instructorNotes;
+      _form.personalReflection.text = lesson.personalReflection;
       if (lesson.lessonDuration > 0) {
-        _durationHours = lesson.lessonDuration ~/ 60;
-        _durationMinutes = lesson.lessonDuration % 60;
+        _form.flightHours = lesson.lessonDuration ~/ 60;
+        _form.flightMinutes = lesson.lessonDuration % 60;
       }
-      _additionalExerciseIds.addAll(lesson.additionalExerciseIds);
+      _form.exerciseIds.addAll(lesson.additionalExerciseIds);
+
+      // New logbook fields — older lessons stored before 2026-04-29 simply
+      // have empty defaults; the form is happy with that.
+      _form.aircraftType = lesson.aircraftType;
+      _form.registration.text = lesson.aircraftRegistration;
+      _form.departureIcao.text = lesson.departureAirfield;
+      _form.arrivalIcao.text = lesson.arrivalAirfield;
+      _form.landings = lesson.landings;
+      _form.instructorName.text = lesson.instructorName;
+      _form.isDayFlight = lesson.isDayFlight;
+      _form.criterionRatings.addAll(lesson.criterionRatings ?? const {});
+      // Best-effort role inference from saved time fields.
+      if (lesson.picTimeMinutes > 0 && lesson.dualTimeMinutes == 0) {
+        _form.pilotRole = PilotRole.pic;
+      } else if (lesson.dualTimeMinutes > 0 && lesson.picTimeMinutes == 0) {
+        _form.pilotRole = PilotRole.dual;
+      }
+      _formInstructorPrefilled = true;
     } else {
       _autosave.loadDraft(widget.exerciseId).then((result) {
         if (!mounted) return;
@@ -107,10 +117,30 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         }
       });
     }
+  }
 
-    _instructorNotesController.addListener(_onFieldChanged);
-    _reflectionController.addListener(_onFieldChanged);
-    _soloDurationController.addListener(_onFieldChanged);
+  /// Pre-fill aircraft type from the user's profile and the instructor name
+  /// from the most recent lesson — only on initial creation, only if the user
+  /// hasn't typed anything in those fields yet.
+  void _maybePrefillDefaults() {
+    if (_isEditMode || _formInstructorPrefilled) return;
+    final user = ref.read(appUserProvider).valueOrNull;
+    if (user != null) {
+      if (_form.aircraftType.isEmpty && user.aircraftType.isNotEmpty) {
+        _form.aircraftType = user.aircraftType;
+      }
+      if (_form.departureIcao.text.isEmpty && user.airfieldIcao.isNotEmpty) {
+        _form.departureIcao.text = user.airfieldIcao.toUpperCase();
+      }
+      if (_form.arrivalIcao.text.isEmpty && user.airfieldIcao.isNotEmpty) {
+        _form.arrivalIcao.text = user.airfieldIcao.toUpperCase();
+      }
+    }
+    final lastInstructor = ref.read(lastInstructorNameProvider);
+    if (_form.instructorName.text.isEmpty && lastInstructor != null) {
+      _form.instructorName.text = lastInstructor;
+    }
+    _formInstructorPrefilled = true;
   }
 
   void _onFieldChanged() {
@@ -123,13 +153,21 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     }
     _autosave.saveDraft(DebriefDraft(
       exerciseId: widget.exerciseId,
-      studentRating: _studentRating,
-      instructorNotes: _instructorNotesController.text,
-      personalReflection: _reflectionController.text,
-      soloDuration: _soloDurationController.text,
-      durationHours: _durationHours,
-      durationMinutes: _durationMinutes,
-      additionalExerciseIds: _additionalExerciseIds.toList(),
+      studentRating: _form.studentRating,
+      instructorNotes: _form.instructorNotes.text,
+      personalReflection: _form.personalReflection.text,
+      soloDuration: _form.soloDuration.text,
+      durationHours: _form.flightHours,
+      durationMinutes: _form.flightMinutes,
+      additionalExerciseIds: _form.exerciseIds.toList(),
+      aircraftType: _form.aircraftType,
+      registration: _form.registration.text,
+      departureIcao: _form.departureIcao.text,
+      arrivalIcao: _form.arrivalIcao.text,
+      pilotRole: _form.pilotRole.name,
+      landings: _form.landings,
+      instructorName: _form.instructorName.text,
+      isDayFlight: _form.isDayFlight,
       savedAt: DateTime.now(),
     ));
   }
@@ -163,27 +201,34 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
 
   void _restoreDraft(DebriefDraft draft) {
     setState(() {
-      _studentRating = draft.studentRating;
-      _instructorNotesController.text = draft.instructorNotes;
-      _reflectionController.text = draft.personalReflection;
-      _soloDurationController.text = draft.soloDuration;
-      _durationHours = draft.durationHours;
-      _durationMinutes = draft.durationMinutes;
-      _additionalExerciseIds
+      _form.studentRating = draft.studentRating;
+      _form.instructorNotes.text = draft.instructorNotes;
+      _form.personalReflection.text = draft.personalReflection;
+      _form.soloDuration.text = draft.soloDuration;
+      _form.flightHours = draft.durationHours;
+      _form.flightMinutes = draft.durationMinutes;
+      _form.exerciseIds
         ..clear()
         ..addAll(draft.additionalExerciseIds);
+      _form.aircraftType = draft.aircraftType;
+      _form.registration.text = draft.registration;
+      _form.departureIcao.text = draft.departureIcao;
+      _form.arrivalIcao.text = draft.arrivalIcao;
+      _form.pilotRole = PilotRole.values.firstWhere(
+        (r) => r.name == draft.pilotRole,
+        orElse: () => PilotRole.dual,
+      );
+      _form.landings = draft.landings;
+      _form.instructorName.text = draft.instructorName;
+      _form.isDayFlight = draft.isDayFlight;
     });
+    _formInstructorPrefilled = true;
   }
 
   @override
   void dispose() {
     _savedIndicatorTimer?.cancel();
-    _instructorNotesController.removeListener(_onFieldChanged);
-    _reflectionController.removeListener(_onFieldChanged);
-    _soloDurationController.removeListener(_onFieldChanged);
-    _instructorNotesController.dispose();
-    _reflectionController.dispose();
-    _soloDurationController.dispose();
+    _form.dispose();
     super.dispose();
   }
 
@@ -208,22 +253,40 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         final offlineService = ref.read(offlineLessonServiceProvider);
         int? durationMinutes;
         if (lessonType == LessonType.flight) {
-          durationMinutes = _durationHours * 60 + _durationMinutes;
+          durationMinutes = _form.flightHours * 60 + _form.flightMinutes;
         } else if (lessonType == LessonType.milestone) {
-          final text = _soloDurationController.text.trim();
+          final text = _form.soloDuration.text.trim();
           if (text.isNotEmpty) durationMinutes = int.tryParse(text);
         }
 
+        final dualMin =
+            _form.pilotRole == PilotRole.dual ? (durationMinutes ?? 0) : 0;
+        final picMin =
+            _form.pilotRole == PilotRole.pic ? (durationMinutes ?? 0) : 0;
+
         final data = <String, dynamic>{
-          'student_rating': _studentRating,
-          'instructor_notes': _sanitise(_instructorNotesController.text).isEmpty
+          'student_rating': _form.studentRating,
+          'instructor_notes': _sanitise(_form.instructorNotes.text).isEmpty
               ? null
-              : _sanitise(_instructorNotesController.text),
-          'personal_reflection': _sanitise(_reflectionController.text).isEmpty
+              : _sanitise(_form.instructorNotes.text),
+          'personal_reflection': _sanitise(_form.personalReflection.text).isEmpty
               ? null
-              : _sanitise(_reflectionController.text),
+              : _sanitise(_form.personalReflection.text),
           if (durationMinutes != null) 'lesson_duration': durationMinutes,
-          'additional_exercise_ids': _additionalExerciseIds.toList(),
+          'additional_exercise_ids': _form.exerciseIds.toList(),
+          // ── New logbook fields ─────────────────────────────────────────
+          'aircraft_type': _form.aircraftType,
+          'aircraft_registration':
+              _form.registration.text.trim().toUpperCase(),
+          'departure_airfield':
+              _form.departureIcao.text.trim().toUpperCase(),
+          'arrival_airfield': _form.arrivalIcao.text.trim().toUpperCase(),
+          'landings': _form.landings,
+          'instructor_name': _sanitise(_form.instructorName.text),
+          'is_day_flight': _form.isDayFlight,
+          if (durationMinutes != null) 'flight_time_minutes': durationMinutes,
+          'dual_time_minutes': dualMin,
+          'pic_time_minutes': picMin,
         };
 
         await offlineService.updateLesson(uid, widget.existingLesson!.id, data);
@@ -264,13 +327,13 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     try {
       int? soloMinutes;
       if (lessonType == LessonType.milestone) {
-        final text = _soloDurationController.text.trim();
+        final text = _form.soloDuration.text.trim();
         if (text.isNotEmpty) soloMinutes = int.tryParse(text);
       }
 
       int? durationMinutes;
       if (lessonType == LessonType.flight) {
-        durationMinutes = _durationHours * 60 + _durationMinutes;
+        durationMinutes = _form.flightHours * 60 + _form.flightMinutes;
         if (durationMinutes <= 0) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -287,22 +350,39 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         durationMinutes = soloMinutes;
       }
 
+      final dualMin = _form.pilotRole == PilotRole.dual
+          ? (durationMinutes ?? 0)
+          : 0;
+      final picMin = _form.pilotRole == PilotRole.pic
+          ? (durationMinutes ?? 0)
+          : 0;
+
       final lesson = Lesson(
         id: '',
         exerciseId: exerciseId,
         subExercise: subExerciseId ?? '',
-        studentRating: _studentRating,
+        studentRating: _form.studentRating,
         instructorRating: null,
         lessonDuration: durationMinutes ?? 0,
-        instructorNotes: _sanitise(_instructorNotesController.text),
-        personalReflection: _sanitise(_reflectionController.text),
-        additionalExerciseIds: _additionalExerciseIds.toList(),
+        instructorNotes: _sanitise(_form.instructorNotes.text),
+        personalReflection: _sanitise(_form.personalReflection.text),
+        additionalExerciseIds: _form.exerciseIds.toList(),
         lessonDate: DateTime.now(),
         status: LessonStatus.completed,
         createdAt: DateTime.now(),
-        criterionRatings: _criterionRatings.isNotEmpty
-            ? Map<String, int>.from(_criterionRatings)
+        criterionRatings: _form.criterionRatings.isNotEmpty
+            ? Map<String, int>.from(_form.criterionRatings)
             : null,
+        aircraftType: _form.aircraftType,
+        aircraftRegistration: _form.registration.text.trim().toUpperCase(),
+        departureAirfield: _form.departureIcao.text.trim().toUpperCase(),
+        arrivalAirfield: _form.arrivalIcao.text.trim().toUpperCase(),
+        flightTimeMinutes: durationMinutes ?? 0,
+        dualTimeMinutes: dualMin,
+        picTimeMinutes: picMin,
+        landings: _form.landings,
+        instructorName: _sanitise(_form.instructorName.text),
+        isDayFlight: _form.isDayFlight,
       );
 
       final lessonId = await offlineLessons.createLesson(uid, lesson);
@@ -319,7 +399,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
 
       // Upsert UserExercise for each additional exercise
       final allUEs = ref.read(userExercisesProvider).valueOrNull ?? [];
-      for (final additionalComposite in _additionalExerciseIds) {
+      for (final additionalComposite in _form.exerciseIds) {
         final (addExId, addSubId) = parseExerciseId(additionalComposite);
         final addUE = allUEs.where((ue) {
           return ue.exerciseId == addExId && ue.subExercise == addSubId;
@@ -349,11 +429,11 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         exerciseId: widget.exerciseId,
         exerciseName: exerciseName,
         completedAt: DateTime.now(),
-        rating: _studentRating,
+        rating: _form.studentRating,
         ratingHistory: existingHistory,
       );
 
-      for (final additionalComposite in _additionalExerciseIds) {
+      for (final additionalComposite in _form.exerciseIds) {
         final addName = exerciseFullName(additionalComposite);
         final allUEsForNotif =
             ref.read(userExercisesProvider).valueOrNull ?? [];
@@ -365,7 +445,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
           exerciseId: additionalComposite,
           exerciseName: addName,
           completedAt: DateTime.now(),
-          rating: _studentRating,
+          rating: _form.studentRating,
           ratingHistory: addUE?.ratingHistory ?? [],
         );
       }
@@ -376,7 +456,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         name: 'lesson_checked_in',
         parameters: {
           'exercise_id': widget.exerciseId,
-          'rating': _studentRating,
+          'rating': _form.studentRating,
           'duration_minutes': durationMinutes ?? 0,
         },
       );
@@ -384,7 +464,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         name: 'lesson_debriefed',
         parameters: {
           'exercise_id': widget.exerciseId,
-          'rating': _studentRating,
+          'rating': _form.studentRating,
           'lesson_type': lessonType.name,
         },
       );
@@ -392,7 +472,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         name: 'lesson_saved',
         parameters: {
           'exercise_id': widget.exerciseId,
-          'rating': _studentRating,
+          'rating': _form.studentRating,
         },
       );
 
@@ -418,10 +498,14 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
           });
         });
 
-        if (allComplete) {
-          context.go('/completion');
+        if (exerciseId == 'ex_14') {
+          context.go('/milestone', extra: {'firstSolo': true});
+        } else if (allComplete) {
+          context.go('/milestone', extra: {'firstSolo': false});
         } else {
-          context.go('/exercises');
+          // Post-check-in → take the user straight into a conversational AI
+          // debrief, prefilled with the lesson context they just logged.
+          context.pushReplacement('/ask-ai', extra: _buildAiDebriefPrompt());
         }
       }
 
@@ -432,7 +516,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
           !lessonId.startsWith('local_')) {
         () async {
           try {
-            final userIsPremium = await SubscriptionService.isPremium();
+            final userIsPremium = await ref.read(premiumStatusProvider.future);
             if (!userIsPremium) return;
             FirebaseAnalytics.instance.logEvent(
               name: 'ai_debrief_requested',
@@ -478,6 +562,45 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         maxLength: InputSanitiser.maxMedium,
       );
 
+  /// Build a prefilled prompt for the conversational AI debrief from whatever
+  /// the user has entered so far. Safe to call with empty form fields — those
+  /// sections are simply omitted; the AI is capped at 2 follow-up questions.
+  String _buildAiDebriefPrompt() {
+    final reflection = _sanitise(_form.personalReflection.text);
+    final instructorNotes = _sanitise(_form.instructorNotes.text);
+    final exerciseName = exerciseFullName(widget.exerciseId);
+    final durationMinutes = _form.flightHours * 60 + _form.flightMinutes;
+
+    final buf = StringBuffer()
+      ..write('I just finished a lesson on $exerciseName.\n\n')
+      ..write('Lesson summary:\n')
+      ..write('- Self rating: ${_form.studentRating}/5\n');
+
+    if (_form.criterionRatings.isNotEmpty) {
+      final criteria = ExerciseCriteria.forExercise(widget.exerciseId);
+      final labelByKey = {for (final c in criteria) c.key: c.label};
+      final parts = _form.criterionRatings.entries
+          .map((e) => '${labelByKey[e.key] ?? e.key} ${e.value}/5')
+          .join(', ');
+      buf.write('- Skill ratings: $parts\n');
+    }
+
+    if (durationMinutes > 0) {
+      buf.write('- Lesson duration: $durationMinutes min\n');
+    }
+
+    if (instructorNotes.isNotEmpty) {
+      buf.write('- Instructor notes: "$instructorNotes"\n');
+    }
+    if (reflection.isNotEmpty) {
+      buf.write('- My reflection: "$reflection"\n');
+    }
+
+    buf.write(
+        '\nPlease debrief me — what went well, what to improve, and what to focus on next time. Use the lesson summary above and my training history to give the debrief directly. Only ask me a follow-up question if you genuinely need more information; otherwise just give the debrief. Maximum 2 questions if you do ask.');
+    return buf.toString();
+  }
+
   Future<void> _upsertUserExercise({
     required String uid,
     required FirestoreService firestore,
@@ -486,7 +609,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     required UserExercise? existingUE,
     required List<int> existingHistory,
   }) async {
-    final newHistory = [...existingHistory, _studentRating];
+    final newHistory = [...existingHistory, _form.studentRating];
     final bestRating = newHistory.reduce((a, b) => a > b ? a : b);
     final exerciseNum =
         existingUE?.exerciseNumber ?? _exerciseNumberFrom(exerciseId);
@@ -500,14 +623,14 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         exerciseId: exerciseId,
         subExercise: subExerciseId,
         exerciseNumber: exerciseNum,
-        status: _studentRating >= 3
+        status: _form.studentRating >= 3
             ? ExerciseStatus.completedSatisfactory
             : ExerciseStatus.completedUnsatisfactory,
         bestRating: bestRating,
         ratingHistory: newHistory,
         timesAttempted: (existingUE?.timesAttempted ?? 0) + 1,
         lastAttempted: DateTime.now(),
-        spacedRepDue: DateTime.now().add(const Duration(days: 1)),
+        spacedRepDue: DateTime.now().add(spacedRepDueOffsetForRating(_form.studentRating)),
         videoWatched: existingUE?.videoWatched ?? false,
         briefViewed: existingUE?.briefViewed ?? false,
         flashcardsCompleted: existingUE?.flashcardsCompleted ?? false,
@@ -542,14 +665,14 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         'exerciseId': widget.exerciseId,
         'lessonData': {
           'exerciseName': exerciseName,
-          'studentRating': _studentRating,
+          'studentRating': _form.studentRating,
           'instructorRating': null,
-          'instructorNotes': _sanitise(_instructorNotesController.text).isEmpty
+          'instructorNotes': _sanitise(_form.instructorNotes.text).isEmpty
               ? null
-              : _sanitise(_instructorNotesController.text),
-          'personalReflection': _sanitise(_reflectionController.text).isEmpty
+              : _sanitise(_form.instructorNotes.text),
+          'personalReflection': _sanitise(_form.personalReflection.text).isEmpty
               ? null
-              : _sanitise(_reflectionController.text),
+              : _sanitise(_form.personalReflection.text),
           'quizScore': null,
           'ratingHistory': ratingHistory,
         },
@@ -584,8 +707,8 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     try {
       final criteria = ExerciseCriteria.forExercise(widget.exerciseId);
       final criterionLines = criteria
-          .where((c) => _criterionRatings.containsKey(c.key))
-          .map((c) => '- ${c.label}: ${_criterionRatings[c.key]}/5')
+          .where((c) => _form.criterionRatings.containsKey(c.key))
+          .map((c) => '- ${c.label}: ${_form.criterionRatings[c.key]}/5')
           .join('\n');
 
       final attemptCount = (existingUE?.timesAttempted ?? 0) + 1;
@@ -596,7 +719,7 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
       final prompt = StringBuffer();
       prompt.writeln(
           'The student just completed a lesson on $exerciseName.');
-      prompt.writeln('Overall rating: $_studentRating/5.');
+      prompt.writeln('Overall rating: ${_form.studentRating}/5.');
       if (criterionLines.isNotEmpty) {
         prompt.writeln('Per-criterion ratings:');
         prompt.writeln(criterionLines);
@@ -615,15 +738,15 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         'exerciseId': widget.exerciseId,
         'lessonData': {
           'exerciseName': exerciseName,
-          'studentRating': _studentRating,
-          'instructorNotes': _sanitise(_instructorNotesController.text).isEmpty
+          'studentRating': _form.studentRating,
+          'instructorNotes': _sanitise(_form.instructorNotes.text).isEmpty
               ? null
-              : _sanitise(_instructorNotesController.text),
-          'personalReflection': _sanitise(_reflectionController.text).isEmpty
+              : _sanitise(_form.instructorNotes.text),
+          'personalReflection': _sanitise(_form.personalReflection.text).isEmpty
               ? null
-              : _sanitise(_reflectionController.text),
-          'criterionRatings': _criterionRatings.isNotEmpty
-              ? _criterionRatings
+              : _sanitise(_form.personalReflection.text),
+          'criterionRatings': _form.criterionRatings.isNotEmpty
+              ? _form.criterionRatings
               : null,
           'ratingHistory': existingHistory,
           'nextFocusPrompt': prompt.toString(),
@@ -738,8 +861,8 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
       canPop: _isEditMode,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop || _isEditMode) return;
-        final hasContent = _instructorNotesController.text.isNotEmpty ||
-            _reflectionController.text.isNotEmpty;
+        final hasContent = _form.instructorNotes.text.isNotEmpty ||
+            _form.personalReflection.text.isNotEmpty;
         final navigator = Navigator.of(context);
         if (!hasContent) {
           navigator.pop();
@@ -830,6 +953,12 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     required UserExercise? existingUE,
     required List<int> existingHistory,
   }) {
+    // Pre-fill aircraft type + last instructor on first build (data isn't
+    // available during initState).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _maybePrefillDefaults();
+    });
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => FocusScope.of(context).unfocus(),
@@ -839,98 +968,37 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
             _buildHeader(exerciseName),
-            const SizedBox(height: 28),
-
-            // Self-rating
-            _buildSectionLabel('How did the lesson go?'),
-            const SizedBox(height: 12),
-            _buildStarRating(
-              rating: _studentRating,
-              onChanged: (v) {
-                setState(() => _studentRating = v);
-                _onFieldChanged();
-              },
-            ),
             const SizedBox(height: 24),
 
-            // Per-criterion ratings
-            ..._buildCriteriaRatingSection(),
-            const SizedBox(height: 24),
-
-            // Flight duration
-            if (lessonType == LessonType.flight) ...[
-              _buildSectionLabel('Flight Duration'),
-              const SizedBox(height: 12),
-              _buildDurationPicker(),
-              const SizedBox(height: 24),
-            ],
-
-            // Solo duration (milestone)
-            if (lessonType == LessonType.milestone) ...[
-              _buildSectionLabel('Solo Flight Duration'),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _soloDurationController,
-                keyboardType: TextInputType.number,
-                style: TextStyle(color: AppColors.onSurface),
-                decoration: InputDecoration(
-                  labelText: 'Solo flight duration (minutes)',
-                  suffixText: 'min',
-                ),
-                validator: (v) {
-                  if (v != null && v.isNotEmpty) {
-                    if (int.tryParse(v) == null) return 'Enter whole minutes';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            // Instructor comments (flight only)
-            if (lessonType == LessonType.flight) ...[
-              _buildSectionLabel("Instructor's Comments"),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _instructorNotesController,
-                maxLines: 3,
-                maxLength: InputSanitiser.maxMedium,
-                style: TextStyle(color: AppColors.onSurface),
-                decoration: InputDecoration(
-                  labelText: "Instructor's comments (optional)",
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            // Reflection
-            if (lessonType != LessonType.milestone) ...[
-              _buildSectionLabel('Your Reflection'),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _reflectionController,
-                maxLines: 4,
-                maxLength: InputSanitiser.maxMedium,
-                style: TextStyle(color: AppColors.onSurface),
-                decoration: InputDecoration(
-                  labelText: 'Your thoughts on the lesson (optional)',
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            // Other exercises covered
-            _buildSectionLabel('Other Exercises Covered'),
-            const SizedBox(height: 6),
-            Text(
-              'Did this flight also practise any other exercises?',
-              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+            LessonForm(
+              controller: _form,
+              mode: LessonFormMode.checkIn,
+              primaryExerciseId: widget.exerciseId,
+              lessonType: lessonType,
+              onChanged: _onFieldChanged,
             ),
-            const SizedBox(height: 12),
-            _buildAdditionalExercisesPicker(),
-            const SizedBox(height: 28),
+            const SizedBox(height: 16),
+
+            // AI Debrief (secondary)
+            OutlinedButton.icon(
+              onPressed: () => context.push(
+                '/ask-ai',
+                extra: _buildAiDebriefPrompt(),
+              ),
+              icon: const Icon(Icons.auto_awesome_rounded),
+              label: const Text('AI Debrief'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                minimumSize: const Size.fromHeight(52),
+                side: BorderSide(
+                  color: AppColors.primary.withValues(alpha: 0.6),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
 
             // Save
             ElevatedButton(
@@ -971,89 +1039,6 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
   // Sub-widgets
   // ---------------------------------------------------------------------------
 
-  List<Widget> _buildCriteriaRatingSection() {
-    final criteria = ExerciseCriteria.forExercise(widget.exerciseId);
-    if (criteria.isEmpty) return [];
-
-    return [
-      _buildSectionLabel('Rate each skill'),
-      const SizedBox(height: 6),
-      Text(
-        'CAA assessment criteria — rate how you feel each went (optional)',
-        style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
-      ),
-      const SizedBox(height: 12),
-      ...criteria.map((criterion) {
-        final current = _criterionRatings[criterion.key];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                criterion.label,
-                style: TextStyle(
-                  color: AppColors.onSurface,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: List.generate(5, (index) {
-                  final dotIndex = index + 1;
-                  final filled = current != null && dotIndex <= current;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (_criterionRatings[criterion.key] == dotIndex) {
-                          _criterionRatings.remove(criterion.key);
-                        } else {
-                          _criterionRatings[criterion.key] = dotIndex;
-                        }
-                      });
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: filled
-                              ? AppColors.primary
-                              : AppColors.primary.withValues(alpha: 0.12),
-                          border: Border.all(
-                            color: filled
-                                ? AppColors.primary
-                                : AppColors.primary.withValues(alpha: 0.3),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '$dotIndex',
-                            style: TextStyle(
-                              color: filled
-                                  ? Colors.white
-                                  : AppColors.onSurfaceVariant,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ],
-          ),
-        );
-      }),
-    ];
-  }
-
   Widget _buildHeader(String exerciseName) {
     final dateStr = DateFormat('EEEE, d MMMM yyyy').format(DateTime.now());
     return Column(
@@ -1088,167 +1073,4 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     );
   }
 
-  Widget _buildSectionLabel(String label) {
-    return Text(
-      label,
-      style: TextStyle(
-        color: AppColors.onSurface,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-
-  Widget _buildStarRating({
-    required int rating,
-    required ValueChanged<int> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: List.generate(5, (index) {
-            final starIndex = index + 1;
-            return GestureDetector(
-              onTap: () => onChanged(starIndex),
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Icon(
-                  starIndex <= rating
-                      ? Icons.star_rounded
-                      : Icons.star_outline_rounded,
-                  color: starIndex <= rating
-                      ? AppColors.primary
-                      : AppColors.onSurfaceVariant,
-                  size: 36,
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Struggled',
-              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 11),
-            ),
-            Text(
-              'Nailed it',
-              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 11),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Future<void> _pickDuration() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: _durationHours, minute: _durationMinutes),
-      helpText: 'Select flight duration',
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _durationHours = picked.hour;
-        _durationMinutes = picked.minute;
-      });
-      _onFieldChanged();
-    }
-  }
-
-  Widget _buildDurationPicker() {
-    final label = _durationMinutes == 0
-        ? '${_durationHours}hr'
-        : '${_durationHours}hr ${_durationMinutes}min';
-
-    return GestureDetector(
-      onTap: _pickDuration,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.timer_outlined,
-                color: AppColors.onSurfaceVariant, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: AppColors.onSurface,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded,
-                color: AppColors.onSurfaceVariant, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAdditionalExercisesPicker() {
-    final currentComposite = widget.exerciseId;
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: AppConstants.allExerciseIds
-          .where((id) => id != currentComposite)
-          .map((id) {
-        final selected = _additionalExerciseIds.contains(id);
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              if (selected) {
-                _additionalExerciseIds.remove(id);
-              } else {
-                _additionalExerciseIds.add(id);
-              }
-            });
-            _onFieldChanged();
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.15)
-                  : AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: selected ? AppColors.primary : AppColors.divider,
-                width: selected ? 1.5 : 1,
-              ),
-            ),
-            child: Text(
-              exerciseCompactName(id),
-              style: TextStyle(
-                color:
-                    selected ? AppColors.primary : AppColors.onSurfaceVariant,
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
 }

@@ -1,6 +1,7 @@
 // QXC Guide — educational guide for planning a qualifying cross-country flight.
 // Chapter 1 is free. Chapters 2–6 require a premium subscription.
 // Progress (which chapters have been read) is stored in SharedPreferences.
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,7 +16,7 @@ import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
 const String _kQxcProgressPrefix = 'qxc_chapter_read_';
 
-String _progressKey(int chapterIndex) => '$_kQxcProgressPrefix$chapterIndex';
+String _progressKey(String uid, int chapterIndex) => '$_kQxcProgressPrefix${uid}_$chapterIndex';
 
 // ---------------------------------------------------------------------------
 // Chapter metadata
@@ -65,19 +66,22 @@ class _QxcGuideScreenState extends ConsumerState<QxcGuideScreen> {
     _loadProgress();
   }
 
+  String get _uid => FirebaseAuth.instance.currentUser?.uid ?? 'anon';
+
   Future<void> _loadProgress() async {
+    final uid = _uid;
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
       for (int i = 0; i < _chapters.length; i++) {
-        _read[i] = prefs.getBool(_progressKey(i)) ?? false;
+        _read[i] = prefs.getBool(_progressKey(uid, i)) ?? false;
       }
     });
   }
 
   Future<void> _markRead(int index) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_progressKey(index), true);
+    await prefs.setBool(_progressKey(_uid, index), true);
     if (!mounted) return;
     setState(() => _read[index] = true);
   }

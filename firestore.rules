@@ -38,8 +38,9 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isOwner(uid);
 
-      // Owners may create their own document freely (first-time onboarding).
-      allow create: if isOwner(uid);
+      // Owners may create their own document at sign-up, but cannot
+      // pre-set premium fields — those are written by Cloud Functions only.
+      allow create: if isOwner(uid) && doesNotWritePremiumFields();
 
       // Owners may update their own document but CANNOT touch premium fields.
       // Those fields are managed exclusively by Cloud Functions / RevenueCat
@@ -75,7 +76,15 @@ service cloud.firestore {
     // conversations/{conversationId}
     // -------------------------------------------------------------------------
     match /conversations/{conversationId} {
-      allow read, write: if isParticipant(resource.data);
+      allow read: if isParticipant(resource.data);
+
+      // Participants may update conversation metadata but cannot reassign
+      // participant_ids (that would grant arbitrary read/write to others).
+      allow update: if isParticipant(resource.data)
+          && !request.resource.data.diff(resource.data)
+              .affectedKeys().hasAny(['participant_ids']);
+
+      allow delete: if isParticipant(resource.data);
 
       // Allow a new conversation to be created when the caller is listed as a
       // participant in the document being written.

@@ -1,4 +1,4 @@
-# FlightPath — one-command Android emulator runner (Windows / PowerShell)
+# FlightPath -- one-command Android emulator runner (Windows / PowerShell)
 #
 # Usage:
 #   .\tool\run-emulator.ps1            # debug build (default)
@@ -39,7 +39,7 @@ function Write-Err   ($msg) { Write-Host "[run-emulator] $msg" -ForegroundColor 
 # ---------------------------------------------------------------------------
 $flutter = Get-Command flutter -ErrorAction SilentlyContinue
 if (-not $flutter) {
-    Write-Err "`flutter` is not on PATH."
+    Write-Err "flutter is not on PATH."
     Write-Err "Install the Flutter SDK and add it to PATH, then re-run."
     Write-Err "  https://docs.flutter.dev/get-started/install/windows"
     exit 1
@@ -62,7 +62,7 @@ if (Test-Path $envFile) {
         }
     }
 } else {
-    Write-Warn2 "tool/.env.local not found — using placeholder dart-defines."
+    Write-Warn2 "tool/.env.local not found -- using placeholder dart-defines."
     Write-Warn2 "Copy tool/.env.local.example to tool/.env.local when you have real keys."
 }
 
@@ -70,7 +70,8 @@ if (Test-Path $envFile) {
 # fire. Real keys live in tool/.env.local and override these.
 if (-not $env:REVENUECAT_ANDROID_KEY) { $env:REVENUECAT_ANDROID_KEY = "goog_dev_placeholder" }
 if (-not $env:REVENUECAT_IOS_KEY)     { $env:REVENUECAT_IOS_KEY     = "appl_dev_placeholder" }
-if (-not $env:AVWX_API_KEY)           { $env:AVWX_API_KEY           = "avwx_dev_placeholder" }
+# AVWX_API_KEY is no longer needed on the client — weather is now proxied
+# through the `getWeather` Firebase Cloud Function.
 
 # ---------------------------------------------------------------------------
 # 3. Ensure an Android emulator/device is running
@@ -86,7 +87,7 @@ function Get-AndroidDeviceId {
             }
         }
     } catch {
-        # Fallback: parse plain text `flutter devices` output
+        # Fallback: parse plain text flutter devices output
         $txt = & flutter devices 2>$null
         foreach ($line in $txt) {
             if ($line -match "emulator-\d+") { return $matches[0] }
@@ -103,18 +104,23 @@ if (-not $deviceId) {
         exit 1
     }
 
-    Write-Info "No Android device connected — looking for an AVD to launch."
+    Write-Info "No Android device connected -- looking for an AVD to launch."
     $avdList = & flutter emulators 2>$null
     $avdIds  = @()
     foreach ($line in $avdList) {
-        if ($line -match "^([^\s]+)\s+\u2022") { $avdIds += $matches[1] }
-        elseif ($line -match "^([A-Za-z0-9_\-]+)\s+\|") { $avdIds += $matches[1] }
+        # AVD rows from `flutter emulators` look like:
+        #   Pixel_10_Pro • Pixel 10 Pro • Google • android
+        # The bullet glyph survives PS 5.1 encoding inconsistently, so we key off
+        # the "android" platform column instead. Header rows ("Id" / "1 available
+        # emulator:") don't contain "android".
+        if ($line -match 'android' -and $line -match '^([A-Za-z0-9_\-]+)\s') {
+            $avdIds += $matches[1]
+        }
     }
 
     if ($avdIds.Count -eq 0) {
         Write-Err "No Android AVDs found. Create one via:"
         Write-Err "  Android Studio -> More Actions -> Virtual Device Manager -> Create Device"
-        Write-Err "Or from the CLI: `flutter emulators --create --name flightpath_avd`"
         exit 1
     }
 
@@ -132,7 +138,7 @@ if (-not $deviceId) {
 
     if (-not $deviceId) {
         Write-Err "Emulator did not come online within 90 seconds."
-        Write-Err "Check Android Studio's AVD Manager and try launching it manually."
+        Write-Err "Check Android Studio AVD Manager and try launching it manually."
         exit 1
     }
 }
@@ -148,11 +154,10 @@ if ($Release) { $buildMode = "--release" }
 
 $dartDefines = @(
     "--dart-define=REVENUECAT_ANDROID_KEY=$($env:REVENUECAT_ANDROID_KEY)",
-    "--dart-define=REVENUECAT_IOS_KEY=$($env:REVENUECAT_IOS_KEY)",
-    "--dart-define=AVWX_API_KEY=$($env:AVWX_API_KEY)"
+    "--dart-define=REVENUECAT_IOS_KEY=$($env:REVENUECAT_IOS_KEY)"
 )
 
-Write-Info "flutter run $buildMode -d $deviceId $($dartDefines -join ' ')"
+Write-Info ("flutter run " + $buildMode + " -d " + $deviceId + " " + ($dartDefines -join " "))
 Write-Host ""
 
 & flutter run $buildMode -d $deviceId @dartDefines

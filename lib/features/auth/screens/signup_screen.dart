@@ -1,6 +1,7 @@
-// Signup screen — account creation with email, password, and display name.
+// Signup screen — account creation with email, password, display name, and social sign-in.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,6 +63,36 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _passwordController.dispose();
     _confirmController.dispose();
     super.dispose();
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authServiceProvider).signInWithGoogle();
+      FirebaseAnalytics.instance.logEvent(name: 'signup_google');
+    } on FirebaseAuthException catch (e) {
+      if (mounted) _showError(AuthService.friendlyError(e));
+    } catch (e) {
+      final msg = e.toString();
+      final isCancelled = msg.contains('sign_in_canceled') ||
+          (msg.contains('sign_in_failed') && msg.contains('12501'));
+      if (mounted && !isCancelled) {
+        _showError('Google sign-in failed. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _signInWithApple() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authServiceProvider).signInWithApple();
+    } on FirebaseAuthException catch (e) {
+      if (mounted) _showError(AuthService.friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _signUp() async {
@@ -216,6 +247,45 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(height: 24),
                 Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('or', style: Theme.of(context).textTheme.bodyMedium),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _loading ? null : _signInWithGoogle,
+                  icon: const _GoogleIcon(),
+                  label: const Text('Continue with Google'),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _loading ? null : _signInWithApple,
+                    icon: const _AppleIcon(),
+                    label: const Text('Continue with Apple'),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
@@ -236,5 +306,73 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       ),
     ),
     );
+  }
+}
+
+class _GoogleIcon extends StatelessWidget {
+  const _GoogleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: CustomPaint(painter: _GoogleGPainter()),
+    );
+  }
+}
+
+class _GoogleGPainter extends CustomPainter {
+  static const Color _blue   = Color(0xFF4285F4);
+  static const Color _red    = Color(0xFFEA4335);
+  static const Color _yellow = Color(0xFFFBBC05);
+  static const Color _green  = Color(0xFF34A853);
+  static const Color _white  = Colors.white;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r  = size.width / 2;
+    final ri = r * 0.42;
+    final strokeW = r - ri;
+    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r - strokeW / 2);
+
+    Paint arc(Color c) => Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeW
+      ..strokeCap = StrokeCap.butt;
+
+    const d = 3.14159265358979 / 180.0;
+    canvas.drawArc(rect, -150 * d, 210 * d, false, arc(_blue));
+    canvas.drawArc(rect, -210 * d,  60 * d, false, arc(_red));
+    canvas.drawArc(rect,  150 * d,  60 * d, false, arc(_yellow));
+    canvas.drawArc(rect,   60 * d,  90 * d, false, arc(_green));
+
+    final barTop    = cy - strokeW * 0.55;
+    final barBottom = cy + strokeW * 0.55;
+    final barLeft   = cx - strokeW * 0.05;
+    canvas.drawRect(
+      Rect.fromLTRB(barLeft, barTop, size.width, barBottom),
+      Paint()..color = _white,
+    );
+    canvas.drawCircle(Offset(cx, cy), ri, Paint()..color = _white);
+    canvas.drawRect(
+      Rect.fromLTRB(cx, barTop, cx + ri + strokeW * 0.45, barBottom),
+      Paint()..color = _blue,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_GoogleGPainter oldDelegate) => false;
+}
+
+class _AppleIcon extends StatelessWidget {
+  const _AppleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(Icons.apple, size: 22, color: Theme.of(context).colorScheme.onSurface);
   }
 }

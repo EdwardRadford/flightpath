@@ -14,6 +14,13 @@ class WeatherServiceException implements Exception {
   String toString() => 'WeatherServiceException: $message';
 }
 
+/// Thrown when the station exists but doesn't publish live weather data (HTTP 204/404 from AVWX).
+/// Distinct from a network error — the Cloud Function confirmed the station, it just doesn't report.
+class NoWeatherDataException extends WeatherServiceException {
+  final String icao;
+  NoWeatherDataException(this.icao, String message) : super(message);
+}
+
 // ---------------------------------------------------------------------------
 // Cloud layer model
 // ---------------------------------------------------------------------------
@@ -548,40 +555,6 @@ class WeatherData {
     return text[0].toUpperCase() + text.substring(1);
   }
 
-  /// Maps an OWM cloud coverage percentage to a METAR abbreviation.
-  static String _mapCloudCoverage(int pct) {
-    if (pct <= 0) return 'CLR';
-    if (pct <= 25) return 'FEW';
-    if (pct <= 50) return 'SCT';
-    if (pct <= 87) return 'BKN';
-    return 'OVC';
-  }
-
-  /// Estimates cloud height in feet from the OWM condition code when the API
-  /// doesn't provide explicit layer heights (free tier).
-  static int _estimateCloudHeight(int conditionId, int visMetres) {
-    // Fog / mist → very low
-    if (conditionId >= 700 && conditionId <= 762) return 500;
-    // Thunderstorm → moderate base
-    if (conditionId >= 200 && conditionId <= 232) return 2000;
-    // Rain / drizzle → 1500–3000 depending on visibility
-    if ((conditionId >= 300 && conditionId <= 321) ||
-        (conditionId >= 500 && conditionId <= 531)) {
-      return visMetres < 5000 ? 1500 : 3000;
-    }
-    // Snow
-    if (conditionId >= 600 && conditionId <= 622) return 1000;
-    // Overcast
-    if (conditionId == 804) return 3000;
-    // Broken
-    if (conditionId == 803) return 3500;
-    // Scattered / few
-    if (conditionId == 802) return 4000;
-    if (conditionId == 801) return 5000;
-    // Clear
-    return 10000;
-  }
-
   /// Determines the flight category from visibility and cloud base.
   static FlightCategory _determineFlightCategory(
     int visMetres,
@@ -713,6 +686,15 @@ class WeatherService {
       );
       result = await callable.call({'icaoCode': sanitisedCode});
     } on FirebaseFunctionsException catch (e) {
+      if (e.code == 'not-found') {
+        // Station doesn't report — reset the timer so the user can
+        // immediately retry with a different (nearby) ICAO.
+        _lastCallTime = null;
+        throw NoWeatherDataException(
+          sanitisedCode,
+          e.message ?? '$sanitisedCode doesn\'t publish live weather data.',
+        );
+      }
       throw WeatherServiceException(
         _mapFunctionsError(e, sanitisedCode),
       );
@@ -744,8 +726,8 @@ class WeatherService {
   }
 
   /// Recursively converts platform-channel types to JSON-compatible Dart types.
-  /// Firebase returns nested maps as Map<Object?, Object?> and lists as
-  /// List<Object?> — this normalises the entire tree to Map<String, dynamic>.
+  /// Firebase returns nested maps as `Map<Object?, Object?>` and lists as
+  /// `List<Object?>` — this normalises the entire tree to `Map<String, dynamic>`.
   static dynamic _deepNormalise(dynamic value) {
     if (value is Map) {
       return Map<String, dynamic>.fromEntries(
@@ -769,7 +751,8 @@ class WeatherService {
       case 'unauthenticated':
         return 'You must be signed in to fetch weather data.';
       case 'not-found':
-        return 'No weather data found for "$icaoCode". '
+        return e.message ??
+            'No weather data found for "$icaoCode". '
             'Check the ICAO code is correct and try again.';
       case 'invalid-argument':
         return e.message ?? 'Invalid ICAO code supplied.';

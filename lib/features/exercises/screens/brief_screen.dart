@@ -1,5 +1,5 @@
-// Brief screen — displays the exercise overview, key focus areas, common
-// mistakes, aircraft tips, active recall prompt, and skills test standards.
+// Brief screen — displays the exercise overview, aim, today's focus,
+// CAA assessment criteria, and secondary detail sections behind a disclosure.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +47,8 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
   bool _analyticsLogged = false;
   final Stopwatch _readTimer = Stopwatch();
 
-  String? _openSectionKey;
+  String? _openSectionKey = 'overview_aim';
+  bool _secondaryExpanded = false;
 
   @override
   void initState() {
@@ -104,28 +105,22 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
     }).firstOrNull;
 
     final firestore = ref.read(firestoreServiceProvider);
-    final updated = UserExercise(
-      id: existing?.id ?? '',
-      exerciseId: exerciseId,
-      subExercise: subExerciseId,
-      exerciseNumber: content.exerciseNumber,
-      status: existing == null || existing.status == ExerciseStatus.notStarted
-          ? ExerciseStatus.inProgress
-          : existing.status,
-      bestRating: existing?.bestRating,
-      timesAttempted: existing?.timesAttempted ?? 0,
-      ratingHistory: existing?.ratingHistory ?? [],
-      lastAttempted: existing?.lastAttempted,
-      videoWatched: existing?.videoWatched ?? false,
-      briefViewed: true,
-      flashcardsCompleted: existing?.flashcardsCompleted ?? false,
-      weatherChecked: existing?.weatherChecked ?? false,
-      quizPassed: existing?.quizPassed ?? false,
-      quizAttempted: existing?.quizAttempted ?? false,
-      visualisationViewed: existing?.visualisationViewed ?? false,
-      spacedRepDue: existing?.spacedRepDue,
-      checklistCompleted: existing?.checklistCompleted ?? [],
-    );
+    final updated = existing?.copyWith(
+          briefViewed: true,
+          status: existing.status == ExerciseStatus.notStarted
+              ? ExerciseStatus.inProgress
+              : existing.status,
+        ) ??
+        UserExercise(
+          id: '',
+          exerciseId: exerciseId,
+          subExercise: subExerciseId,
+          exerciseNumber: content.exerciseNumber,
+          status: ExerciseStatus.inProgress,
+          timesAttempted: 0,
+          ratingHistory: const [],
+          briefViewed: true,
+        );
     await firestore.upsertUserExercise(uid, updated);
   }
 
@@ -209,6 +204,12 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
           });
         }
 
+        final bool hasSecondarySections = content.commonMistakes.isNotEmpty ||
+            content.oneThingToNail.isNotEmpty ||
+            content.masteryCriteria.isNotEmpty ||
+            showTip ||
+            skillsTestStandards.containsKey(widget.compositeExerciseId);
+
         return Scaffold(
           appBar: AppBar(
             title: Column(
@@ -259,60 +260,38 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 1. Overview
-              _AccordionSection(
-                sectionKey: 'overview',
-                title: 'Overview',
-                isOpen: _openSectionKey == 'overview',
-                onToggle: () => openSection('overview'),
-                child: Text(
-                  content.overview,
-                  style: TextStyle(
-                    color: AppColors.onSurface,
-                    fontSize: 16,
-                    height: 1.6,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // 2. Aim
-              _AccordionSection(
-                sectionKey: 'aim',
-                title: 'Aim',
-                isOpen: _openSectionKey == 'aim',
-                onToggle: () => openSection('aim'),
-                child: Text(
-                  content.aim,
-                  style: TextStyle(
-                    color: AppColors.onSurface,
-                    fontSize: 16,
-                    height: 1.6,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // 3. What to Expect
-              if (content.whatToExpect.isNotEmpty) ...[
+              // 1. Overview + Aim — collapsible, starts open
+              if (content.overview.isNotEmpty || content.aim.isNotEmpty) ...[
                 _AccordionSection(
-                  sectionKey: 'what_to_expect',
-                  title: 'What to Expect',
-                  isOpen: _openSectionKey == 'what_to_expect',
-                  onToggle: () => openSection('what_to_expect'),
-                  child: Text(
-                    content.whatToExpect,
-                    style: TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 16,
-                      height: 1.6,
-                    ),
+                  sectionKey: 'overview_aim',
+                  title: 'Overview & Aim',
+                  isOpen: _openSectionKey == 'overview_aim',
+                  onToggle: () => openSection('overview_aim'),
+                  child: _OverviewAimBody(
+                    overview: content.overview,
+                    aim: content.aim,
                   ),
                 ),
                 const SizedBox(height: 12),
               ],
 
-              // 4. CAA Assessment Criteria
+              // 2. Today's Focus — keyFocusAreas + whatToExpect
+              if (content.keyFocusAreas.isNotEmpty ||
+                  content.whatToExpect.isNotEmpty) ...[
+                _AccordionSection(
+                  sectionKey: 'todays_focus',
+                  title: "Today's Focus",
+                  isOpen: _openSectionKey == 'todays_focus',
+                  onToggle: () => openSection('todays_focus'),
+                  child: _TodaysFocusBody(
+                    keyFocusAreas: content.keyFocusAreas,
+                    whatToExpect: content.whatToExpect,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // 3. CAA Assessment Criteria — always shown if present
               if (ExerciseCriteria.exerciseCriteria
                   .containsKey(widget.compositeExerciseId)) ...[
                 _AccordionSection(
@@ -328,160 +307,139 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                 const SizedBox(height: 12),
               ],
 
-              // 5. Key Focus Areas
-              if (content.keyFocusAreas.isNotEmpty) ...[
-                _AccordionSection(
-                  sectionKey: 'key_focus',
-                  title: 'Key Focus Areas',
-                  isOpen: _openSectionKey == 'key_focus',
-                  onToggle: () => openSection('key_focus'),
-                  child: Text(
-                    content.keyFocusAreas,
-                    style: TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 16,
-                      height: 1.6,
+              // See more — secondary sections disclosed on demand
+              if (hasSecondarySections) ...[
+                _SeeMoreRow(
+                  expanded: _secondaryExpanded,
+                  onToggle: () =>
+                      setState(() => _secondaryExpanded = !_secondaryExpanded),
+                ),
+                if (_secondaryExpanded) ...[
+                  const SizedBox(height: 12),
+
+                  if (content.commonMistakes.isNotEmpty) ...[
+                    _AccordionSection(
+                      sectionKey: 'common_mistakes',
+                      title: 'Common Mistakes',
+                      icon: Icons.warning_amber_rounded,
+                      iconColor: AppColors.warning,
+                      isOpen: _openSectionKey == 'common_mistakes',
+                      onToggle: () => openSection('common_mistakes'),
+                      child: _BulletList(
+                        text: content.commonMistakes,
+                        bulletColor: AppColors.warning,
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
+                    const SizedBox(height: 12),
+                  ],
 
-              // 6. Pre-Flight Checklist (always open — interactive)
-              if (content.preFlightChecklist.isNotEmpty) ...[
-                _InteractiveChecklist(
-                  checklistText: content.preFlightChecklist,
-                  compositeExerciseId: widget.compositeExerciseId,
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // 7. Common Mistakes
-              if (content.commonMistakes.isNotEmpty) ...[
-                _AccordionSection(
-                  sectionKey: 'common_mistakes',
-                  title: 'Common Mistakes',
-                  icon: Icons.warning_amber_rounded,
-                  iconColor: AppColors.warning,
-                  isOpen: _openSectionKey == 'common_mistakes',
-                  onToggle: () => openSection('common_mistakes'),
-                  child: _BulletList(
-                    text: content.commonMistakes,
-                    bulletColor: AppColors.warning,
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // 8. One Thing to Nail
-              if (content.oneThingToNail.isNotEmpty) ...[
-                _AccordionSection(
-                  sectionKey: 'one_thing',
-                  title: 'One Thing to Nail',
-                  isOpen: _openSectionKey == 'one_thing',
-                  onToggle: () => openSection('one_thing'),
-                  child: Text(
-                    content.oneThingToNail,
-                    style: TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 16,
-                      height: 1.6,
+                  if (content.oneThingToNail.isNotEmpty) ...[
+                    _AccordionSection(
+                      sectionKey: 'one_thing',
+                      title: 'One Thing to Nail',
+                      isOpen: _openSectionKey == 'one_thing',
+                      onToggle: () => openSection('one_thing'),
+                      child: Text(
+                        content.oneThingToNail,
+                        style: TextStyle(
+                          color: AppColors.onSurface,
+                          fontSize: 16,
+                          height: 1.6,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
+                    const SizedBox(height: 12),
+                  ],
 
-              // 9. Mastery Criteria
-              if (content.masteryCriteria.isNotEmpty) ...[
-                _AccordionSection(
-                  sectionKey: 'mastery_criteria',
-                  title: 'Mastery Criteria',
-                  isOpen: _openSectionKey == 'mastery_criteria',
-                  onToggle: () => openSection('mastery_criteria'),
-                  child: Text(
-                    content.masteryCriteria,
-                    style: TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 16,
-                      height: 1.6,
+                  if (content.masteryCriteria.isNotEmpty) ...[
+                    _AccordionSection(
+                      sectionKey: 'mastery_criteria',
+                      title: 'Mastery Criteria',
+                      isOpen: _openSectionKey == 'mastery_criteria',
+                      onToggle: () => openSection('mastery_criteria'),
+                      child: Text(
+                        content.masteryCriteria,
+                        style: TextStyle(
+                          color: AppColors.onSurface,
+                          fontSize: 16,
+                          height: 1.6,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
+                    const SizedBox(height: 12),
+                  ],
 
-              // 10. Aircraft-Specific Tips
-              if (showTip) ...[
-                _AccordionSection(
-                  sectionKey: 'aircraft_tips',
-                  title: 'Aircraft Tips',
-                  icon: Icons.airplanemode_active_rounded,
-                  iconColor: AppColors.primary,
-                  isOpen: _openSectionKey == 'aircraft_tips',
-                  onToggle: () => openSection('aircraft_tips'),
-                  child: _AircraftTipBody(
-                    aircraftType: aircraftType,
-                    tip: aircraftTip,
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // 11. Skills Test Standard
-              if (skillsTestStandards
-                  .containsKey(widget.compositeExerciseId)) ...[
-                _AccordionSection(
-                  sectionKey: 'skills_test',
-                  title: 'Skills Test Standard',
-                  icon: Icons.school_rounded,
-                  iconColor: AppColors.primary,
-                  isOpen: _openSectionKey == 'skills_test',
-                  onToggle: () => openSection('skills_test'),
-                  child: Text(
-                    skillsTestStandards[widget.compositeExerciseId]!,
-                    style: TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 14,
-                      height: 1.6,
+                  if (showTip) ...[
+                    _AccordionSection(
+                      sectionKey: 'aircraft_tips',
+                      title: 'Aircraft Tips',
+                      icon: Icons.airplanemode_active_rounded,
+                      iconColor: AppColors.primary,
+                      isOpen: _openSectionKey == 'aircraft_tips',
+                      onToggle: () => openSection('aircraft_tips'),
+                      child: _AircraftTipBody(
+                        aircraftType: aircraftType,
+                        tip: aircraftTip,
+                      ),
                     ),
-                  ),
-                ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  if (skillsTestStandards
+                      .containsKey(widget.compositeExerciseId)) ...[
+                    _AccordionSection(
+                      sectionKey: 'skills_test',
+                      title: 'Skills Test Standard',
+                      icon: Icons.school_rounded,
+                      iconColor: AppColors.primary,
+                      isOpen: _openSectionKey == 'skills_test',
+                      onToggle: () => openSection('skills_test'),
+                      child: Text(
+                        skillsTestStandards[widget.compositeExerciseId]!,
+                        style: TextStyle(
+                          color: AppColors.onSurface,
+                          fontSize: 14,
+                          height: 1.6,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ],
                 const SizedBox(height: 12),
               ],
 
-              // 12. Active Recall
+              // Active Recall — always at bottom before checklist
               _ActiveRecallCard(key: _recallKey),
 
-              // 13. Action buttons
+              // Pre-flight checklist — static, read-only
+              if (content.preFlightChecklist.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _StaticChecklist(checklistText: content.preFlightChecklist),
+              ],
+
+              // Action buttons
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    FirebaseAnalytics.instance.logEvent(
-                      name: 'brief_next_tapped',
-                      parameters: {
-                        'exercise_id': widget.compositeExerciseId,
-                        'destination':
-                            hasFlashcards ? 'flashcards' : 'quiz',
-                      },
-                    );
-                    if (hasFlashcards) {
-                      context.push(
-                        '/exercises/${widget.compositeExerciseId}/flashcards',
-                      );
-                    } else {
-                      context.push(
-                        '/exercises/${widget.compositeExerciseId}/quiz',
-                      );
-                    }
-                  },
+                  onPressed: hasFlashcards
+                      ? () {
+                          FirebaseAnalytics.instance.logEvent(
+                            name: 'brief_next_tapped',
+                            parameters: {
+                              'exercise_id': widget.compositeExerciseId,
+                              'destination': 'flashcards',
+                            },
+                          );
+                          context.push(
+                            '/exercises/${widget.compositeExerciseId}/flashcards',
+                          );
+                        }
+                      : null,
                   icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                  label: Text(
-                    hasFlashcards ? 'Next: Flashcards' : 'Next: Quiz',
-                  ),
+                  label: const Text('Next: Flashcards'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -613,6 +571,145 @@ class _AccordionSection extends StatelessWidget {
   }
 }
 
+/// Merged Overview + Aim card — always fully expanded (no accordion toggle).
+class _OverviewAimBody extends StatelessWidget {
+  final String overview;
+  final String aim;
+
+  const _OverviewAimBody({required this.overview, required this.aim});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (overview.isNotEmpty)
+          Text(
+            overview,
+            style: TextStyle(
+              color: AppColors.onSurface,
+              fontSize: 15,
+              height: 1.6,
+            ),
+          ),
+        if (aim.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Text(
+            'Aim',
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            aim,
+            style: TextStyle(
+              color: AppColors.onSurface,
+              fontSize: 15,
+              height: 1.6,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Today's Focus section body — keyFocusAreas as bullets, whatToExpect as prose.
+class _TodaysFocusBody extends StatelessWidget {
+  final String keyFocusAreas;
+  final String whatToExpect;
+
+  const _TodaysFocusBody({
+    required this.keyFocusAreas,
+    required this.whatToExpect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (keyFocusAreas.isNotEmpty) ...[
+          _BulletList(
+            text: keyFocusAreas,
+            bulletColor: AppColors.primary,
+          ),
+        ],
+        if (keyFocusAreas.isNotEmpty && whatToExpect.isNotEmpty)
+          const SizedBox(height: 12),
+        if (whatToExpect.isNotEmpty)
+          Text(
+            whatToExpect,
+            style: TextStyle(
+              color: AppColors.onSurface,
+              fontSize: 15,
+              height: 1.6,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Disclosure row that toggles secondary sections.
+class _SeeMoreRow extends StatelessWidget {
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  const _SeeMoreRow({required this.expanded, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onToggle,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Divider(color: cs.outline, height: 1),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    expanded ? 'See less' : 'See more',
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    expanded
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    color: AppColors.onSurfaceVariant,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Divider(color: cs.outline, height: 1),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Renders a block of text as a simple bullet list split on newlines.
 class _BulletList extends StatelessWidget {
   final String text;
@@ -665,80 +762,20 @@ class _BulletList extends StatelessWidget {
   }
 }
 
-/// Interactive pre-flight checklist with persistent checkboxes.
-class _InteractiveChecklist extends ConsumerStatefulWidget {
+/// Read-only pre-flight checklist — numbered icon bullets, no interaction.
+class _StaticChecklist extends StatelessWidget {
   final String checklistText;
-  final String compositeExerciseId;
 
-  const _InteractiveChecklist({
-    required this.checklistText,
-    required this.compositeExerciseId,
-  });
-
-  @override
-  ConsumerState<_InteractiveChecklist> createState() =>
-      _InteractiveChecklistState();
-}
-
-class _InteractiveChecklistState extends ConsumerState<_InteractiveChecklist> {
-  late final List<String> _items;
-
-  @override
-  void initState() {
-    super.initState();
-    _items = widget.checklistText
-        .split('\n')
-        .map((l) => l.trim())
-        .where((l) => l.isNotEmpty)
-        .toList();
-  }
-
-  Future<void> _toggle(int index, List<int> current) async {
-    final uid = ref.read(currentUserIdProvider);
-    if (uid == null) return;
-
-    final (exerciseId, subExerciseId) =
-        parseExerciseId(widget.compositeExerciseId);
-
-    final exercises = ref.read(userExercisesProvider).valueOrNull ?? [];
-    final existing = exercises
-        .where(
-            (ue) => ue.exerciseId == exerciseId && ue.subExercise == subExerciseId)
-        .firstOrNull;
-
-    if (existing == null) return;
-
-    final updated = List<int>.from(current);
-    if (updated.contains(index)) {
-      updated.remove(index);
-    } else {
-      updated.add(index);
-    }
-
-    final firestore = ref.read(firestoreServiceProvider);
-    await firestore.upsertUserExercise(
-      uid,
-      existing.copyWith(checklistCompleted: updated),
-    );
-  }
+  const _StaticChecklist({required this.checklistText});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
-    final (exerciseId, subExerciseId) =
-        parseExerciseId(widget.compositeExerciseId);
-
-    final exercises = ref.watch(userExercisesProvider).valueOrNull ?? [];
-    final userExercise = exercises
-        .where(
-            (ue) => ue.exerciseId == exerciseId && ue.subExercise == subExerciseId)
-        .firstOrNull;
-
-    final completed = userExercise?.checklistCompleted ?? [];
-    final doneCount = completed.length;
-    final totalCount = _items.length;
-    final allDone = totalCount > 0 && doneCount >= totalCount;
+    final items = checklistText
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
 
     return Container(
       width: double.infinity,
@@ -746,122 +783,60 @@ class _InteractiveChecklistState extends ConsumerState<_InteractiveChecklist> {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: allDone
-              ? AppColors.success.withValues(alpha: 0.6)
-              : cs.outline,
-          width: allDone ? 1.5 : 0.5,
-        ),
+        border: Border.all(color: cs.outline, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
-          Row(
-            children: [
-              if (allDone) ...[
-                const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.success,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: Text(
-                  'Pre-Flight Checklist',
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Progress indicator
           Text(
-            allDone
-                ? 'All $totalCount items complete'
-                : '$doneCount of $totalCount items complete',
+            'Pre-Flight Checklist',
             style: TextStyle(
-              color: allDone ? AppColors.success : AppColors.onSurfaceVariant,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+              color: cs.onSurface,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 12),
           Divider(color: cs.outline, height: 1),
           const SizedBox(height: 10),
-
-          // Checklist items
-          ..._items.asMap().entries.map((entry) {
+          ...items.asMap().entries.map((entry) {
             final index = entry.key;
             final text = entry.value;
-            final isChecked = completed.contains(index);
-
-            return InkWell(
-              onTap: () => _toggle(index, completed),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Checkbox
-                    Container(
-                      width: 22,
-                      height: 22,
-                      margin: const EdgeInsets.only(top: 1, right: 10),
-                      decoration: BoxDecoration(
-                        color: isChecked
-                            ? AppColors.success.withValues(alpha: 0.15)
-                            : AppColors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                        border: isChecked
-                            ? Border.all(
-                                color: AppColors.success.withValues(alpha: 0.4),
-                                width: 1,
-                              )
-                            : null,
-                      ),
-                      child: Center(
-                        child: isChecked
-                            ? const Icon(
-                                Icons.check_rounded,
-                                size: 14,
-                                color: AppColors.success,
-                              )
-                            : Text(
-                                '${index + 1}',
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                      ),
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    margin: const EdgeInsets.only(top: 1, right: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    // Item text
-                    Expanded(
+                    child: Center(
                       child: Text(
-                        text,
-                        style: TextStyle(
-                          color: isChecked
-                              ? AppColors.onSurfaceVariant
-                              : AppColors.onSurface,
-                          fontSize: 14,
-                          height: 1.55,
-                          decoration:
-                              isChecked ? TextDecoration.lineThrough : null,
-                          decorationColor: AppColors.onSurfaceVariant,
+                        '${index + 1}',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        color: AppColors.onSurface,
+                        fontSize: 14,
+                        height: 1.55,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             );
           }),

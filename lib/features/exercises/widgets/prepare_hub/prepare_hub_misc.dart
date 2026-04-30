@@ -1,8 +1,7 @@
 // Miscellaneous small widgets for the prepare hub screen:
-// PrepareHubSectionLabel, PrepareHubRevisionBanner, PrepareHubPlaceholderBody,
+// PrepareHubSectionLabel, PrepareHubAfterLessonCard, PrepareHubPlaceholderBody,
 // PrepareHubErrorBody.
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 
 // ---------------------------------------------------------------------------
@@ -28,16 +27,28 @@ class PrepareHubSectionLabel extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Revision banner
+// After-lesson card — used twice on the prepare hub (Review Relevant Lessons
+// + AI Debrief). Same visual weight as the old revision banner.
 // ---------------------------------------------------------------------------
 
-class PrepareHubRevisionBanner extends StatelessWidget {
-  const PrepareHubRevisionBanner({super.key});
+class PrepareHubAfterLessonCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const PrepareHubAfterLessonCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/revision'),
+      onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -56,8 +67,8 @@ class PrepareHubRevisionBanner extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Icons.psychology_rounded,
+              child: Icon(
+                icon,
                 color: AppColors.primary,
                 size: 24,
               ),
@@ -67,9 +78,9 @@ class PrepareHubRevisionBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Revision Mode',
-                    style: TextStyle(
+                  Text(
+                    title,
+                    style: const TextStyle(
                       color: AppColors.primary,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -77,7 +88,7 @@ class PrepareHubRevisionBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Mixed questions across all exercises, weighted to your weak areas.',
+                    subtitle,
                     style: TextStyle(
                       color: AppColors.onSurfaceVariant,
                       fontSize: 13,

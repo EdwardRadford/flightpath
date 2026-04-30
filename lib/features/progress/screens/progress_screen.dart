@@ -15,7 +15,9 @@ import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/utils/exercise_helpers.dart';
 import 'package:flight_path/features/progress/screens/hours_minimums_screen.dart';
+import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
+import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
 // Syllabus phases
 const _phases = [
@@ -1436,6 +1438,7 @@ class _SyllabusTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesAsync = ref.watch(userExercisesProvider);
+    final appUser = ref.watch(appUserProvider).valueOrNull;
 
     return exercisesAsync.when(
       loading: () => const Center(
@@ -1627,7 +1630,19 @@ class _SyllabusTab extends ConsumerWidget {
                       return Column(
                         children: [
                           InkWell(
-                            onTap: () => context.push('/exercises/$routeId'),
+                            onTap: () {
+                              final hasAccess = appUser?.canAccessExercise(routeId) ?? true;
+                              if (!hasAccess) {
+                                showPremiumPaywall(
+                                  context,
+                                  source: 'syllabus_tab',
+                                  freeWindowStart: appUser?.freeWindowStart ?? 1,
+                                  freeWindowEnd: appUser?.freeWindowEnd ?? 3,
+                                );
+                                return;
+                              }
+                              context.push('/exercises/$routeId');
+                            },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 12),
