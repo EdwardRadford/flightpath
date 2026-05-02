@@ -37,25 +37,31 @@ workflows:
           set -x
           keychain initialize
 
-          echo "=== existing certs ==="
-          app-store-connect certificates list --type IOS_DISTRIBUTION || true
+          # CI builds run on ephemeral Mac VMs — the private key for any
+          # existing iOS distribution cert lives only on the VM that
+          # created it (which is gone). So revoke every existing cert at
+          # the start, then create fresh + matching key inside this VM.
+          # Revoking a distribution cert does NOT invalidate already-
+          # shipped apps, so this is safe.
+          echo "=== revoking any existing distribution certs ==="
+          app-store-connect certificates list --type IOS_DISTRIBUTION --json 2>/dev/null \
+            | python3 -c "import sys,json; data=json.load(sys.stdin); [print(c['id']) for c in (data if isinstance(data,list) else [])]" \
+            | while read -r cert_id; do
+                if [ -n "$cert_id" ]; then
+                  echo "Revoking $cert_id"
+                  app-store-connect certificates delete "$cert_id" --ignore-not-found || true
+                fi
+              done
 
           echo "=== existing bundle ids ==="
           app-store-connect bundle-ids list --bundle-id-identifier "$BUNDLE_IDENTIFIER" || true
 
-          echo "=== creating dist cert if missing ==="
-          # Codemagic's certificates create requires an RSA private key to
-          # tie the new cert to. Generate one fresh for this build if no
-          # distribution cert already exists in App Store Connect.
-          if ! app-store-connect certificates list --type IOS_DISTRIBUTION 2>/dev/null | grep -q "Id:"; then
-            ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/dist_cert_key -q -N ""
-            app-store-connect certificates create \
-              --type IOS_DISTRIBUTION \
-              --certificate-key @file:/tmp/dist_cert_key \
-              --save
-          else
-            echo "Distribution cert already exists"
-          fi
+          echo "=== creating fresh dist cert + private key ==="
+          ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/dist_cert_key -q -N ""
+          app-store-connect certificates create \
+            --type IOS_DISTRIBUTION \
+            --certificate-key @file:/tmp/dist_cert_key \
+            --save
 
           echo "=== fetching signing files ==="
           app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
