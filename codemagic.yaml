@@ -36,6 +36,17 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
+          # Ensure a non-Xcode-managed distribution certificate exists.
+          # No-op if one already exists in App Store Connect.
+          app-store-connect certificates create \
+            --type IOS_DISTRIBUTION \
+            --save || true
+          # Register the bundle ID if missing (idempotent — does nothing if
+          # already registered as a proper App ID).
+          app-store-connect bundle-ids register "$BUNDLE_IDENTIFIER" \
+            --name "Flight Path Training" \
+            --platform IOS || true
+          # Fetch or create the App Store provisioning profile.
           app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
             --type IOS_APP_STORE \
             --create
