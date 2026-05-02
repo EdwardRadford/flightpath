@@ -17,8 +17,8 @@ workflows:
         XCODE_WORKSPACE: ios/Runner.xcworkspace
         XCODE_SCHEME: Runner
         BUNDLE_IDENTIFIER: uk.co.flightpath.flightPath
-      flutter: stable
-      xcode: latest
+      flutter: 3.41.6
+      xcode: 26.0
       cocoapods: default
     scripts:
       - name: Flutter packages get
@@ -43,12 +43,16 @@ workflows:
           echo "=== existing bundle ids ==="
           app-store-connect bundle-ids list --bundle-id-identifier "$BUNDLE_IDENTIFIER" || true
 
-          echo "=== existing profiles ==="
-          app-store-connect profiles list --bundle-id-identifier "$BUNDLE_IDENTIFIER" --type IOS_APP_STORE || true
-
           echo "=== creating dist cert if missing ==="
-          if ! app-store-connect certificates list --type IOS_DISTRIBUTION 2>/dev/null | grep -q "id:"; then
-            app-store-connect certificates create --type IOS_DISTRIBUTION --save
+          # Codemagic's certificates create requires an RSA private key to
+          # tie the new cert to. Generate one fresh for this build if no
+          # distribution cert already exists in App Store Connect.
+          if ! app-store-connect certificates list --type IOS_DISTRIBUTION 2>/dev/null | grep -q "Id:"; then
+            ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/dist_cert_key -q -N ""
+            app-store-connect certificates create \
+              --type IOS_DISTRIBUTION \
+              --certificate-key /tmp/dist_cert_key \
+              --save
           else
             echo "Distribution cert already exists"
           fi
@@ -56,7 +60,8 @@ workflows:
           echo "=== fetching signing files ==="
           app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key /tmp/dist_cert_key
 
           keychain add-certificates
           xcode-project use-profiles
