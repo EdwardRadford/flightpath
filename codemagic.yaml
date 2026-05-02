@@ -21,6 +21,15 @@ workflows:
       xcode: 26.0
       cocoapods: default
     scripts:
+      - name: Install flutterfire CLI
+        script: |
+          # Required by the iOS Run Script phase that uploads Crashlytics
+          # symbols (FlutterFire: upload-crashlytics-symbols). Without
+          # this on PATH, the archive step fails.
+          dart pub global activate flutterfire_cli
+          echo "$HOME/.pub-cache/bin" >> $CM_BUILD_DIR/.path_extensions
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+          flutterfire --version
       - name: Flutter packages get
         script: flutter packages pub get
       - name: Analyzer
@@ -84,6 +93,9 @@ workflows:
           pod install --repo-update
       - name: Build IPA
         script: |
+          # Ensure flutterfire CLI is on PATH for the iOS Run Script phase
+          # that uploads Crashlytics symbols.
+          export PATH="$HOME/.pub-cache/bin:$PATH"
           flutter build ipa --release \
             --build-name=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1) \
             --build-number=$(($(app-store-connect get-latest-testflight-build-number "$BUNDLE_IDENTIFIER") + 1)) \
