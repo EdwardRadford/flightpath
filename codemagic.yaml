@@ -13,12 +13,10 @@ workflows:
     environment:
       groups:
         - flightpath_secrets
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: uk.co.flightpath.flightPath
       vars:
         XCODE_WORKSPACE: ios/Runner.xcworkspace
         XCODE_SCHEME: Runner
+        BUNDLE_IDENTIFIER: uk.co.flightpath.flightPath
       flutter: stable
       xcode: latest
       cocoapods: default
