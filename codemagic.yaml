@@ -74,9 +74,13 @@ workflows:
       - name: Pod install
         script: |
           cd ios
-          # --repo-update so stale Podfile.lock pinning resolves against the
-          # current spec repo. purchases_flutter occasionally bumps
-          # PurchasesHybridCommon and the lockfile lags.
+          # Delete Podfile.lock + Pods/ so each CI build resolves fresh
+          # against the current spec repo. Without this, stale pins
+          # (e.g. PurchasesHybridCommon 17.52 when the plugin needs 17.53)
+          # block pod install. Lockfile reproducibility doesn't matter
+          # here — Ed builds only on CI for iOS.
+          rm -f Podfile.lock
+          rm -rf Pods
           pod install --repo-update
       - name: Build IPA
         script: |
