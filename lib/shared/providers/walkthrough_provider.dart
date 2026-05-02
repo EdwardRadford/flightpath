@@ -14,6 +14,10 @@ String? _currentUid() => FirebaseAuth.instance.currentUser?.uid;
 
 /// Reads the walkthrough flag from Firestore for [uid].
 /// Returns null if the field does not exist yet.
+///
+/// Reads both `has_seen_walkthrough` (current) and `hasSeenWalkthrough`
+/// (legacy camelCase from pre-rename docs). The next write will clear
+/// the legacy field so this fallback eventually goes unused.
 Future<bool?> _readFirestore(String uid) async {
   final doc = await FirebaseFirestore.instance
       .collection('users')
@@ -21,17 +25,18 @@ Future<bool?> _readFirestore(String uid) async {
       .get(const GetOptions(source: Source.serverAndCache));
   final data = doc.data();
   if (data == null) return null;
-  final value = data['hasSeenWalkthrough'];
+  final value = data['has_seen_walkthrough'] ?? data['hasSeenWalkthrough'];
   if (value is bool) return value;
   return null;
 }
 
 /// Writes the walkthrough flag to Firestore for [uid].
+/// Also deletes the legacy camelCase field if present.
 Future<void> _writeFirestore(String uid, bool value) async {
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(uid)
-      .set({'hasSeenWalkthrough': value}, SetOptions(merge: true));
+  await FirebaseFirestore.instance.collection('users').doc(uid).set({
+    'has_seen_walkthrough': value,
+    'hasSeenWalkthrough': FieldValue.delete(),
+  }, SetOptions(merge: true));
 }
 
 /// One-time migration: if SharedPreferences has the old flag but Firestore
