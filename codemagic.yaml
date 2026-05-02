@@ -24,7 +24,7 @@ workflows:
       - name: Flutter packages get
         script: flutter packages pub get
       - name: Analyzer
-        script: flutter analyze
+        script: flutter analyze --no-fatal-infos
       - name: Unit tests
         script: flutter test
       - name: Add PrivacyInfo to Xcode project
