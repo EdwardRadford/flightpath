@@ -96,9 +96,25 @@ workflows:
           # Ensure flutterfire CLI is on PATH for the iOS Run Script phase
           # that uploads Crashlytics symbols.
           export PATH="$HOME/.pub-cache/bin:$PATH"
+
+          # Build number resolution: use the max of (latest in App Store
+          # Connect + 1) and (pubspec.yaml +N + 1) so builds always
+          # increment, even when ASC API is lagging on still-processing
+          # builds. get-latest-build-number is broader than
+          # get-latest-testflight-build-number — it includes pending
+          # uploads, which is what we want.
+          LATEST_API=$(app-store-connect get-latest-build-number "$BUNDLE_IDENTIFIER" 2>/dev/null || echo 0)
+          PUBSPEC_BUILD=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f2)
+          if [ "$LATEST_API" -gt "$PUBSPEC_BUILD" ]; then
+            NEXT_BUILD=$((LATEST_API + 1))
+          else
+            NEXT_BUILD=$((PUBSPEC_BUILD + 1))
+          fi
+          echo "Build numbering — API latest: $LATEST_API, pubspec: $PUBSPEC_BUILD, using: $NEXT_BUILD"
+
           flutter build ipa --release \
             --build-name=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1) \
-            --build-number=$(($(app-store-connect get-latest-testflight-build-number "$BUNDLE_IDENTIFIER") + 1)) \
+            --build-number=$NEXT_BUILD \
             --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY \
             --dart-define=REVENUECAT_ANDROID_KEY=$REVENUECAT_ANDROID_KEY \
             --export-options-plist=/Users/builder/export_options.plist
