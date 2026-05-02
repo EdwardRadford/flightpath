@@ -5,6 +5,7 @@
 import 'dart:math';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -337,8 +338,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       );
 
       await firestore.upsertUserExercise(uid, updated);
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('QuizScreen: failed to save result: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'QuizScreen: failed to save quiz result',
+        fatal: false,
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }

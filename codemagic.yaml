@@ -68,7 +68,10 @@ workflows:
       - name: Pod install
         script: |
           cd ios
-          pod install
+          # --repo-update so stale Podfile.lock pinning resolves against the
+          # current spec repo. purchases_flutter occasionally bumps
+          # PurchasesHybridCommon and the lockfile lags.
+          pod install --repo-update
       - name: Build IPA
         script: |
           flutter build ipa --release \

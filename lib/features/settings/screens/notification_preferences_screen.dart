@@ -98,6 +98,7 @@ class _NotificationPreferencesScreenState
       await NotificationService.savePreference(key: key, value: value);
     }
 
+    if (!mounted) return;
     // Invalidate the provider cache so future reads are fresh.
     ref.invalidate(_notificationPrefsProvider);
 

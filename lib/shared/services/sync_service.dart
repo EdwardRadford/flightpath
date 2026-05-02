@@ -326,11 +326,16 @@ class SyncService {
             .collection('lessons')
             .add(data);
         await _pendingLessonsBox.delete(key);
-      } catch (e) {
+      } catch (e, st) {
         if (kDebugMode) {
           debugPrint(
               'SyncService: failed to sync pending lesson $key: $e');
         }
+        FirebaseCrashlytics.instance.recordError(
+          e, st,
+          reason: 'SyncService: pending lesson sync failed (will retry)',
+          fatal: false,
+        );
         break;
       }
     }

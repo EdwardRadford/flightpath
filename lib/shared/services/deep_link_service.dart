@@ -12,6 +12,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,8 +25,13 @@ class DeepLinkService {
   Future<Uri?> getInitialLink() async {
     try {
       return await _appLinks.getInitialLink();
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('DeepLinkService: failed to get initial link: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'DeepLinkService.getInitialLink failed',
+        fatal: false,
+      );
       return null;
     }
   }

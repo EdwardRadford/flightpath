@@ -265,7 +265,14 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
         },
       );
       if (mounted) setState(() => _sttReady = ready);
-    } catch (_) {
+    } catch (e, st) {
+      // STT init failure is recoverable — text-only fallback — but report so
+      // we can spot a regression on a particular device class.
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'AskAi: STT init failed',
+        fatal: false,
+      );
       if (mounted) setState(() => _sttReady = false);
     }
   }
@@ -301,7 +308,12 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
           listenMode: stt.ListenMode.dictation,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'AskAi: STT listen failed',
+        fatal: false,
+      );
       if (mounted) setState(() => _isListening = false);
       _micPulse.stop();
     }
@@ -476,7 +488,15 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
           try {
             final decoded = jsonDecode(raw);
             if (decoded is Map<String, dynamic>) parsed = decoded;
-          } catch (_) {}
+          } catch (e, st) {
+            // Malformed 429 body — fall through to generic error below, but
+            // record so a server-side regression is visible.
+            FirebaseCrashlytics.instance.recordError(
+              e, st,
+              reason: 'AskAi: malformed 429 JSON body from getAiChatStream',
+              fatal: false,
+            );
+          }
           if (parsed != null && parsed['type'] == 'daily_limit_reached') {
             await ref
                 .read(askAiLimitProvider.notifier)

@@ -110,10 +110,18 @@ class ConsentService {
           }
           break;
       }
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) {
         debugPrint('ConsentService: failed to apply $key=$granted — $e');
       }
+      // Note: only reports if the user has *also* granted Crashlytics consent;
+      // if they declined Crashlytics this is a no-op, which is the desired
+      // privacy-respecting behaviour.
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'ConsentService: failed to apply consent for $key',
+        fatal: false,
+      );
     }
   }
 }

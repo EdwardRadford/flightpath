@@ -1,6 +1,7 @@
 // Offline-aware lesson service — saves lessons to Firestore when online,
 // falls back to local Hive storage when offline, and queues for sync.
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,10 +37,15 @@ class OfflineLessonService {
     if (isOnline) {
       try {
         return await _firestore.createLesson(uid, lesson);
-      } catch (e) {
+      } catch (e, st) {
         // Network error despite connectivity check — fall through to offline.
         debugPrint(
             'OfflineLessonService: Firestore write failed, saving locally: $e');
+        FirebaseCrashlytics.instance.recordError(
+          e, st,
+          reason: 'OfflineLessonService.createLesson: online write failed (queued offline)',
+          fatal: false,
+        );
       }
     }
 
@@ -68,8 +74,13 @@ class OfflineLessonService {
       try {
         await _firestore.updateLesson(uid, lessonId, data);
         return;
-      } catch (e) {
+      } catch (e, st) {
         debugPrint('OfflineLessonService: update failed, queueing: $e');
+        FirebaseCrashlytics.instance.recordError(
+          e, st,
+          reason: 'OfflineLessonService.updateLesson: online write failed (queued offline)',
+          fatal: false,
+        );
       }
     }
 
