@@ -93,6 +93,7 @@ class _AirfieldScreenState extends ConsumerState<AirfieldScreen> {
                           color: cs.onSurface.withValues(alpha: 0.45),
                           size: 18,
                         ),
+                        tooltip: 'Clear search',
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');

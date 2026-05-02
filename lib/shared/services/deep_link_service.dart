@@ -2,7 +2,6 @@
 //
 // Supported deep link patterns:
 //   flightpath://exercise/{exerciseId}          → prepare hub
-//   flightpath://exercise/{exerciseId}/quiz     → quiz screen
 //   flightpath://exercise/{exerciseId}/flashcards → practice/flashcards
 //   flightpath://progress/{token}               → shared progress
 //   flightpath://lesson/{lessonId}              → lesson detail (fetches from Firestore)
@@ -69,8 +68,6 @@ class DeepLinkService {
         }
         if (segments.length >= 3) {
           switch (segments[2]) {
-            case 'quiz':
-              return '/exercises/$exerciseId/quiz';
             case 'flashcards':
               return '/exercises/$exerciseId/flashcards';
             case 'brief':
@@ -84,7 +81,7 @@ class DeepLinkService {
         return null;
 
       case 'exercises':
-        // Handle /exercises/:id and /exercises/:id/brief|quiz etc.
+        // Handle /exercises/:id and /exercises/:id/brief|flashcards etc.
         if (segments.length < 2) return '/exercises';
         final exerciseId = segments[1];
         if (!_safeSegment.hasMatch(exerciseId) || exerciseId.length > 30) {
@@ -95,8 +92,6 @@ class DeepLinkService {
         }
         if (segments.length >= 3) {
           switch (segments[2]) {
-            case 'quiz':
-              return '/exercises/$exerciseId/quiz';
             case 'brief':
               return '/exercises/$exerciseId/brief';
             case 'flashcards':

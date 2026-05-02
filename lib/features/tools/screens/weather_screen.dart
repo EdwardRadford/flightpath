@@ -253,6 +253,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
         title: const Text('Weather Briefing'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back',
           onPressed: () => context.pop(),
         ),
         actions: [

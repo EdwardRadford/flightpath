@@ -18,7 +18,7 @@ class _TourPage {
 const _pages = [
   _TourPage(
     icon: AppIcons.tour,
-    title: 'Welcome to Flight Path',
+    title: 'Welcome to Flight Path Training',
     description:
         'Your personal PPL(A) training companion. '
         'Let\u2019s take a quick look at what\u2019s inside.',
@@ -28,14 +28,14 @@ const _pages = [
     title: 'Home',
     description:
         'Your dashboard shows your next lesson, quick stats, '
-        'a daily revision question, and your recent activity.',
+        'and your recent activity.',
   ),
   _TourPage(
     icon: AppIcons.exercises,
     title: 'Exercises',
     description:
         'All CAA exercises in order. Tap any exercise to prepare \u2014 '
-        'read the brief, practice flashcards, take quizzes, and chat with your AI instructor.',
+        'read the brief, practice flashcards, and chat with your AI instructor.',
   ),
   _TourPage(
     icon: AppIcons.menuBook,

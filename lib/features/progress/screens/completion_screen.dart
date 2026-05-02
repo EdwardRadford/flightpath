@@ -143,6 +143,7 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
               child: IconButton(
                 onPressed: () => context.go('/exercises'),
                 icon: Icon(Icons.close, color: AppColors.onSurfaceVariant),
+                tooltip: 'Close',
               ),
             ),
           ),
@@ -445,17 +446,26 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
               ],
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(5, (i) {
-              return Icon(
-                i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                color: i < rating
-                    ? AppColors.primary
-                    : AppColors.onSurfaceVariant.withValues(alpha: 0.3),
-                size: 16,
-              );
-            }),
+          // Wrap in Semantics + ExcludeSemantics so VoiceOver reads
+          // "rating, $rating of 5" instead of five separate "image" nodes.
+          Semantics(
+            label: 'Rating, $rating of 5',
+            child: ExcludeSemantics(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (i) {
+                  return Icon(
+                    i < rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    color: i < rating
+                        ? AppColors.primary
+                        : AppColors.onSurfaceVariant.withValues(alpha: 0.3),
+                    size: 16,
+                  );
+                }),
+              ),
+            ),
           ),
         ],
       ),

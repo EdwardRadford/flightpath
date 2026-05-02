@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 
-/// Displays the Flight Path privacy policy as static scrollable text.
+/// Displays the Flight Path Training privacy policy as static scrollable text.
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
@@ -29,7 +29,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: 'Information We Collect',
             body:
-                'Flight Path collects the information you provide when creating an account, '
+                'Flight Path Training collects the information you provide when creating an account, '
                 'including your name, email address, and training details such as your aircraft '
                 'type, flight school, and home airfield. We also collect data about your '
                 'exercise progress, lesson records, and quiz scores to power the app\'s '
@@ -38,7 +38,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: 'How We Use Your Information',
             body:
-                'We use your information to provide and improve the Flight Path service, '
+                'We use your information to provide and improve the Flight Path Training service, '
                 'personalise your training experience, send you relevant notifications, '
                 'and generate AI-powered feedback on your progress. We do not sell your '
                 'personal data to third parties.',
@@ -51,7 +51,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: 'AI Features',
             body:
-                'Flight Path uses AI to provide debrief summaries and chat responses. '
+                'Flight Path Training uses AI to provide debrief summaries and chat responses. '
                 'Relevant exercise and progress data is sent to our Cloud Functions to '
                 'generate these responses. This data is processed transiently and is '
                 'not used to train AI models.',
@@ -59,7 +59,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: 'Notifications',
             body:
-                'With your permission, Flight Path sends push notifications to remind '
+                'With your permission, Flight Path Training sends push notifications to remind '
                 'you of upcoming lessons, prompt spaced repetition reviews, and nudge '
                 'you if you have been inactive. You can manage or disable notifications '
                 'at any time from Settings > Notification Preferences.',
@@ -74,7 +74,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: 'Cookies & Analytics',
             body:
-                'Flight Path uses Firebase Analytics to understand how users interact '
+                'Flight Path Training uses Firebase Analytics to understand how users interact '
                 'with the app. This data is anonymised and aggregated. No advertising '
                 'cookies are used.',
           ),
@@ -92,7 +92,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              'Flight Path is designed for student pilots training for the UK PPL. '
+              'Flight Path Training is designed for student pilots training for the UK PPL. '
               'The app is intended as a study aid only and does not replace your '
               'instructor\'s guidance or official CAA documentation.',
               style: TextStyle(

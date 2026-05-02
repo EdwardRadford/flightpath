@@ -1,4 +1,5 @@
-// Exercise data providers — user exercise streams, cached exercise content, and quiz questions.
+// Exercise data providers — user exercise streams, cached exercise content,
+// and flashcards.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flight_path/shared/providers/auth_provider.dart';
@@ -7,7 +8,6 @@ import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/shared/models/exercise_content.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/models/flashcard.dart';
-import 'package:flight_path/shared/models/quiz_question.dart';
 
 // ---------------------------------------------------------------------------
 // Exercise write helpers
@@ -139,26 +139,6 @@ final exerciseContentProvider =
     final subExerciseId = args.$2;
     final cache = ref.watch(contentCacheServiceProvider);
     return cache.getExerciseContent(
-      exerciseId,
-      subExerciseId: subExerciseId,
-    );
-  },
-);
-
-// ---------------------------------------------------------------------------
-// Quiz questions
-// ---------------------------------------------------------------------------
-
-/// Fetches quiz questions for the given (exerciseId, subExerciseId?) pair.
-///
-/// Uses [ContentCacheService] for offline caching with background refresh.
-final quizQuestionsProvider =
-    FutureProvider.family<List<QuizQuestion>, (String, String?)>(
-  (ref, args) async {
-    final exerciseId = args.$1;
-    final subExerciseId = args.$2;
-    final cache = ref.watch(contentCacheServiceProvider);
-    return cache.getQuizQuestions(
       exerciseId,
       subExerciseId: subExerciseId,
     );

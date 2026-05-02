@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
+import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
 // ---------------------------------------------------------------------------
 // Exercise data structure (file-level — consumed by FlightPathBody and painter)
@@ -665,18 +666,23 @@ class _FlightPathBodyState extends State<FlightPathBody>
         Positioned(
           left: cx - kNodeRadius,
           top: cy - kNodeRadius,
-          child: IgnorePointer(
-            child: Container(
-              width: kNodeRadius * 2,
-              height: kNodeRadius * 2,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0x66000000),
-              ),
-              child: const Icon(
-                Icons.lock_rounded,
-                color: Colors.white,
-                size: 20,
+          // Semantics label tells screen-reader users this exercise is
+          // gated behind Pro — colour/lock icon alone is not enough.
+          child: Semantics(
+            label: 'Locked, requires Pro upgrade',
+            child: IgnorePointer(
+              child: Container(
+                width: kNodeRadius * 2,
+                height: kNodeRadius * 2,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x66000000),
+                ),
+                child: const Icon(
+                  Icons.lock_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -792,18 +798,21 @@ class _FlightPathBodyState extends State<FlightPathBody>
           Positioned(
             left: subCx - kSubNodeRadius,
             top: subCy - kSubNodeRadius,
-            child: IgnorePointer(
-              child: Container(
-                width: kSubNodeRadius * 2,
-                height: kSubNodeRadius * 2,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x66000000),
-                ),
-                child: const Icon(
-                  Icons.lock_rounded,
-                  color: Colors.white,
-                  size: 14,
+            child: Semantics(
+              label: 'Locked, requires Pro upgrade',
+              child: IgnorePointer(
+                child: Container(
+                  width: kSubNodeRadius * 2,
+                  height: kSubNodeRadius * 2,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0x66000000),
+                  ),
+                  child: const Icon(
+                    Icons.lock_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
                 ),
               ),
             ),
@@ -825,7 +834,9 @@ class _FlightPathBodyState extends State<FlightPathBody>
                         subStatus == NodeStatus.mastered)
                     ? AppColors.onSurface
                     : AppColors.onSurfaceVariant,
-                fontSize: 9,
+                // Bumped from 9 to 11 \u2014 9pt is below WCAG legible body
+                // size and unreadable for older users.
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
@@ -846,11 +857,11 @@ class _FlightPathBodyState extends State<FlightPathBody>
       final freeStart = math.max(1, widget.currentExerciseNumber - 2);
       final freeEnd = math.min(19, widget.currentExerciseNumber + 2);
       if (exNum < freeStart || exNum > freeEnd) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Upgrade to Pro to unlock all 22 exercises'),
-            duration: Duration(seconds: 3),
-          ),
+        showPremiumPaywall(
+          context,
+          source: 'exercise_list_locked',
+          freeWindowStart: freeStart,
+          freeWindowEnd: freeEnd,
         );
         return;
       }
@@ -865,11 +876,13 @@ class _FlightPathBodyState extends State<FlightPathBody>
 
   void _onSubExerciseTap(ExerciseListItem item, String subId) {
     if (!widget.isPremium) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Upgrade to Pro to unlock all 22 exercises'),
-          duration: Duration(seconds: 3),
-        ),
+      final freeStart = math.max(1, widget.currentExerciseNumber - 2);
+      final freeEnd = math.min(19, widget.currentExerciseNumber + 2);
+      showPremiumPaywall(
+        context,
+        source: 'exercise_list_locked',
+        freeWindowStart: freeStart,
+        freeWindowEnd: freeEnd,
       );
       return;
     }

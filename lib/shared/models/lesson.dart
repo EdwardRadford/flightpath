@@ -5,8 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Possible states in the lesson lifecycle state machine.
 enum LessonStatus { scheduled, prepared, completed, cancelled, manualEntry }
 
-/// A single flying lesson record including ratings, quiz results, weather,
-/// AI debrief data, and pilot logbook fields.
+/// A single flying lesson record including ratings, weather, AI debrief data,
+/// and pilot logbook fields.
 class Lesson {
   final String id;
   final String exerciseId;
@@ -19,9 +19,6 @@ class Lesson {
   final int? instructorRating; // 1–5
   final String instructorNotes;
   final String personalReflection;
-  final int quizScore; // 0–100 — 0 if not taken
-  final bool? quizPassed;
-  final int quizAttempts;
   final double? weatherWindSpeed;
   final String weatherWindDirection;
   final double? weatherVisibility;
@@ -63,9 +60,6 @@ class Lesson {
     this.instructorRating,
     this.instructorNotes = '',
     this.personalReflection = '',
-    this.quizScore = 0,
-    this.quizPassed,
-    this.quizAttempts = 0,
     this.weatherWindSpeed,
     this.weatherWindDirection = '',
     this.weatherVisibility,
@@ -111,9 +105,6 @@ class Lesson {
       instructorRating: (data['instructor_rating'] as num?)?.toInt(),
       instructorNotes: data['instructor_notes'] ?? '',
       personalReflection: data['personal_reflection'] ?? '',
-      quizScore: (data['quiz_score'] as num? ?? 0).toInt(),
-      quizPassed: data['quiz_passed'],
-      quizAttempts: (data['quiz_attempts'] as num? ?? 0).toInt(),
       weatherWindSpeed: (data['weather_wind_speed'] as num?)?.toDouble(),
       weatherWindDirection: data['weather_wind_direction'] ?? '',
       weatherVisibility: (data['weather_visibility'] as num?)?.toDouble(),
@@ -162,17 +153,9 @@ class Lesson {
     }
   }
 
-  /// Combined session score (0–100).
-  /// 60% from student rating (normalised), 40% from quiz score.
-  /// Falls back to rating-only or quiz-only if one is missing.
-  int? get sessionScore {
-    final ratingNorm = studentRating != null ? studentRating! * 20 : null;
-    final effectiveQuiz = quizScore > 0 ? quizScore : null;
-    if (ratingNorm != null && effectiveQuiz != null) {
-      return ((ratingNorm * 0.6) + (effectiveQuiz * 0.4)).round();
-    }
-    return ratingNorm ?? effectiveQuiz;
-  }
+  /// Combined session score (0–100), derived from the student self-rating.
+  int? get sessionScore =>
+      studentRating != null ? studentRating! * 20 : null;
 
   /// Serialises this lesson to a Firestore-compatible map.
   Map<String, dynamic> toFirestore() => {
@@ -188,9 +171,6 @@ class Lesson {
     if (instructorNotes.isNotEmpty) 'instructor_notes': instructorNotes,
     if (personalReflection.isNotEmpty)
       'personal_reflection': personalReflection,
-    if (quizScore > 0) 'quiz_score': quizScore,
-    if (quizPassed != null) 'quiz_passed': quizPassed,
-    'quiz_attempts': quizAttempts,
     if (weatherWindSpeed != null) 'weather_wind_speed': weatherWindSpeed,
     if (weatherWindDirection.isNotEmpty)
       'weather_wind_direction': weatherWindDirection,
@@ -242,9 +222,6 @@ class Lesson {
     int? instructorRating,
     String? instructorNotes,
     String? personalReflection,
-    int? quizScore,
-    bool? quizPassed,
-    int? quizAttempts,
     double? weatherWindSpeed,
     String? weatherWindDirection,
     double? weatherVisibility,
@@ -283,9 +260,6 @@ class Lesson {
       instructorRating: instructorRating ?? this.instructorRating,
       instructorNotes: instructorNotes ?? this.instructorNotes,
       personalReflection: personalReflection ?? this.personalReflection,
-      quizScore: quizScore ?? this.quizScore,
-      quizPassed: quizPassed ?? this.quizPassed,
-      quizAttempts: quizAttempts ?? this.quizAttempts,
       weatherWindSpeed: weatherWindSpeed ?? this.weatherWindSpeed,
       weatherWindDirection: weatherWindDirection ?? this.weatherWindDirection,
       weatherVisibility: weatherVisibility ?? this.weatherVisibility,

@@ -282,9 +282,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // -- 4. Weather preview card
                 const WeatherPreviewCard(),
 
-                // -- 5. Due for review
-                const DueForReviewCard(),
-
                 // -- 6. Debrief nudge (shown when > 3 days since last debrief)
                 const DebriefNudgeCard(),
 
@@ -316,7 +313,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onTap: () => launchUrl(
                       Uri.parse(
                         'mailto:contact@getflightpath.app'
-                        '?subject=FlightPath%20Feedback',
+                        '?subject=Flight%20Path%20Training%20Feedback',
                       ),
                     ),
                     child: Text(

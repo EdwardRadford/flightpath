@@ -1,5 +1,5 @@
 // Lesson detail screen — full read-only view of a single completed lesson
-// including ratings, quiz score, and AI debrief.
+// including ratings and AI debrief.
 // Includes edit and delete actions via an overflow menu.
 //
 // Can be opened in two ways:
@@ -495,26 +495,6 @@ class _LessonDetailBody extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Quiz',
-                          style: TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                            fontSize: 11,
-                          ),
-                        ),
-                        Text(
-                          '${lesson.quizScore}%',
-                          style: TextStyle(
-                            color: AppColors.onSurface,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
                 ],
               ),
             ),

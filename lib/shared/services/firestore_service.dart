@@ -1,5 +1,5 @@
 // Firestore data-access layer — reads and writes for users, lessons,
-// exercises, quiz questions, and share links.
+// exercises, flashcards, and share links.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -12,7 +12,6 @@ import 'package:flight_path/shared/models/app_user.dart';
 import 'package:flight_path/shared/models/exercise_content.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/models/flashcard.dart';
-import 'package:flight_path/shared/models/quiz_question.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 
 /// Service layer wrapping all Firestore reads and writes.
@@ -54,10 +53,6 @@ class FirestoreService {
   /// Read-only exercise content collection (unchanged).
   CollectionReference<Map<String, dynamic>> get exerciseContentCollection =>
       _db.collection('exercise_content');
-
-  /// Read-only quiz questions collection (unchanged).
-  CollectionReference<Map<String, dynamic>> get quizQuestionsCollection =>
-      _db.collection('quiz_questions');
 
   /// Read-only flashcards collection.
   CollectionReference<Map<String, dynamic>> get flashcardsCollection =>
@@ -354,42 +349,6 @@ class FirestoreService {
     final snap = await exerciseContentCollection.doc(docId).get();
     if (!snap.exists) return null;
     return ExerciseContent.fromFirestore(snap);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Quiz Questions
-  // ---------------------------------------------------------------------------
-
-  /// Fetches up to 10 quiz questions for [exerciseId], shuffled randomly.
-  /// Pass [subExerciseId] for sub-exercises (e.g. '10a').
-  Future<List<QuizQuestion>> getQuizQuestions(
-    String exerciseId, {
-    String? subExerciseId,
-  }) async {
-    Query<Map<String, dynamic>> query =
-        quizQuestionsCollection.where('exercise_id', isEqualTo: exerciseId);
-
-    if (subExerciseId != null) {
-      query = query.where('sub_exercise', isEqualTo: subExerciseId);
-    } else {
-      // When no sub-exercise is requested, exclude questions that belong to
-      // sub-exercises (i.e. sub_exercise field is absent / null).
-      query = query.where('sub_exercise', isNull: true);
-    }
-
-    final qs = await query.get();
-    final questions = <QuizQuestion>[];
-    for (final doc in qs.docs) {
-      try {
-        questions.add(QuizQuestion.fromFirestore(doc));
-      } catch (e) {
-        debugPrint('Skipping malformed document ${doc.id}: $e');
-      }
-    }
-
-    // Shuffle and cap at 10.
-    questions.shuffle();
-    return questions.take(10).toList();
   }
 
   // ---------------------------------------------------------------------------

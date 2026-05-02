@@ -88,7 +88,7 @@ class _ConsentDialogState extends State<_ConsentDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Flight Path uses three optional services to improve the app. '
+              'Flight Path Training uses three optional services to improve the app. '
               'You can change these any time in Settings → Privacy.',
               style: TextStyle(
                 color: cs.onSurface.withValues(alpha: 0.75),

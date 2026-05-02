@@ -951,33 +951,46 @@ class _MicButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedBuilder(
-        animation: pulseAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: isListening ? pulseAnimation.value : 1.0,
-            child: child,
-          );
-        },
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: isListening
-                ? AppColors.primary.withValues(alpha: 0.2)
-                : AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(24),
-            border: isListening
-                ? Border.all(color: AppColors.primary, width: 1.5)
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Icon(
-            isListening ? Icons.stop_rounded : Icons.mic_rounded,
-            color: isListening ? AppColors.primary : AppColors.onSurfaceVariant,
-            size: 20,
+    return Semantics(
+      button: true,
+      label: isListening ? 'Stop voice input' : 'Start voice input',
+      child: GestureDetector(
+        onTap: onTap,
+        // Pad to 48dp tap target while keeping the visible button at 44dp.
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(
+            child: AnimatedBuilder(
+              animation: pulseAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: isListening ? pulseAnimation.value : 1.0,
+                  child: child,
+                );
+              },
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isListening
+                      ? AppColors.primary.withValues(alpha: 0.2)
+                      : AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(24),
+                  border: isListening
+                      ? Border.all(color: AppColors.primary, width: 1.5)
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                  color:
+                      isListening ? AppColors.primary : AppColors.onSurfaceVariant,
+                  size: 20,
+                ),
+              ),
+            ),
           ),
         ),
       ),

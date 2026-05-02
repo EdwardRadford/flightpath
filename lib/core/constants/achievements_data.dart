@@ -21,10 +21,6 @@ IconData achievementIcon(String iconName) {
       return Icons.star;
     case 'stars':
       return Icons.stars;
-    case 'school':
-      return Icons.school;
-    case 'quiz':
-      return Icons.quiz;
     case 'style':
       return Icons.style;
     case 'local_fire_department':
@@ -110,20 +106,6 @@ const List<Achievement> allAchievements = [
     title: 'Gold Standard',
     description: 'Achieve 5-star ratings on 5 exercises',
     iconName: 'stars',
-    category: AchievementCategory.mastery,
-  ),
-  Achievement(
-    id: 'quiz_ace',
-    title: 'Quiz Ace',
-    description: 'Score 100% on any quiz',
-    iconName: 'school',
-    category: AchievementCategory.mastery,
-  ),
-  Achievement(
-    id: 'ten_quizzes',
-    title: 'Quiz Master',
-    description: 'Pass 10 quizzes',
-    iconName: 'quiz',
     category: AchievementCategory.mastery,
   ),
   Achievement(

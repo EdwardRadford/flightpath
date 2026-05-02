@@ -1,11 +1,11 @@
 # Privacy Policy
 
-**Flight Path**
+**Flight Path Training**
 Last updated: 30 April 2026
 
 ## 1. Introduction
 
-Flight Path ("the App") is developed and operated by Edward Radford, a sole developer based in the United Kingdom ("we", "us", "our"). This Privacy Policy explains what personal data we collect, why we collect it, who processes it on our behalf, and your rights under the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
+Flight Path Training ("the App") is developed and operated by Edward Radford, a sole developer based in the United Kingdom ("we", "us", "our"). This Privacy Policy explains what personal data we collect, why we collect it, who processes it on our behalf, and your rights under the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
 
 The App is a training aid for student pilots working through the UK CAA PPL(A) syllabus. It does not replace professional flight instruction. Always follow your instructor's guidance and current CAA regulations.
 

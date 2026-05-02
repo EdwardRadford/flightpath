@@ -9,12 +9,12 @@ import 'package:flight_path/shared/services/consent_service.dart';
 // ---------------------------------------------------------------------------
 class SettingsDisclaimerSection extends StatelessWidget {
   static const String _shortText =
-      'Flight Path is a study aid only. It does not replace official flight '
+      'Flight Path Training is a study aid only. It does not replace official flight '
       'training, your instructor\'s guidance, or official CAA publications. '
       'Never use this app in flight.';
 
   static const String _fullText =
-      'Flight Path is a study aid only. It does not replace official flight '
+      'Flight Path Training is a study aid only. It does not replace official flight '
       'training, your instructor\'s guidance, or official CAA publications. '
       'Never use this app in flight. Always conduct a full pre-flight briefing '
       'with your instructor.\n\n'
@@ -212,7 +212,7 @@ class _SettingsPrivacySectionState extends State<SettingsPrivacySection> {
       FirebaseAnalytics.instance.logEvent(name: 'data_export_started');
       final uri = Uri.parse(
         'mailto:contact@getflightpath.app'
-        '?subject=FlightPath%20data%20export%20request'
+        '?subject=Flight%20Path%20Training%20data%20export%20request'
         '&body=Hi,%0A%0AI%20would%20like%20to%20request%20a%20copy%20of%20my%20data.%0A%0A'
         'Account%20UID:%20${widget.uid}%0A%0AThank%20you.',
       );

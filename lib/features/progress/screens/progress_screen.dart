@@ -109,11 +109,6 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
               tooltip: 'My Goals',
             ),
             IconButton(
-              onPressed: () => context.push('/weak-areas'),
-              icon: const Icon(Icons.track_changes_rounded),
-              tooltip: 'Weak Areas',
-            ),
-            IconButton(
               onPressed: () => context.push('/share-progress'),
               icon: const Icon(Icons.share_rounded),
               tooltip: 'Share with Instructor',

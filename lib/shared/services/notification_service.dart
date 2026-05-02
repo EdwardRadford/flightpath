@@ -145,7 +145,7 @@ class NotificationService {
       const AndroidNotificationChannel(
         _fcmChannelId,
         _fcmChannelName,
-        description: 'Server-sent notifications from Flight Path',
+        description: 'Server-sent notifications from Flight Path Training',
         importance: Importance.high,
       ),
     );
@@ -271,7 +271,7 @@ class NotificationService {
 
     await _plugin.show(
       notification.hashCode,
-      notification.title ?? 'Flight Path',
+      notification.title ?? 'Flight Path Training',
       notification.body ?? '',
       const NotificationDetails(
         android: AndroidNotificationDetails(

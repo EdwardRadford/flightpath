@@ -150,7 +150,7 @@ class _NotificationPreferencesScreenState
                     ),
                   ),
                   subtitle: Text(
-                    'Turn off to silence all Flight Path notifications.',
+                    'Turn off to silence all Flight Path Training notifications.',
                     style: TextStyle(
                       color: cs.onSurface.withValues(alpha: 0.6),
                       fontSize: 12,

@@ -68,7 +68,7 @@ class _MockSkillsTestScreenState extends ConsumerState<MockSkillsTestScreen> {
 
   Future<void> _saveSummary() async {
     final buffer = StringBuffer();
-    buffer.writeln('FlightPath — Mock Skills Test Self-Assessment');
+    buffer.writeln('Flight Path Training — Mock Skills Test Self-Assessment');
     buffer.writeln('');
 
     for (final entry in skillsTestStandards.entries) {

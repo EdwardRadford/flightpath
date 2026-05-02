@@ -159,12 +159,6 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
           }
         }
         return fiveStarExercises.length >= 5;
-      case 'quiz_ace':
-        return completedLessons.any((l) => l.quizScore == 100);
-      case 'ten_quizzes':
-        final passedQuizzes =
-            completedLessons.where((l) => l.quizPassed == true).length;
-        return passedQuizzes >= 10;
       case 'all_flashcards':
         // flashcardsCompleted is tracked per UserExercise in Firestore.
         final completedFlashcardIds = exercises

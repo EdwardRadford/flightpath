@@ -32,7 +32,7 @@ class _WelcomePage {
 const _pages = [
   _WelcomePage(
     icon: Icons.flight_takeoff,
-    headline: 'Welcome to Flight Path',
+    headline: 'Welcome to Flight Path Training',
     subtext:
         'Your personal companion through the PPL(A) syllabus — from first '
         'lesson to skills test.',

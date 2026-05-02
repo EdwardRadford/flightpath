@@ -33,6 +33,7 @@ import 'package:flight_path/shared/utils/exercise_helpers.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
 import 'package:flight_path/shared/widgets/connectivity_banner.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
+import 'package:flight_path/shared/widgets/premium_upsell_card.dart';
 
 /// Post-lesson debrief form with ratings, reflections, and AI-powered feedback.
 /// When [existingLesson] is provided, the screen operates in edit mode:
@@ -503,6 +504,24 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         } else if (allComplete) {
           context.go('/milestone', extra: {'firstSolo': false});
         } else {
+          // Free users get a one-time soft upsell before entering the AI
+          // debrief. Pro users go straight through, same as before.
+          final isPremium = await ref.read(premiumStatusProvider.future);
+          if (mounted && !isPremium) {
+            final appUser = ref.read(appUserProvider).valueOrNull;
+            await showPremiumUpsellCard(
+              context,
+              title: 'Lesson saved',
+              message:
+                  'Upgrade to Pro for unlimited AI debriefs across every exercise.',
+              primaryLabel: 'Upgrade',
+              secondaryLabel: 'Continue with limited AI',
+              paywallSource: 'post_debrief_upsell',
+              freeWindowStart: appUser?.freeWindowStart ?? 1,
+              freeWindowEnd: appUser?.freeWindowEnd ?? 3,
+            );
+          }
+          if (!mounted) return;
           // Post-check-in → take the user straight into a conversational AI
           // debrief, prefilled with the lesson context they just logged.
           context.pushReplacement('/ask-ai', extra: _buildAiDebriefPrompt());
@@ -673,7 +692,6 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
           'personalReflection': _sanitise(_form.personalReflection.text).isEmpty
               ? null
               : _sanitise(_form.personalReflection.text),
-          'quizScore': null,
           'ratingHistory': ratingHistory,
         },
       });

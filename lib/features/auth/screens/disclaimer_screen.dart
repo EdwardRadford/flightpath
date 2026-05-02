@@ -116,7 +116,7 @@ class _DisclaimerScreenState extends ConsumerState<DisclaimerScreen> {
                         _Section(
                           title: 'Study aid only',
                           body:
-                              'Flight Path is a study companion designed to help you prepare for and reflect on your flying lessons. It is not a replacement for instruction from a qualified flying instructor (FI).',
+                              'Flight Path Training is a study companion designed to help you prepare for and reflect on your flying lessons. It is not a replacement for instruction from a qualified flying instructor (FI).',
                         ),
                         _Section(
                           title: 'Always follow your instructor',
@@ -145,11 +145,14 @@ class _DisclaimerScreenState extends ConsumerState<DisclaimerScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'By continuing, you acknowledge that Flight Path is a training aid and accept full responsibility for your own safety and compliance with applicable regulations.',
+                          'By continuing, you acknowledge that Flight Path Training is a training aid and accept full responsibility for your own safety and compliance with applicable regulations.',
                           style: TextStyle(
                             color: AppColors.onSurfaceVariant,
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
+                            // Bumped from 12pt italic to 14pt regular — the
+                            // acceptance phrasing should not be the smallest
+                            // text on the safety notice.
+                            fontSize: 14,
+                            height: 1.5,
                           ),
                         ),
                       ],
@@ -199,7 +202,7 @@ class _DisclaimerScreenState extends ConsumerState<DisclaimerScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Continue to Flight Path'),
+                    : const Text('Continue to Flight Path Training'),
               ),
               const SizedBox(height: 8),
             ],

@@ -39,10 +39,8 @@ import '../../features/settings/screens/settings_screen.dart';
 // Exercise prep + debrief screens
 import '../../features/exercises/screens/prepare_hub_screen.dart';
 import '../../features/exercises/screens/brief_screen.dart';
-import '../../features/exercises/screens/quiz_screen.dart';
 import '../../features/exercises/screens/visualisation_screen.dart';
 import '../../features/exercises/screens/flashcard_screen.dart';
-import '../../features/exercises/screens/revision_screen.dart';
 import '../../features/debrief/screens/debrief_screen.dart';
 
 // Logbook
@@ -52,7 +50,6 @@ import '../../features/logbook/screens/logbook_entry_screen.dart';
 import '../../features/progress/screens/completion_screen.dart';
 import '../../features/progress/screens/goals_screen.dart';
 import '../../features/progress/screens/share_progress_screen.dart';
-import '../../features/progress/screens/weak_areas_screen.dart';
 import '../../features/progress/screens/achievements_screen.dart';
 import '../../features/progress/screens/lesson_detail_screen.dart';
 
@@ -277,13 +274,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             // Hours is a tab within LogbookProgressScreen — redirect there.
             redirect: (context, state) => '/logbook',
           ),
-          GoRoute(
-            path: '/revision',
-            // Cross-exercise skills-test revision mode (restored 2026-04-13
-            // from the 1.0.1 orphan set — closes the _RevisionBanner broken
-            // promise on the exercises prepare hub).
-            builder: (context, state) => const RevisionScreen(),
-          ),
         ],
       ),
 
@@ -314,15 +304,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => slideTransition(
           state: state,
           child: BriefScreen(
-            compositeExerciseId: state.pathParameters['exerciseId']!,
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/exercises/:exerciseId/quiz',
-        pageBuilder: (context, state) => slideTransition(
-          state: state,
-          child: QuizScreen(
             compositeExerciseId: state.pathParameters['exerciseId']!,
           ),
         ),
@@ -466,13 +447,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => fadeSlideTransition(
           state: state,
           child: const ShareProgressScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/weak-areas',
-        pageBuilder: (context, state) => fadeSlideTransition(
-          state: state,
-          child: const WeakAreasScreen(),
         ),
       ),
       GoRoute(

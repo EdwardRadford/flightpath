@@ -94,10 +94,12 @@ class _StatCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   )),
               const SizedBox(height: 2),
+              // Bumped from fontSize 10 / alpha 0.5 to 12 / alpha 0.75 —
+              // previous combination failed WCAG AA contrast in dark mode.
               Text(label,
                   style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.5),
-                    fontSize: 10,
+                    color: cs.onSurface.withValues(alpha: 0.75),
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   )),
             ],

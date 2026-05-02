@@ -81,12 +81,12 @@ class CurrentExerciseCard extends StatelessWidget {
     }
 
     final briefDone = matchingUe != null && matchingUe.timesAttempted > 0;
-    final quizDone = matchingUe?.quizPassed ?? false;
+    final flashcardsDone = matchingUe?.flashcardsCompleted ?? false;
     final videoDone = matchingUe?.videoWatched ?? false;
 
     final prepItems = [
       (label: 'Brief', done: briefDone, icon: Icons.menu_book_rounded),
-      (label: 'Quiz', done: quizDone, icon: Icons.quiz_rounded),
+      (label: 'Flashcards', done: flashcardsDone, icon: Icons.style_rounded),
       (label: 'Video', done: videoDone, icon: Icons.play_circle_rounded),
     ];
     final doneCount = prepItems.where((item) => item.done).length;

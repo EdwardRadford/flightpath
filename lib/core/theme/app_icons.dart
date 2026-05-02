@@ -109,8 +109,6 @@ abstract final class AppIcons {
   // ---------------------------------------------------------------------------
   // Features — content & learning
   // ---------------------------------------------------------------------------
-  static const quiz = Icons.quiz_rounded;
-  static const quizOutlined = Icons.quiz_outlined;
   static const flashcard = Icons.style_rounded;
   static const notes = Icons.notes_rounded;
   static const description = Icons.description_outlined;

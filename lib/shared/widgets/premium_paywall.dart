@@ -166,7 +166,7 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
 
             // Title
              Text(
-              'Unlock Flight Path Pro',
+              'Unlock Flight Path Training Pro',
               style: TextStyle(
                 color: AppColors.onSurface,
                 fontSize: 22,
@@ -199,8 +199,6 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
             _FeatureRow(icon: Icons.track_changes_rounded, text: 'Full progress tracking across all 19 exercises'),
             const SizedBox(height: 12),
             _FeatureRow(icon: Icons.psychology_rounded, text: 'Ask the AI tutor anything, any time'),
-            const SizedBox(height: 12),
-            _FeatureRow(icon: Icons.quiz_rounded, text: 'Quiz bank \u2014 pass your RT and ground exams'),
             const SizedBox(height: 28),
 
             // Purchase button

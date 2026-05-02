@@ -939,25 +939,37 @@ class _StarRating extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: List.generate(5, (index) {
-            final starIndex = index + 1;
-            return GestureDetector(
-              onTap: () => onChanged(starIndex),
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Icon(
-                  starIndex <= rating
-                      ? Icons.star_rounded
-                      : Icons.star_outline_rounded,
-                  color: starIndex <= rating
-                      ? AppColors.primary
-                      : AppColors.onSurfaceVariant,
-                  size: 36,
+        Semantics(
+          label: 'Rating: $rating of 5 stars',
+          slider: true,
+          value: '$rating',
+          child: Row(
+            children: List.generate(5, (index) {
+              final starIndex = index + 1;
+              return Semantics(
+                button: true,
+                label: 'Set rating to $starIndex',
+                child: ExcludeSemantics(
+                  child: GestureDetector(
+                    onTap: () => onChanged(starIndex),
+                    child: Padding(
+                      // Pad each star to a 44pt+ tap target.
+                      padding: const EdgeInsets.fromLTRB(0, 4, 8, 4),
+                      child: Icon(
+                        starIndex <= rating
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        color: starIndex <= rating
+                            ? AppColors.primary
+                            : AppColors.onSurfaceVariant,
+                        size: 36,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
         const SizedBox(height: 6),
         Row(

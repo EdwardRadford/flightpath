@@ -297,7 +297,7 @@ class _Logo extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          'Flight Path',
+          'Flight Path Training',
           style: TextStyle(
             color: cs.onSurface,
             fontSize: 22,

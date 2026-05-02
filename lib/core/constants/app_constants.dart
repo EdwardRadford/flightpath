@@ -23,12 +23,6 @@ class AppConstants {
     return exNum >= windowStart && exNum <= windowEnd;
   }
 
-  // Business rules
-  static const int quizPassThreshold = 75; // percent — CAA standard
-  static const int quizConsecutiveFailPrompt = 3;
-  static const int minQuizQuestions = 8;
-  static const int maxQuizQuestions = 10;
-
   // Quiet hours (no notifications)
   static const int quietHourStart = 22; // 10pm
   static const int quietHourEnd = 8;    // 8am

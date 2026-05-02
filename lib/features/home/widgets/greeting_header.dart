@@ -84,10 +84,10 @@ class GreetingHeader extends StatelessWidget {
   }
 
   static String _subtitleText(AppUser? user) {
-    if (user == null) return 'Welcome to Flight Path';
+    if (user == null) return 'Welcome to Flight Path Training';
     final aircraft =
         AppConstants.aircraftTypes[user.aircraftType] ?? '';
     if (aircraft.isNotEmpty) return 'Flying a $aircraft';
-    return 'Welcome to Flight Path';
+    return 'Welcome to Flight Path Training';
   }
 }

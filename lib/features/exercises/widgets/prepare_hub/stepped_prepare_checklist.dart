@@ -48,7 +48,6 @@ class SteppedPrepareChecklist extends ConsumerStatefulWidget {
   final String compositeExerciseId;
   final LessonType lessonType;
   final UserExercise? userExercise;
-  final bool quizPassed;
   final bool locked;
   final ExerciseContent content;
 
@@ -57,7 +56,6 @@ class SteppedPrepareChecklist extends ConsumerStatefulWidget {
     required this.compositeExerciseId,
     required this.lessonType,
     required this.userExercise,
-    required this.quizPassed,
     required this.content,
     this.locked = false,
   });
@@ -152,8 +150,6 @@ class _SteppedPrepareChecklistState
         widget.userExercise?.briefStatus ?? 'Not Viewed';
     final String flashcardsStatusLabel =
         widget.userExercise?.flashcardsStatus ?? 'Not Started';
-    final String quizStatusLabel =
-        widget.userExercise?.quizStatus ?? 'Not Started';
 
     switch (widget.lessonType) {
       case LessonType.ground:
@@ -168,14 +164,6 @@ class _SteppedPrepareChecklistState
           ),
           PrepareStepItem(
             stepNumber: 2,
-            icon: Icons.edit_rounded,
-            label: 'Quiz',
-            done: widget.quizPassed,
-            route: '/exercises/${widget.compositeExerciseId}/quiz',
-            statusLabel: quizStatusLabel,
-          ),
-          PrepareStepItem(
-            stepNumber: 3,
             icon: Icons.style_rounded,
             label: 'Flashcards',
             done: flashcardsDone,
@@ -423,7 +411,6 @@ class _SteppedPrepareChecklistState
         // Start Next Step button
         if (firstIncomplete != null &&
             !({
-              'Quiz',
               'Flashcards',
               'Schedule Your Lesson',
             }.contains(firstIncomplete.label) &&

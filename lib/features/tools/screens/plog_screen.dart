@@ -91,6 +91,7 @@ class _PlogScreenState extends ConsumerState<PlogScreen> {
           title: const Text('Route Planner (PLOG)'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
+            tooltip: 'Back',
             onPressed: () => context.pop(),
           ),
         ),
@@ -122,7 +123,7 @@ class _PlogScreenState extends ConsumerState<PlogScreen> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => showPremiumPaywall(context, source: 'plog_screen'),
-                  child: const Text('Unlock FlightPath Pro'),
+                  child: const Text('Unlock Flight Path Training Pro'),
                 ),
               ],
             ),
@@ -136,6 +137,7 @@ class _PlogScreenState extends ConsumerState<PlogScreen> {
         title: const Text('Route Planner (PLOG)'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back',
           onPressed: () => context.pop(),
         ),
         actions: [

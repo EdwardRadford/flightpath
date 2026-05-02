@@ -1,4 +1,4 @@
-// Flashcard screen — swipe-through revision mode with 3D flip animation.
+// Flashcard screen — swipe-through practice mode with 3D flip animation.
 // Cards can be swiped right ("got it") or left ("needs review").
 import 'dart:math';
 

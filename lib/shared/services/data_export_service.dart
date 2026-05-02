@@ -109,7 +109,7 @@ class DataExportService {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: 'application/json')],
-          subject: 'Flight Path — My Data Export',
+          subject: 'Flight Path Training — My Data Export',
         ),
       );
     } catch (e, stack) {

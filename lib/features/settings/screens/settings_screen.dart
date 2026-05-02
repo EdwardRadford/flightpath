@@ -29,11 +29,13 @@ class _GroupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    // Bumped from fontSize 10 / alpha 0.35 to 11 / alpha 0.7 — earlier
+    // combination failed WCAG AA contrast (≈ 2.6:1).
     return Text(
       label.toUpperCase(),
       style: TextStyle(
-        color: cs.onSurface.withValues(alpha: 0.35),
-        fontSize: 10,
+        color: cs.onSurface.withValues(alpha: 0.7),
+        fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.2,
       ),
@@ -316,8 +318,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     final version = snapshot.data?.version ?? '';
                     return Text(
                       version.isNotEmpty
-                          ? 'Flight Path v$version'
-                          : 'Flight Path',
+                          ? 'Flight Path Training v$version'
+                          : 'Flight Path Training',
                       style: TextStyle(
                         color: AppColors.onSurfaceVariant
                             .withValues(alpha: 0.55),

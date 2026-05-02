@@ -1,6 +1,6 @@
 // Prepare hub screen — central dashboard for a single exercise showing
 // the prepare checklist (brief / flashcards / before-you-fly / weather /
-// self-brief), contextual tools, lesson logging, and revision entry point.
+// self-brief), contextual tools, and lesson logging.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -110,10 +110,6 @@ class _PrepareHubScreenState extends ConsumerState<PrepareHubScreen> {
 
         final bool hasLessons = exerciseLessons.isNotEmpty;
 
-        // Determine if quiz was ever passed at CAA standard (75%)
-        final bool quizPassed = exerciseLessons.any(
-            (l) => l.quizScore >= AppConstants.quizPassThreshold);
-
         // Free exercises are always accessible; premium exercises need purchase.
         final hasAccess = appUser?.canAccessExercise(compositeExerciseId) ??
             AppConstants.isFreeExercise(compositeExerciseId,
@@ -138,7 +134,7 @@ class _PrepareHubScreenState extends ConsumerState<PrepareHubScreen> {
                       : 'Exercise ${content.exerciseNumber}';
                   SharePlus.instance.share(
                     ShareParams(
-                      text: 'Check out $title on Flight Path: $url',
+                      text: 'Check out $title on Flight Path Training: $url',
                     ),
                   );
                   FirebaseAnalytics.instance.logEvent(
@@ -156,7 +152,6 @@ class _PrepareHubScreenState extends ConsumerState<PrepareHubScreen> {
             content: content,
             userExercise: userExercise,
             hasLessons: hasLessons,
-            quizPassed: quizPassed,
             isPremium: hasAccess,
             freeWindowStart: appUser?.freeWindowStart ?? 1,
             freeWindowEnd: appUser?.freeWindowEnd ?? 3,
@@ -178,7 +173,6 @@ class _PrepareHubBody extends StatelessWidget {
   final ExerciseContent content;
   final UserExercise? userExercise;
   final bool hasLessons;
-  final bool quizPassed;
   final bool isPremium;
   final int freeWindowStart;
   final int freeWindowEnd;
@@ -190,7 +184,6 @@ class _PrepareHubBody extends StatelessWidget {
     required this.content,
     required this.userExercise,
     required this.hasLessons,
-    required this.quizPassed,
     required this.isPremium,
     required this.freeWindowStart,
     required this.freeWindowEnd,
@@ -320,7 +313,6 @@ class _PrepareHubBody extends StatelessWidget {
             compositeExerciseId: compositeExerciseId,
             lessonType: content.lessonType,
             userExercise: userExercise,
-            quizPassed: quizPassed,
             locked: !isPremium,
             content: content,
           ),

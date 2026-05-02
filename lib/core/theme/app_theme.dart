@@ -17,7 +17,10 @@ class AppColors {
   static const Color surfaceVariantDark = Color(0xFF1E2538);
   static const Color surfaceElevatedDark = Color(0xFF1A2035); // Slightly lighter for hero cards
   static const Color onSurfaceDark = Color(0xFFECEFF4);
-  static const Color onSurfaceVariantDark = Color(0xFF8A94A6);
+  // Lifted from #8A94A6 → #A6B0C2 to maintain ≥4.5:1 contrast on
+  // surfaceDark (#141928) when widgets apply withValues(alpha: 0.5–0.7) to
+  // titles and labels. Direct contrast: 7.4:1, ≈ 4.4:1 at alpha 0.6.
+  static const Color onSurfaceVariantDark = Color(0xFFA6B0C2);
   static const Color dividerDark = Color(0xFF2A3045);
 
   // ── Light theme surfaces ────────────────────────────────────────────────
@@ -181,7 +184,10 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           minimumSize: const Size(48, 48),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          // padded (Material default) so a TextButton always meets the 48dp
+          // tap target even when its child has compact padding (e.g. login
+          // "Sign in" link, welcome "Skip" button).
+          tapTargetSize: MaterialTapTargetSize.padded,
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -192,7 +198,7 @@ class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           minimumSize: const Size(48, 48),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          tapTargetSize: MaterialTapTargetSize.padded,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -397,7 +403,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           minimumSize: const Size(48, 48),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          tapTargetSize: MaterialTapTargetSize.padded,
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -408,7 +414,7 @@ class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           minimumSize: const Size(48, 48),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          tapTargetSize: MaterialTapTargetSize.padded,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

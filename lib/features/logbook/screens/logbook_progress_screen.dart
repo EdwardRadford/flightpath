@@ -1,5 +1,5 @@
 // Combined Logbook & Progress screen — tabbed view with Entries, Hours, and
-// Syllabus tabs, plus sort/export/achievements/weak-areas/share actions.
+// Syllabus tabs, plus sort/export/achievements/share actions.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -555,7 +555,6 @@ class _LogbookProgressScreenState extends ConsumerState<LogbookProgressScreen>
               if (value == 'pdf') _exportPdf(lessons);
               if (value == 'export') _exportData();
               if (value == 'achievements') context.push('/achievements');
-              if (value == 'weak-areas') context.push('/weak-areas');
               if (value == 'share') context.push('/share-progress');
             },
             itemBuilder: (context) => [
@@ -587,16 +586,6 @@ class _LogbookProgressScreenState extends ConsumerState<LogbookProgressScreen>
                     Icon(Icons.military_tech_rounded, size: 18),
                     SizedBox(width: 10),
                     Text('Achievements'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'weak-areas',
-                child: Row(
-                  children: [
-                    Icon(Icons.track_changes_rounded, size: 18),
-                    SizedBox(width: 10),
-                    Text('Weak Areas'),
                   ],
                 ),
               ),
@@ -791,6 +780,7 @@ class _EntriesTab extends StatelessWidget {
                             icon: Icon(Icons.clear_rounded,
                                 color: AppColors.onSurfaceVariant,
                                 size: 18),
+                            tooltip: 'Clear search',
                             onPressed: () => searchController.clear(),
                           )
                         : null,
@@ -2260,7 +2250,6 @@ class _LogbookDetailSheetState extends State<_LogbookDetailSheet> {
   bool _hasLessonDetail(Lesson lesson) {
     return lesson.studentRating != null ||
         lesson.instructorRating != null ||
-        lesson.quizScore > 0 ||
         lesson.aiDebriefWell.isNotEmpty ||
         lesson.instructorNotes.isNotEmpty ||
         lesson.personalReflection.isNotEmpty;
@@ -2351,14 +2340,6 @@ class _LessonDetailSection extends StatelessWidget {
                     label: 'Instructor',
                     value: '${lesson.instructorRating}/5',
                   ),
-                if (lesson.quizScore > 0) ...[
-                  const SizedBox(width: 12),
-                  _MiniStat(
-                    icon: Icons.quiz_outlined,
-                    label: 'Quiz',
-                    value: '${lesson.quizScore}%',
-                  ),
-                ],
               ],
             ),
           ),

@@ -79,9 +79,14 @@ class FlightPathApp extends ConsumerWidget {
       // animation widgets (micro_animations.dart, screen_transitions.dart).
       builder: (context, child) {
         final base = MediaQuery.of(context);
-        final scaleFactor = accessibility.largerText
+        // Cap text scaling at 1.5x. iOS XXXL+ Larger Text can otherwise push
+        // scaleFactor above 3x which breaks our many fixed-height layouts
+        // (stat cards, exercise canvas, AppBar titles). 1.5x preserves
+        // readability without overflow.
+        final rawScale = accessibility.largerText
             ? (base.textScaler.scale(1.0) * 1.2)
             : base.textScaler.scale(1.0);
+        final scaleFactor = rawScale.clamp(1.0, 1.5);
         return MediaQuery(
           data: base.copyWith(
             textScaler: TextScaler.linear(scaleFactor),

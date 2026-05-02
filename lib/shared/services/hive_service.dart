@@ -1,27 +1,25 @@
-// Local cache service for exercise content, quiz questions, and offline
+// Local cache service for exercise content, flashcards, and offline
 // lessons using Hive.
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-/// Manages local caching of exercise content, quiz questions, flashcards, and
-/// offline lessons using Hive.
+/// Manages local caching of exercise content, flashcards, and offline lessons
+/// using Hive.
 ///
 /// [init] must be called once at app startup. After that, any number of
 /// HiveService instances can be created — they all reference the same
 /// already-opened Hive boxes via [Hive.box].
 ///
-/// Five Hive boxes:
+/// Hive boxes:
 ///   - exerciseContent   — keyed by exercise ID
-///   - quizQuestions     — keyed by exercise ID
 ///   - flashcards        — keyed by exercise ID
 ///   - offlineWriteQueue — keyed by queue entry ID
 ///   - offlineLessonDrafts — keyed by local lesson ID
 class HiveService {
   static const String _contentBoxName = 'exerciseContent';
   static const String _versionsBoxName = 'exercise_content_versions';
-  static const String _quizBoxName = 'quizQuestions';
   static const String _flashcardsBoxName = 'flashcards';
   static const String _cacheTimestampsBoxName = 'cache_timestamps';
   static const String _offlineWriteQueueBoxName = 'offlineWriteQueue';
@@ -39,9 +37,6 @@ class HiveService {
     }
     if (!Hive.isBoxOpen(_versionsBoxName)) {
       await Hive.openBox<int>(_versionsBoxName);
-    }
-    if (!Hive.isBoxOpen(_quizBoxName)) {
-      await Hive.openBox<String>(_quizBoxName);
     }
     if (!Hive.isBoxOpen(_flashcardsBoxName)) {
       await Hive.openBox<String>(_flashcardsBoxName);
@@ -63,7 +58,6 @@ class HiveService {
   // Accessors — always safe after init() has been awaited.
   Box<Map> get _contentBox => Hive.box<Map>(_contentBoxName);
   Box<int> get _versionsBox => Hive.box<int>(_versionsBoxName);
-  Box<String> get _quizBox => Hive.box<String>(_quizBoxName);
   Box<String> get _flashcardsBox => Hive.box<String>(_flashcardsBoxName);
   Box<String> get _timestampsBox => Hive.box<String>(_cacheTimestampsBoxName);
 
@@ -122,32 +116,8 @@ class HiveService {
   Future<void> clearExerciseCache() async {
     await _contentBox.clear();
     await _versionsBox.clear();
-    await _quizBox.clear();
     await _flashcardsBox.clear();
     await _timestampsBox.clear();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Quiz question caching
-  // ---------------------------------------------------------------------------
-
-  /// Caches quiz questions for a given exercise key as JSON.
-  Future<void> cacheQuizQuestions(
-    String key,
-    List<Map<String, dynamic>> questions,
-  ) async {
-    await _quizBox.put(key, jsonEncode(questions));
-    await _setCacheTimestamp('quiz_$key');
-  }
-
-  /// Returns cached quiz questions for [key], or null if not cached.
-  List<Map<String, dynamic>>? getCachedQuizQuestions(String key) {
-    final raw = _quizBox.get(key);
-    if (raw == null) return null;
-    final decoded = jsonDecode(raw) as List;
-    return decoded
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
   }
 
   // ---------------------------------------------------------------------------
@@ -197,12 +167,6 @@ class HiveService {
   /// Returns a human-readable "last updated" string for exercise content.
   String? getContentLastUpdated(String key) {
     final ts = getCacheTimestamp('content_$key');
-    return ts != null ? _formatTimeAgo(ts) : null;
-  }
-
-  /// Returns a human-readable "last updated" string for quiz questions.
-  String? getQuizLastUpdated(String key) {
-    final ts = getCacheTimestamp('quiz_$key');
     return ts != null ? _formatTimeAgo(ts) : null;
   }
 

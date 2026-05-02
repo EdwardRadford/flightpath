@@ -28,7 +28,7 @@ class PrepareHubSectionLabel extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 // After-lesson card — used twice on the prepare hub (Review Relevant Lessons
-// + AI Debrief). Same visual weight as the old revision banner.
+// + AI Debrief).
 // ---------------------------------------------------------------------------
 
 class PrepareHubAfterLessonCard extends StatelessWidget {

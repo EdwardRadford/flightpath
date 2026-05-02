@@ -123,7 +123,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
         scheduledTime: _selectedTime!.format(context),
         status: LessonStatus.scheduled,
         createdAt: DateTime.now(),
-        quizAttempts: 0,
       );
 
       final lessonId = await offlineLessons.createLesson(uid, lesson);

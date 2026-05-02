@@ -7,7 +7,6 @@ import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/services/weather_service.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
-import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/features/home/providers/weather_preview_provider.dart';
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
@@ -122,94 +121,6 @@ class DebriefNudgeCard extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    ),
-    );
-  }
-}
-
-/// Shows exercises that are past their spaced-repetition due date.
-/// Hidden when no exercises are due.
-class DueForReviewCard extends ConsumerWidget {
-  const DueForReviewCard({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dueList = ref.watch(dueForReviewProvider);
-    if (dueList.isEmpty) return const SizedBox.shrink();
-
-    final cs = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cs.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.refresh_rounded,
-                  color: AppColors.warning,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Text(
-                'Due for review',
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...dueList.map((entry) {
-            final composite =
-                compositeExerciseId(entry.exerciseId, entry.subExercise);
-            return InkWell(
-              onTap: () => context.push('/exercises/$composite'),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        entry.displayName,
-                        style: TextStyle(
-                          color: cs.onSurface,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: cs.onSurface.withValues(alpha: 0.3),
-                      size: 18,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
       ),
     ),
     );
