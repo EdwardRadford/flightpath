@@ -35,21 +35,31 @@ workflows:
           ruby tool/add_privacy_manifest.rb
       - name: Set up code signing
         script: |
+          set -e
+          set -x
           keychain initialize
-          # Ensure a non-Xcode-managed distribution certificate exists.
-          # No-op if one already exists in App Store Connect.
-          app-store-connect certificates create \
-            --type IOS_DISTRIBUTION \
-            --save || true
-          # Register the bundle ID if missing (idempotent — does nothing if
-          # already registered as a proper App ID).
-          app-store-connect bundle-ids register "$BUNDLE_IDENTIFIER" \
-            --name "Flight Path Training" \
-            --platform IOS || true
-          # Fetch or create the App Store provisioning profile.
+
+          echo "=== existing certs ==="
+          app-store-connect certificates list --type IOS_DISTRIBUTION || true
+
+          echo "=== existing bundle ids ==="
+          app-store-connect bundle-ids list --bundle-id-identifier "$BUNDLE_IDENTIFIER" || true
+
+          echo "=== existing profiles ==="
+          app-store-connect profiles list --bundle-id-identifier "$BUNDLE_IDENTIFIER" --type IOS_APP_STORE || true
+
+          echo "=== creating dist cert if missing ==="
+          if ! app-store-connect certificates list --type IOS_DISTRIBUTION 2>/dev/null | grep -q "id:"; then
+            app-store-connect certificates create --type IOS_DISTRIBUTION --save
+          else
+            echo "Distribution cert already exists"
+          fi
+
+          echo "=== fetching signing files ==="
           app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
             --type IOS_APP_STORE \
             --create
+
           keychain add-certificates
           xcode-project use-profiles
       - name: Pod install
