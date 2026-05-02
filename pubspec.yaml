@@ -1,7 +1,7 @@
 name: flight_path
 description: "UK PPL(A) student pilot lesson companion app."
 publish_to: 'none'
-version: 1.0.6+12
+version: 1.0.7+12
 
 environment:
   sdk: ^3.6.0
