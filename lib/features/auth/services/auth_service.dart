@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -85,12 +86,24 @@ class AuthService {
       await SubscriptionService.identifyUser(user.uid);
     } on FirebaseAuthException {
       rethrow;
-    } on PlatformException catch (_) {
+    } on PlatformException catch (e, st) {
+      // Record the underlying platform error before we replace it with a
+      // generic FirebaseAuthException — otherwise the original cause is lost.
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'AuthService.signInWithGoogle: PlatformException',
+        fatal: false,
+      );
       throw FirebaseAuthException(
         code: 'google-signin-failed',
         message: 'Google Sign-In is not available. Please use email sign-in instead.',
       );
-    } catch (_) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'AuthService.signInWithGoogle: unexpected error',
+        fatal: false,
+      );
       throw FirebaseAuthException(
         code: 'google-signin-failed',
         message: 'Google Sign-In is not available. Please use email sign-in instead.',
@@ -142,15 +155,25 @@ class AuthService {
       }
       await SubscriptionService.identifyUser(user.uid);
       await FirebaseAnalytics.instance.logLogin(loginMethod: 'apple');
-    } on SignInWithAppleAuthorizationException catch (e) {
+    } on SignInWithAppleAuthorizationException catch (e, st) {
       if (e.code == AuthorizationErrorCode.canceled) return;
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'AuthService.signInWithApple: AuthorizationException',
+        fatal: false,
+      );
       throw FirebaseAuthException(
         code: 'apple-signin-failed',
         message: 'Apple Sign-In failed. Please try again.',
       );
     } on FirebaseAuthException {
       rethrow;
-    } catch (_) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'AuthService.signInWithApple: unexpected error',
+        fatal: false,
+      );
       throw FirebaseAuthException(
         code: 'apple-signin-failed',
         message: 'Apple Sign-In failed. Please try again.',
@@ -168,8 +191,15 @@ class AuthService {
     await NotificationService.cleanupFcm();
     try {
       await _googleSignIn.signOut();
-    } catch (e) {
+    } catch (e, st) {
+      // Don't block the rest of the sign-out flow — Firebase Auth signOut still
+      // runs below — but record so a recurring Google session leak is visible.
       debugPrint('AuthService sign-out: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'AuthService.signOut: Google signOut failed',
+        fatal: false,
+      );
     }
     await SubscriptionService.resetUser();
     await _auth.signOut();

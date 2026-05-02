@@ -274,6 +274,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     if (!_sttReady) return;
     if (_isListening) {
       await _stt.stop();
+      if (!mounted) return;
       setState(() => _isListening = false);
       _micPulse.stop();
       return;
@@ -333,6 +334,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
 
     final allowed =
         await ref.read(askAiLimitProvider.notifier).canSendMessage();
+    if (!mounted) return;
     if (!allowed) return;
 
     final now = DateTime.now();
@@ -356,6 +358,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
 
     if (_isListening) {
       await _stt.stop();
+      if (!mounted) return;
       setState(() => _isListening = false);
       _micPulse.stop();
     }
@@ -378,6 +381,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     unawaited(_persistHistory());
 
     await ref.read(askAiLimitProvider.notifier).incrementMessageCount();
+    if (!mounted) return;
 
     final userMessages = _messages.where((m) => m.role == 'user').length;
     if (userMessages == 1) {
@@ -438,6 +442,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     required User currentUser,
   }) async {
     final token = await currentUser.getIdToken(true);
+    if (!mounted) return;
 
     // Insert a placeholder assistant message; streaming text will fill it.
     setState(() {
@@ -460,6 +465,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
       request.body = jsonEncode(body);
 
       final response = await client.send(request);
+      if (!mounted) return;
 
       if (response.statusCode != 200) {
         // Drain the body — small JSON, safe to await — so we can detect
@@ -515,7 +521,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
           buffer.write(chunk);
           if (firstDelta) {
             firstDelta = false;
-            setState(() => _isLoading = false);
+            if (mounted) setState(() => _isLoading = false);
           }
           final idx = _streamingMessageIndex;
           if (idx != null && mounted) {

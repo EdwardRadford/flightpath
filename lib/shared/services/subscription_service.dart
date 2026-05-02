@@ -2,6 +2,7 @@
 // and restore flows.
 import 'dart:io';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
@@ -52,12 +53,20 @@ class SubscriptionService {
       try {
         await Purchases.configure(config);
         return;
-      } catch (e) {
+      } catch (e, st) {
         if (kDebugMode) {
           debugPrint('RevenueCat init attempt $attempt failed: $e');
         }
         if (attempt < 3) {
           await Future<void>.delayed(Duration(seconds: attempt * 2));
+        } else {
+          // Final attempt failed — record so we can see if RevenueCat is
+          // chronically unavailable on real devices (revenue impact).
+          FirebaseCrashlytics.instance.recordError(
+            e, st,
+            reason: 'SubscriptionService.init: RevenueCat configure failed after retries',
+            fatal: false,
+          );
         }
       }
     }
@@ -69,8 +78,15 @@ class SubscriptionService {
     try {
       final info = await Purchases.getCustomerInfo();
       return info.entitlements.active.containsKey(_entitlementId);
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) debugPrint('RevenueCat isPremium error: $e');
+      // Defaults to false on failure — record so a recurring downgrade-on-error
+      // bug is visible (paying users incorrectly seeing the paywall).
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'SubscriptionService.isPremium: RevenueCat lookup failed',
+        fatal: false,
+      );
       return false;
     }
   }
@@ -92,12 +108,22 @@ class SubscriptionService {
           await Purchases.purchase(PurchaseParams.package(lifetime));
       return result.customerInfo.entitlements.active
           .containsKey(_entitlementId);
-    } on PurchasesErrorCode catch (e) {
+    } on PurchasesErrorCode catch (e, st) {
       if (e == PurchasesErrorCode.purchaseCancelledError) return false;
       if (kDebugMode) debugPrint('RevenueCat purchase error: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'SubscriptionService.purchaseLifetime: PurchasesErrorCode',
+        fatal: false,
+      );
       return false;
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) debugPrint('RevenueCat purchase error: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'SubscriptionService.purchaseLifetime: unexpected error',
+        fatal: false,
+      );
       return false;
     }
   }
@@ -107,8 +133,13 @@ class SubscriptionService {
     try {
       final info = await Purchases.restorePurchases();
       return info.entitlements.active.containsKey(_entitlementId);
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) debugPrint('RevenueCat restore error: $e');
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'SubscriptionService.restorePurchases: failed',
+        fatal: false,
+      );
       return false;
     }
   }

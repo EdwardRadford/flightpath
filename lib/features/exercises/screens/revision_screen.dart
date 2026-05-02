@@ -63,6 +63,7 @@ class _RevisionScreenState extends ConsumerState<RevisionScreen> {
 
   Future<void> _loadIncorrectIds() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final ids = prefs.getStringList(_incorrectQuestionsKey) ?? [];
     setState(() => _incorrectIds = ids.toSet());
   }

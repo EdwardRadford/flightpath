@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -183,8 +184,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           if (mounted) setState(() => _quizAlreadyDone = true);
         }
       }
-    } catch (_) {
-      // Non-fatal — proceed with quiz if check fails
+    } catch (e, st) {
+      // Non-fatal — proceed with quiz if check fails. Report so a regression
+      // (e.g. rules change blocking the read) is visible.
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'ProfileSetupScreen: quiz status check failed',
+        fatal: false,
+      );
     }
   }
 

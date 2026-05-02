@@ -454,8 +454,15 @@ async function fetchStudentContext(uid) {
         exerciseProgressLine =
           `${progressLabel} prep — status: ${status}, attempts: ${attempts}${best}; steps done: ${stepsTxt}.`;
       }
-    } catch (_) {
-      // Non-fatal — just omit the progress line.
+    } catch (err) {
+      // Non-fatal — just omit the progress line. Surface the error so we can
+      // see if Firestore is consistently failing for a user (rules drift,
+      // index missing, etc.) without breaking the AI call.
+      logger.warn('fetchStudentContext: per-exercise lookup failed; omitting progress line.', {
+        uid,
+        currentExNum,
+        error: err && err.message,
+      });
     }
 
     // Strip control chars, trim, and cap length so a malformed Firestore
@@ -705,7 +712,8 @@ exports.getAiDebrief = onCall(
     logger.info('getAiDebrief called', {
       uid: request.auth.uid,
       exerciseId: safeExerciseId,
-      exercise: safeExerciseName,
+      // Free-text from the client: log the length only, not the value.
+      exerciseNameLen: safeExerciseName.length,
     });
 
     // Instantiate the SDK client lazily inside the handler so Firebase
@@ -2051,7 +2059,13 @@ exports.appleSignInNotifications = onRequest(
       const inner = await _verifyAppleJwt(outer.events);
       const { type, sub: appleSub } = inner;
 
-      logger.info('appleSignInNotifications: received event', { type, appleSub });
+      // Apple's `sub` is the stable per-user identifier — treat it as PII
+      // and never log the value. Log a hash for cross-event correlation.
+      const appleSubHash = appleSub
+        ? crypto.createHash('sha256').update(appleSub).digest('hex').slice(0, 12)
+        : null;
+
+      logger.info('appleSignInNotifications: received event', { type, appleSubHash });
 
       if (type === 'consent-revoked' || type === 'account-delete') {
         const result = await getAuth().getUsers([
@@ -2059,7 +2073,7 @@ exports.appleSignInNotifications = onRequest(
         ]);
 
         if (result.users.length === 0) {
-          logger.warn('appleSignInNotifications: no user found for Apple sub', { appleSub, type });
+          logger.warn('appleSignInNotifications: no user found for Apple sub', { appleSubHash, type });
           res.status(200).send('OK');
           return;
         }

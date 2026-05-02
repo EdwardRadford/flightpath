@@ -162,6 +162,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
       final data = await _service.getWeatherForAirfield(icao);
       if (!mounted) return;
       await _incrementDailyCount();
+      if (!mounted) return;
       setState(() {
         _state = _WeatherState(
           icaoOverride: _state.icaoOverride,
@@ -228,6 +229,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     controller.dispose();
 
     if (result == null || result.trim().isEmpty) return;
+    if (!mounted) return;
     final icao = result.trim().toUpperCase();
     setState(() {
       _state = _state.copyWith(icaoOverride: icao);

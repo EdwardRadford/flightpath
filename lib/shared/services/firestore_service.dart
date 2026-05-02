@@ -329,8 +329,14 @@ class FirestoreService {
         await HiveService().clearExerciseCache();
         await prefs.setInt(_contentVersionKey, remoteVersion);
       }
-    } catch (_) {
-      // Network or Firestore error — continue with existing cache.
+    } catch (e, st) {
+      // Network or Firestore error — continue with existing cache, but log
+      // so a persistent rules / connectivity regression is visible.
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'FirestoreService.checkAndInvalidateCache failed',
+        fatal: false,
+      );
     }
   }
 

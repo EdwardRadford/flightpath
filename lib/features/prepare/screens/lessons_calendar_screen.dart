@@ -1,4 +1,5 @@
 // Lessons calendar screen — monthly view of all scheduled lessons.
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -245,8 +246,14 @@ class _LessonCard extends ConsumerWidget {
       await ref
           .read(offlineLessonServiceProvider)
           .updateLesson(uid, lesson.id, {'status': 'cancelled'});
-    } catch (_) {
-      // Error is non-fatal; Firestore / sync handles retry.
+    } catch (e, st) {
+      // Error is non-fatal; Firestore / sync handles retry. Log so a
+      // recurring failure here is visible rather than silently dropped.
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'LessonsCalendarScreen: cancel lesson failed',
+        fatal: false,
+      );
     }
   }
 

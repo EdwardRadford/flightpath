@@ -1,6 +1,7 @@
 // Service to manage "Rate This App" prompts using the native in-app review
 // dialog. Tracks lesson completion count, whether the user has rated, and
 // enforces a 30-day cooldown between prompts.
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -90,8 +91,14 @@ class RateAppService {
         await openStoreListing();
         await prefs.setBool(_kHasRatedApp, true);
       }
-    } catch (_) {
-      // Non-critical — swallow and try again next time
+    } catch (e, st) {
+      // Non-critical — swallow and try again next time, but log so a
+      // recurring failure (plugin regression, store unavailable) is visible.
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'RateAppService: in-app review request failed',
+        fatal: false,
+      );
     }
   }
 }

@@ -1,6 +1,7 @@
 // Voice service — wraps flutter_tts and speech_to_text for RT Practice.
 // Designed to degrade gracefully: if either engine fails to initialise,
 // the rest of the feature still works as text-only.
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -58,7 +59,14 @@ class VoiceService extends ChangeNotifier {
       });
 
       _ttsReady = true;
-    } catch (_) {
+    } catch (e, st) {
+      // Init failure is recoverable (text-only fallback) but we want to know
+      // if it happens so we can spot bad device configurations.
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'VoiceService: TTS init failed',
+        fatal: false,
+      );
       _ttsReady = false;
     }
     notifyListeners();
@@ -80,7 +88,12 @@ class VoiceService extends ChangeNotifier {
           }
         },
       );
-    } catch (_) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'VoiceService: STT init failed',
+        fatal: false,
+      );
       _sttReady = false;
     }
     notifyListeners();
@@ -107,7 +120,12 @@ class VoiceService extends ChangeNotifier {
     try {
       await _tts.stop();
       await _tts.speak(text);
-    } catch (_) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'VoiceService: TTS speak failed',
+        fatal: false,
+      );
       _isSpeaking = false;
       notifyListeners();
     }
@@ -148,7 +166,12 @@ class VoiceService extends ChangeNotifier {
           listenMode: stt.ListenMode.dictation,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'VoiceService: STT listen failed',
+        fatal: false,
+      );
       _isListening = false;
       notifyListeners();
     }

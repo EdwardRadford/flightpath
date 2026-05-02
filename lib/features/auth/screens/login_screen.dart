@@ -35,6 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _loadRememberedEmail() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final email = prefs.getString('remembered_email');
     if (email != null && email.isNotEmpty) {
       _emailController.text = email;

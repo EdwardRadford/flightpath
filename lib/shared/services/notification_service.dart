@@ -250,8 +250,14 @@ class NotificationService {
             .collection('users')
             .doc(user.uid)
             .update({'fcm_token': FieldValue.delete()});
-      } catch (_) {
-        // Best-effort — don't block sign-out if this fails.
+      } catch (e, st) {
+        // Best-effort — don't block sign-out if this fails. Report so an
+        // orphaned-token leak is visible if it becomes recurring.
+        FirebaseCrashlytics.instance.recordError(
+          e, st,
+          reason: 'NotificationService.cleanupFcm: token delete failed',
+          fatal: false,
+        );
       }
     }
   }

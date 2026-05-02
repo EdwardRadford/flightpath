@@ -25,8 +25,7 @@ class MainShell extends ConsumerStatefulWidget {
   final Widget child;
   const MainShell({super.key, required this.child});
 
-  /// Global key for the BottomNavigationBar — used by the coach marks
-  /// walkthrough to measure nav tab positions.
+  /// Global key for the BottomNavigationBar.
   static final bottomNavKey = GlobalKey();
 
   static const List<_Tab> _tabs = [

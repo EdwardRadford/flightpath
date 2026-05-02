@@ -1,4 +1,4 @@
-// Home > Footer cards: Ask AI + Upgrade prompt + Debrief nudge + Share card.
+// Home > Footer cards: Ask AI + Upgrade prompt + Debrief nudge.
 // Extracted from home_screen.dart during 2026-04-13 refactor.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -321,7 +321,7 @@ class _LogbookProgressScreenState extends ConsumerState<LogbookProgressScreen>
         );
       },
     );
-    if (result != null) {
+    if (result != null && mounted) {
       setState(() => _dateRange = result);
     }
   }

@@ -51,7 +51,7 @@ workflows:
             ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/dist_cert_key -q -N ""
             app-store-connect certificates create \
               --type IOS_DISTRIBUTION \
-              --certificate-key /tmp/dist_cert_key \
+              --certificate-key @file:/tmp/dist_cert_key \
               --save
           else
             echo "Distribution cert already exists"
@@ -61,7 +61,7 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_IDENTIFIER" \
             --type IOS_APP_STORE \
             --create \
-            --certificate-key /tmp/dist_cert_key
+            --certificate-key @file:/tmp/dist_cert_key
 
           keychain add-certificates
           xcode-project use-profiles

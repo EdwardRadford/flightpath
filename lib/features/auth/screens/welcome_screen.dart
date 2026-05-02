@@ -75,9 +75,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Future<void> _completeWelcome() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kHasSeenOnboardingKey, true);
+    if (!mounted) return;
     // Invalidate the cached provider so the router re-evaluates redirects.
     ref.invalidate(onboardingCompleteProvider);
-    if (mounted) context.go('/signup');
+    context.go('/signup');
   }
 
   void _nextPage() {

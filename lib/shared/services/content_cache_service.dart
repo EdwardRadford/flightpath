@@ -1,6 +1,7 @@
 // Offline content cache service — stale-while-revalidate pattern for exercise
 // content and quiz questions. Returns cached data immediately, then refreshes
 // from Firestore in the background.
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -92,11 +93,16 @@ class ContentCacheService {
             cacheKey, fresh.toMap(), fresh.contentVersion);
         await _hive.setContentCacheTimestamp(cacheKey);
       }
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) {
         debugPrint('ContentCacheService: background refresh failed for '
             '$cacheKey: $e');
       }
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'ContentCacheService: exercise content refresh failed for $cacheKey',
+        fatal: false,
+      );
     }
   }
 
@@ -156,11 +162,16 @@ class ContentCacheService {
       if (fresh.isNotEmpty) {
         await _cacheQuizQuestions(cacheKey, fresh);
       }
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) {
         debugPrint('ContentCacheService: quiz refresh failed for '
             '$cacheKey: $e');
       }
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'ContentCacheService: quiz refresh failed for $cacheKey',
+        fatal: false,
+      );
     }
   }
 
@@ -216,11 +227,16 @@ class ContentCacheService {
       if (fresh.isNotEmpty) {
         await _cacheFlashcards(cacheKey, fresh);
       }
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) {
         debugPrint('ContentCacheService: flashcard refresh failed for '
             '$cacheKey: $e');
       }
+      FirebaseCrashlytics.instance.recordError(
+        e, st,
+        reason: 'ContentCacheService: flashcard refresh failed for $cacheKey',
+        fatal: false,
+      );
     }
   }
 
@@ -280,12 +296,17 @@ class ContentCacheService {
         }
 
         cached++;
-      } catch (e) {
+      } catch (e, st) {
         if (kDebugMode) {
           debugPrint('ContentCacheService: prefetch failed for '
               '$compositeId: $e');
         }
         // Continue with next exercise — don't let one failure stop the rest.
+        FirebaseCrashlytics.instance.recordError(
+          e, st,
+          reason: 'ContentCacheService: prefetch failed for $compositeId',
+          fatal: false,
+        );
       }
     }
 

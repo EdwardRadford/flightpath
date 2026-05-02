@@ -1,7 +1,4 @@
 // Learn tab — shows the AI Instructor chat directly, with RT Practice toggle.
-//
-// TODO(router): Add '/learn/mandatory-readback' route in router.dart pointing
-// at MandatoryReadbackScreen before releasing the readback feature.
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -61,6 +58,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
 
     final allowed =
         await ref.read(askAiLimitProvider.notifier).canSendMessage();
+    if (!mounted) return;
     if (!allowed) return;
 
     final now = DateTime.now();

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -128,10 +129,15 @@ class SyncService {
         entry = SyncQueueEntry.fromJson(
           Map<String, dynamic>.from(jsonDecode(raw) as Map),
         );
-      } catch (e) {
+      } catch (e, st) {
         if (kDebugMode) {
           debugPrint('SyncService: corrupt entry $key — skipping: $e');
         }
+        FirebaseCrashlytics.instance.recordError(
+          e, st,
+          reason: 'SyncService: corrupt queue entry — discarded',
+          fatal: false,
+        );
         await _box.delete(key);
         continue;
       }
@@ -141,10 +147,15 @@ class SyncService {
       try {
         await _replayEntry(entry);
         await _box.delete(key);
-      } catch (e) {
+      } catch (e, st) {
         if (kDebugMode) {
           debugPrint('SyncService: failed to process entry $key: $e');
         }
+        FirebaseCrashlytics.instance.recordError(
+          e, st,
+          reason: 'SyncService: replay failed (will retry next sync)',
+          fatal: false,
+        );
         break;
       }
     }
