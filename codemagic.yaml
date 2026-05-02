@@ -49,7 +49,7 @@ workflows:
         script: |
           flutter build ipa --release \
             --build-name=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1) \
-            --build-number=$(($(($(google-app-store-connect-build-number "$BUNDLE_IDENTIFIER") + 1)))) \
+            --build-number=$(($(app-store-connect get-latest-testflight-build-number "$BUNDLE_IDENTIFIER") + 1)) \
             --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY \
             --dart-define=REVENUECAT_ANDROID_KEY=$REVENUECAT_ANDROID_KEY \
             --export-options-plist=/Users/builder/export_options.plist
