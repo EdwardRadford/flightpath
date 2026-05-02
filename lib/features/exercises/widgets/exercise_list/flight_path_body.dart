@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/features/exercises/providers/syllabus_progress_provider.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
@@ -237,13 +238,18 @@ int exerciseNumber(String exerciseId) {
   return 0;
 }
 
+/// Pure helper kept for non-Consumer call sites (`recency_warning_card.dart`,
+/// `lesson_day_screen.dart`, internal provider). Riverpod-aware widgets should
+/// read `syllabusProgressProvider.currentIndex` instead — that returns the
+/// same value but is part of the unified [SyllabusProgress] snapshot.
+///
+/// Returns the index AFTER the highest exercise marked done — where "done"
+/// covers both ExerciseStatus.completedSatisfactory and
+/// completedUnsatisfactory (both map to NodeStatus.completed or .mastered
+/// via nodeStatus()).
+/// - If nothing is done yet: returns 0 (start at the first exercise).
+/// - If the last exercise in kExercises is done: clamps to the last index.
 int findCurrentExerciseIndex(List<UserExercise> userExercises) {
-  // Returns the index AFTER the highest exercise marked done — where "done"
-  // covers both ExerciseStatus.completedSatisfactory and
-  // completedUnsatisfactory (both map to NodeStatus.completed or .mastered
-  // via nodeStatus()).
-  // - If nothing is done yet: returns 0 (start at the first exercise).
-  // - If the last exercise in kExercises is done: clamps to the last index.
   int highestDone = -1;
   for (int i = 0; i < kExercises.length; i++) {
     final item = kExercises[i];
@@ -269,7 +275,10 @@ const double kNodeRadius = 28.0;
 const double kSubNodeRadius = 18.0;
 const double kVerticalSpacing = 130.0;
 const double kHorizontalPadding = 48.0;
-const double kSubExerciseOffsetY = 54.0;
+// Bumped 2026-05-02 from 54.0 → 61.0 to give 10A/10B (and 18A/B/C) a touch
+// more breathing room beneath the parent node — Ed flagged the cluster as
+// visually crowded. ~7 logical px.
+const double kSubExerciseOffsetY = 61.0;
 const double kSubExerciseSpacingX = 80.0;
 // Vertical spacing between rows when sub-exercises overflow into a 2-column grid.
 const double kSubRowSpacing = 80.0;
@@ -324,7 +333,7 @@ double _exerciseExtraHeight(ExerciseListItem item) {
 // FlightPathBody
 // ---------------------------------------------------------------------------
 
-class FlightPathBody extends StatefulWidget {
+class FlightPathBody extends ConsumerStatefulWidget {
   final List<UserExercise> userExercises;
   final bool isPremium;
   final int currentExerciseNumber;
@@ -337,10 +346,10 @@ class FlightPathBody extends StatefulWidget {
   });
 
   @override
-  State<FlightPathBody> createState() => _FlightPathBodyState();
+  ConsumerState<FlightPathBody> createState() => _FlightPathBodyState();
 }
 
-class _FlightPathBodyState extends State<FlightPathBody>
+class _FlightPathBodyState extends ConsumerState<FlightPathBody>
     with TickerProviderStateMixin {
   late final ScrollController _scrollController;
   late final AnimationController _pulseController;
@@ -389,7 +398,7 @@ class _FlightPathBodyState extends State<FlightPathBody>
   }
 
   void _scrollToCurrent() {
-    final currentIndex = findCurrentExerciseIndex(widget.userExercises);
+    final currentIndex = ref.read(syllabusProgressProvider).currentIndex;
     final targetY = _nodeCentreY(currentIndex) - kNodeRadius - 100;
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -419,24 +428,14 @@ class _FlightPathBodyState extends State<FlightPathBody>
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = findCurrentExerciseIndex(widget.userExercises);
+    final progress = ref.watch(syllabusProgressProvider);
+    final currentIndex = progress.currentIndex;
+    final completedCount = progress.completedCount;
     final totalHeight = _topPadding + 100 +
         kExercises.fold<double>(
           0,
           (sum, item) => sum + kVerticalSpacing + _exerciseExtraHeight(item),
         );
-
-    int completedCount = 0;
-    for (final item in kExercises) {
-      final status = item.hasSubExercises
-          ? aggregateStatus(
-              widget.userExercises, item.exerciseId, item.subExercises)
-          : nodeStatus(
-              findExerciseInList(widget.userExercises, item.exerciseId));
-      if (status == NodeStatus.completed || status == NodeStatus.mastered) {
-        completedCount++;
-      }
-    }
 
     final bool noneStarted = widget.userExercises.isEmpty;
 
@@ -654,6 +653,38 @@ class _FlightPathBodyState extends State<FlightPathBody>
       ),
     );
 
+    // Prep-progress ring — drawn over the circle background but beneath the
+    // PRO badge / lock overlay / icon glyph. Steps for parent exercises:
+    // ground (Ex 1) is 2-step (Brief + Flashcards); flight & milestone are
+    // the standard 5-step prep flow. Sub-exercise rings are handled in
+    // _buildSubExerciseNodes.
+    if (!item.hasSubExercises) {
+      final ue = findExerciseInList(widget.userExercises, item.exerciseId);
+      final filled = _prepStepsCompleted(ue, item);
+      final stepsTotal = _prepStepsTotal(item);
+      if (filled > 0 && stepsTotal > 0) {
+        widgets.add(
+          Positioned(
+            left: cx - kNodeRadius - 3,
+            top: cy - kNodeRadius - 3,
+            child: IgnorePointer(
+              child: SizedBox(
+                width: (kNodeRadius + 3) * 2,
+                height: (kNodeRadius + 3) * 2,
+                child: CustomPaint(
+                  painter: _PrepProgressRingPainter(
+                    filled: filled,
+                    total: stepsTotal,
+                    radius: kNodeRadius + 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
     if (showPro) {
       widgets.add(
         Positioned(
@@ -786,6 +817,32 @@ class _FlightPathBodyState extends State<FlightPathBody>
         ),
       );
 
+      // Prep-progress ring for the sub-exercise — sub-exercises follow the
+      // standard 5-step flight prep flow. Skip when nothing is started.
+      final subFilled = _prepStepsCompleted(ue, item);
+      const subTotal = 5;
+      if (subFilled > 0) {
+        widgets.add(
+          Positioned(
+            left: subCx - kSubNodeRadius - 3,
+            top: subCy - kSubNodeRadius - 3,
+            child: IgnorePointer(
+              child: SizedBox(
+                width: (kSubNodeRadius + 3) * 2,
+                height: (kSubNodeRadius + 3) * 2,
+                child: CustomPaint(
+                  painter: _PrepProgressRingPainter(
+                    filled: subFilled,
+                    total: subTotal,
+                    radius: kSubNodeRadius + 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
       if (showSubPro) {
         widgets.add(
           Positioned(
@@ -872,6 +929,40 @@ class _FlightPathBodyState extends State<FlightPathBody>
     } else {
       context.push('/exercises/${item.exerciseId}');
     }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Prep-step counting (drives the progress ring)
+  // ──────────────────────────────────────────────────────────────────────
+
+  /// Total prep steps for [item] at the parent level. Ex 1 (ground only) is
+  /// 2-step (Brief + Flashcards). All other parent exercises and the
+  /// milestone (Ex 14) follow the standard 5-step flight prep flow.
+  ///
+  /// Sub-exercises always use 5 (handled inline at the call site).
+  int _prepStepsTotal(ExerciseListItem item) {
+    if (item.exerciseId == 'ex_01') return 2;
+    return 5;
+  }
+
+  /// Counts how many prep steps the user has completed for the given
+  /// UserExercise. Honours the 2-step / 5-step split.
+  int _prepStepsCompleted(UserExercise? ue, ExerciseListItem item) {
+    if (ue == null) return 0;
+    final groundOnly = item.exerciseId == 'ex_01';
+    if (groundOnly) {
+      int n = 0;
+      if (ue.briefViewed) n++;
+      if (ue.flashcardsCompleted) n++;
+      return n;
+    }
+    int n = 0;
+    if (ue.briefViewed) n++;
+    if (ue.flashcardsCompleted) n++;
+    if (ue.beforeYouFlyViewed) n++;
+    if (ue.weatherChecked) n++;
+    if (ue.selfBriefCompleted) n++;
+    return n;
   }
 
   void _onSubExerciseTap(ExerciseListItem item, String subId) {
@@ -1246,6 +1337,61 @@ class ExerciseMiniRatingStars extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Prep-progress ring painter
+// ---------------------------------------------------------------------------
+
+/// Draws a circular progress ring around an exercise node showing the
+/// fraction of prep steps completed. Arc starts at 12 o'clock and runs
+/// clockwise. Behind the filled arc, a faint full-circle track in the same
+/// hue keeps the ring visually anchored.
+class _PrepProgressRingPainter extends CustomPainter {
+  final int filled;
+  final int total;
+  final double radius;
+
+  _PrepProgressRingPainter({
+    required this.filled,
+    required this.total,
+    required this.radius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centre = Offset(size.width / 2, size.height / 2);
+
+    final trackPaint = Paint()
+      ..color = AppColors.primary.withValues(alpha: 0.15)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(centre, radius, trackPaint);
+
+    if (filled <= 0 || total <= 0) return;
+
+    final fraction = (filled / total).clamp(0.0, 1.0);
+    final sweep = fraction * 2 * math.pi;
+
+    final ringPaint = Paint()
+      ..color = AppColors.primary
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+
+    final rect = Rect.fromCircle(center: centre, radius: radius);
+    // -π/2 starts the arc at 12 o'clock; positive sweep goes clockwise in
+    // Flutter's canvas coordinate system.
+    canvas.drawArc(rect, -math.pi / 2, sweep, false, ringPaint);
+  }
+
+  @override
+  bool shouldRepaint(_PrepProgressRingPainter oldDelegate) {
+    return oldDelegate.filled != filled ||
+        oldDelegate.total != total ||
+        oldDelegate.radius != radius;
   }
 }
 

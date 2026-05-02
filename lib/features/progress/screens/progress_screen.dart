@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/features/exercises/providers/syllabus_progress_provider.dart';
+import 'package:flight_path/features/exercises/widgets/exercise_list/flight_path_body.dart'
+    show kExercises;
 import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
@@ -1462,9 +1464,14 @@ class _SyllabusTab extends ConsumerWidget {
           ueMap[key] = ue;
         }
 
-        final totalComplete = AppConstants.allExerciseIds
-            .where((id) => ueMap[id]?.status.isCompleted ?? false)
-            .length;
+        // Overall % complete is now driven by the unified
+        // SyllabusProgress provider (parent-level — sub-exercise parents
+        // count only when all children are complete). This keeps the
+        // syllabus tab, the home suggestion, and the flight-path map in
+        // lock-step.
+        final progress = ref.watch(syllabusProgressProvider);
+        final totalComplete = progress.completedCount;
+        final totalExercises = kExercises.length;
 
         final readinessData = ref.watch(skillsReadinessDataProvider);
 
@@ -1497,7 +1504,7 @@ class _SyllabusTab extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$totalComplete of ${AppConstants.allExerciseIds.length} exercises complete',
+                    '$totalComplete of $totalExercises exercises complete',
                     style:  TextStyle(
                       color: AppColors.onSurfaceVariant,
                       fontSize: 13,
@@ -1507,7 +1514,9 @@ class _SyllabusTab extends ConsumerWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
-                      value: totalComplete / AppConstants.allExerciseIds.length,
+                      value: totalExercises > 0
+                          ? totalComplete / totalExercises
+                          : 0.0,
                       backgroundColor: AppColors.surfaceVariant,
                       valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.primary),

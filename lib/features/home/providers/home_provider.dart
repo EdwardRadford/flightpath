@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/features/exercises/providers/syllabus_progress_provider.dart';
+import 'package:flight_path/features/exercises/widgets/exercise_list/flight_path_body.dart'
+    show kExercises;
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/models/user_exercise.dart';
@@ -96,32 +99,46 @@ final suggestedExerciseProvider =
   }
 
   // --- Pass 2: the exercise AFTER the highest completed one ---
-  // Walk the syllabus from the end and find the highest index that is
-  // completed. The next exercise after that is the "current" one. If nothing
-  // is completed, start at the first exercise. If everything is completed,
-  // return null.
-  int highestCompletedIndex = -1;
-  for (int i = 0; i < _orderedExercises.length; i++) {
-    final entry = _orderedExercises[i];
+  // Defer the parent-level "what's current" calculation to syllabusProgress
+  // so the home screen, exercise list, and progress screen all agree. Then
+  // map that parent index onto the flat _orderedExercises list (which
+  // expands sub-exercises) by picking the first not-yet-completed entry for
+  // the current parent.
+  final progress = ref.watch(syllabusProgressProvider);
+  final currentParent = kExercises[progress.currentIndex];
+
+  // If the parent has no sub-exercises, the flat-list entry is just the
+  // parent itself.
+  if (!currentParent.hasSubExercises) {
+    // Edge case: every exercise completed — currentIndex clamps to last, but
+    // that exercise is itself complete, so suppress the suggestion.
+    final ue = byKey[currentParent.exerciseId];
+    if (ue != null && ue.status.isCompleted) return null;
+    return (
+      exerciseId: currentParent.exerciseId,
+      subExerciseId: null,
+      reason: 'Continue your training',
+    );
+  }
+
+  // Parent with sub-exercises: walk the flat list for the first sub of this
+  // parent that isn't completed yet.
+  for (final entry in _orderedExercises) {
+    if (entry.exerciseId != currentParent.exerciseId) continue;
     final key = compositeKey(entry.exerciseId, entry.subExerciseId);
     final ue = byKey[key];
-    if (ue != null && ue.status.isCompleted) {
-      highestCompletedIndex = i;
+    if (ue == null || !ue.status.isCompleted) {
+      return (
+        exerciseId: entry.exerciseId,
+        subExerciseId: entry.subExerciseId,
+        reason: 'Continue your training',
+      );
     }
   }
 
-  final nextIndex = highestCompletedIndex + 1;
-  if (nextIndex >= _orderedExercises.length) {
-    // All exercises complete.
-    return null;
-  }
-
-  final next = _orderedExercises[nextIndex];
-  return (
-    exerciseId: next.exerciseId,
-    subExerciseId: next.subExerciseId,
-    reason: 'Continue your training',
-  );
+  // All subs of the current parent are complete (rare timing window) — no
+  // suggestion.
+  return null;
 });
 
 // ---------------------------------------------------------------------------
