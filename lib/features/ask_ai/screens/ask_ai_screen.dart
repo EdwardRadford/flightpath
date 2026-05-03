@@ -38,11 +38,16 @@ class _AiStreamHttpException implements Exception {
 
 // Cap persisted history so the Hive box can't grow unbounded across sessions.
 const int _kMaxPersistedMessages = 50;
+// Schema version — bump if the persisted shape changes so old payloads are
+// silently discarded rather than crashing the screen.
+const int _kHistorySchemaVersion = 1;
 // Hive key — namespaced by UID so different accounts on the same device get
-// separate chat histories. Falls back to `anon` for unauthenticated states.
-String _askAiHistoryKey() {
-  final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anon';
-  return 'messages_$uid';
+// separate chat histories. Returns null when no signed-in user exists, in
+// which case persistence is skipped and the chat lives only in memory.
+String? _askAiHistoryKey() {
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null || uid.isEmpty) return null;
+  return 'messages_v${_kHistorySchemaVersion}_$uid';
 }
 
 const String _kStreamUrl =
@@ -118,13 +123,57 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
         _sendDebriefIntro();
       });
     } else {
-      // Generic mode: drop in a personalised greeting once the frame is up,
-      // but only if no persisted history was restored.
+      // Generic mode: drop in a personalised greeting once the frame is up.
+      // Only fires if hydration left _messages empty (i.e. true first use or
+      // post-Clear state). The greeting is itself persisted, so re-opening
+      // the screen restores it rather than re-adding a duplicate.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        if (_messages.isEmpty) _addGreeting();
+        if (_messages.isNotEmpty) return;
+        _maybeAddGreetingWhenUserReady();
       });
     }
+  }
+
+  /// Schedules the personalised greeting once the [appUserProvider] has
+  /// emitted a value. We wait so the greeting includes the real first name,
+  /// current exercise number, and aircraft type instead of the fallback
+  /// `Hi there, working on Exercise 1: ...` that fires when the provider
+  /// is still in `AsyncValue.loading`.
+  ///
+  /// On a cold start the provider can take a few hundred ms to resolve while
+  /// Firestore returns the user doc. If it's already resolved (warm start
+  /// after sign-in earlier in the session) the greeting fires immediately.
+  void _maybeAddGreetingWhenUserReady() {
+    if (!mounted) return;
+    final userAsync = ref.read(appUserProvider);
+    if (userAsync.valueOrNull != null) {
+      _addGreeting();
+      return;
+    }
+    // Provider not yet resolved — listen for the first non-null emission,
+    // drop the greeting, then close the subscription so it doesn't re-fire
+    // on later Firestore updates to the user doc.
+    ProviderSubscription<AsyncValue<dynamic>>? sub;
+    var done = false;
+    void finish() {
+      if (done) return;
+      done = true;
+      sub?.close();
+      if (!mounted) return;
+      if (_messages.isEmpty) _addGreeting();
+    }
+
+    sub = ref.listenManual<AsyncValue<dynamic>>(
+      appUserProvider,
+      (prev, next) {
+        if (next.hasValue) finish();
+      },
+    );
+    // Safety net: if the provider never resolves (e.g. signed-out edge case
+    // or Firestore offline) drop the greeting with fallbacks after 1.5s so
+    // the screen isn't perpetually empty.
+    Timer(const Duration(milliseconds: 1500), finish);
   }
 
   // ---------------------------------------------------------------------------
@@ -138,7 +187,10 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
 
   void _loadPersistedHistory() {
     try {
-      final raw = HiveService().askAiHistoryBox.get(_askAiHistoryKey());
+      final key = _askAiHistoryKey();
+      // Anonymous / signed-out users: no persistence — chat is in-memory only.
+      if (key == null) return;
+      final raw = HiveService().askAiHistoryBox.get(key);
       if (raw == null || raw.isEmpty) return;
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
@@ -186,6 +238,9 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
   Future<void> _persistHistory() async {
     // Debrief sessions are ephemeral — never write them to disk.
     if (widget.debriefExerciseId != null) return;
+    final key = _askAiHistoryKey();
+    // Anonymous / signed-out users: in-memory only.
+    if (key == null) return;
     try {
       // Only persist completed (non-empty) messages — skip the placeholder
       // bubble that streaming uses while a delta is in flight.
@@ -200,7 +255,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
               'timestamp': m.timestamp.millisecondsSinceEpoch,
             }).toList(),
       );
-      await HiveService().askAiHistoryBox.put(_askAiHistoryKey(), encoded);
+      await HiveService().askAiHistoryBox.put(key, encoded);
     } catch (e, stack) {
       debugPrint('AskAi: failed to persist chat history: $e');
       FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
@@ -208,8 +263,10 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
   }
 
   Future<void> _clearPersistedHistory() async {
+    final key = _askAiHistoryKey();
+    if (key == null) return;
     try {
-      await HiveService().askAiHistoryBox.delete(_askAiHistoryKey());
+      await HiveService().askAiHistoryBox.delete(key);
     } catch (e, stack) {
       debugPrint('AskAi: failed to clear chat history: $e');
       FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
@@ -341,23 +398,68 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
 
   void _addGreeting() {
     if (!mounted) return;
+    if (_messages.isNotEmpty) return;
     final user = ref.read(appUserProvider).valueOrNull;
     final firstName = (user?.displayName ?? '').split(' ').first;
     final name = firstName.isNotEmpty ? firstName : 'there';
     final exNum = user?.currentExerciseNumber ?? 1;
     final exId = 'ex_${exNum.toString().padLeft(2, '0')}';
     final exTitle = AppConstants.exerciseTitles[exId] ?? 'your exercise';
-    final aircraft = AppConstants.aircraftTypes[user?.aircraftType ?? ''] ?? 'your aircraft';
+    final aircraft =
+        AppConstants.aircraftTypes[user?.aircraftType ?? ''] ?? 'your aircraft';
 
-    if (_messages.isEmpty) {
-      setState(() {
-        _messages.add(ChatMessage(
-          role: 'assistant',
-          content: 'Hi $name, working on Exercise $exNum: $exTitle in your $aircraft. What can I help with?',
-          timestamp: DateTime.now(),
-        ));
-      });
-    }
+    setState(() {
+      _messages.add(ChatMessage(
+        role: 'assistant',
+        content:
+            'Hi $name, working on Exercise $exNum: $exTitle in your $aircraft. What can I help with?',
+        timestamp: DateTime.now(),
+      ));
+    });
+    // Persist the greeting so the next visit to the screen restores it
+    // instead of re-adding a duplicate. Skipped for anon users + debrief
+    // mode inside _persistHistory.
+    unawaited(_persistHistory());
+  }
+
+  /// Confirms the destructive Clear action with a dialog before wiping the
+  /// Hive box, resetting `_messages`, and re-adding the greeting (so the
+  /// post-Clear state matches a true first-open).
+  Future<void> _confirmClearConversation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear conversation?'),
+        content: const Text(
+          "This can't be undone. Your previous messages will be removed from "
+          'this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+    setState(() {
+      _messages.clear();
+      _hasError = false;
+      _streamingMessageIndex = null;
+      _lastUserMessage = null;
+    });
+    await _clearPersistedHistory();
+    if (!mounted) return;
+    // Re-add the greeting so the screen feels like a fresh first-open.
+    // _addGreeting persists itself, matching the empty-then-greeting state.
+    _addGreeting();
   }
 
   @override
@@ -734,11 +836,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
               tooltip: 'Clear conversation',
-              onPressed: () async {
-                setState(() => _messages.clear());
-                await _clearPersistedHistory();
-                _addGreeting();
-              },
+              onPressed: _confirmClearConversation,
             ),
         ],
       ),
