@@ -1,7 +1,10 @@
 // Premium paywall bottom sheet — shown when a free user tries to access
 // exercises 5+ or premium features (AI debrief, full progress tracking).
+import 'dart:async';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/shared/services/subscription_service.dart';
@@ -81,10 +84,31 @@ class PremiumPaywallSheet extends StatefulWidget {
 
 class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
   bool _loading = false;
+  String _purchaseMessage = 'Confirming your purchase...';
+  Timer? _purchaseTimer;
+
+  @override
+  void dispose() {
+    _purchaseTimer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _purchase() async {
     FirebaseAnalytics.instance.logEvent(name: 'upgrade_tapped');
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _purchaseMessage = 'Confirming your purchase...';
+    });
+    _purchaseTimer?.cancel();
+    _purchaseTimer = Timer(const Duration(seconds: 30), () {
+      if (mounted && _loading) {
+        setState(() {
+          _purchaseMessage =
+              'Still waiting on App Store. This usually takes a few seconds, '
+              'sometimes longer over slow connections. Tap below if you need help.';
+        });
+      }
+    });
     final success = await SubscriptionService.purchaseLifetime();
 
     if (success) {
@@ -98,6 +122,7 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
       // server-side validation and create a paywall bypass vector.
     }
 
+    _purchaseTimer?.cancel();
     if (!mounted) return;
     setState(() => _loading = false);
 
@@ -198,7 +223,7 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
             const SizedBox(height: 12),
             _FeatureRow(icon: Icons.track_changes_rounded, text: 'Full progress tracking across all 19 exercises'),
             const SizedBox(height: 12),
-            _FeatureRow(icon: Icons.psychology_rounded, text: 'Ask the AI tutor anything, any time'),
+            _FeatureRow(icon: Icons.psychology_rounded, text: 'AI Instructor — ask anything, any time'),
             const SizedBox(height: 28),
 
             // Purchase button
@@ -215,13 +240,27 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
                   ),
                 ),
                 child: _loading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _purchaseMessage,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: Colors.white70),
+                          ),
+                        ],
                       )
                     : Text(
                         'Get lifetime access \u2014 \u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(0)}',
@@ -232,6 +271,18 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Help link after 30-second timeout
+            if (_loading &&
+                _purchaseMessage.startsWith('Still waiting'))
+              TextButton(
+                onPressed: () => launchUrl(
+                  Uri.parse(
+                      'mailto:contact@getflightpath.app?subject=Purchase%20help'),
+                  mode: LaunchMode.externalApplication,
+                ),
+                child: const Text('Need help? Contact us'),
+              ),
 
             // Restore
             TextButton(

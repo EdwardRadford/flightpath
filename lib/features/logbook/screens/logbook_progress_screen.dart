@@ -2817,9 +2817,9 @@ class _LogbookTotalsRow extends StatelessWidget {
     return Container(
       padding:
           const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceElevatedDark,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: const BorderRadius.vertical(
             bottom: Radius.circular(13)),
       ),
       child: Row(

@@ -27,6 +27,7 @@ class Lesson {
   final String aiDebriefWell;
   final String aiDebriefImprove;
   final String aiDebriefFocus;
+  final String aiMentionToInstructor;
   final List<String> additionalExerciseIds;
   final LessonStatus status;
   final DateTime createdAt;
@@ -68,6 +69,7 @@ class Lesson {
     this.aiDebriefWell = '',
     this.aiDebriefImprove = '',
     this.aiDebriefFocus = '',
+    this.aiMentionToInstructor = '',
     this.additionalExerciseIds = const [],
     required this.status,
     required this.createdAt,
@@ -113,6 +115,7 @@ class Lesson {
       aiDebriefWell: data['ai_debrief_well'] ?? '',
       aiDebriefImprove: data['ai_debrief_improve'] ?? '',
       aiDebriefFocus: data['ai_debrief_focus'] ?? '',
+      aiMentionToInstructor: data['ai_mention_to_instructor'] ?? '',
       additionalExerciseIds: List<String>.from(
         data['additional_exercise_ids'] ?? [],
       ),
@@ -182,6 +185,7 @@ class Lesson {
     if (aiDebriefWell.isNotEmpty) 'ai_debrief_well': aiDebriefWell,
     if (aiDebriefImprove.isNotEmpty) 'ai_debrief_improve': aiDebriefImprove,
     if (aiDebriefFocus.isNotEmpty) 'ai_debrief_focus': aiDebriefFocus,
+    if (aiMentionToInstructor.isNotEmpty) 'ai_mention_to_instructor': aiMentionToInstructor,
     if (additionalExerciseIds.isNotEmpty)
       'additional_exercise_ids': additionalExerciseIds,
     'status': status == LessonStatus.manualEntry
@@ -230,6 +234,7 @@ class Lesson {
     String? aiDebriefWell,
     String? aiDebriefImprove,
     String? aiDebriefFocus,
+    String? aiMentionToInstructor,
     List<String>? additionalExerciseIds,
     LessonStatus? status,
     String? aircraftRegistration,
@@ -268,6 +273,7 @@ class Lesson {
       aiDebriefWell: aiDebriefWell ?? this.aiDebriefWell,
       aiDebriefImprove: aiDebriefImprove ?? this.aiDebriefImprove,
       aiDebriefFocus: aiDebriefFocus ?? this.aiDebriefFocus,
+      aiMentionToInstructor: aiMentionToInstructor ?? this.aiMentionToInstructor,
       additionalExerciseIds:
           additionalExerciseIds ?? this.additionalExerciseIds,
       status: status ?? this.status,

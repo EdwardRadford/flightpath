@@ -180,6 +180,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 20),
               ],
 
+
+              // ── Help ──────────────────────────────────────────────────────
+              const SettingsSectionHeader(label: 'Help'),
+              Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  onTap: () => context.push('/settings/bug-report'),
+                  leading: Icon(Icons.bug_report_outlined,
+                      color: cs.onSurface.withValues(alpha: 0.6)),
+                  title: Text(
+                    'Report a problem',
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Let us know if something isn't working',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                  trailing: Icon(Icons.chevron_right_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.6)),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Reference ─────────────────────────────────────────────────
               const SettingsSectionHeader(label: 'Reference'),
               Container(
                 decoration: BoxDecoration(

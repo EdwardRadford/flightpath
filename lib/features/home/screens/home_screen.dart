@@ -13,12 +13,18 @@ import 'package:flight_path/core/theme/app_icons.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/features/home/widgets/current_exercise_card.dart';
+import 'package:flight_path/features/home/widgets/daily_question_card.dart';
+import 'package:flight_path/features/home/widgets/first_solo_milestone_card.dart';
 import 'package:flight_path/features/home/widgets/greeting_header.dart';
 import 'package:flight_path/features/home/widgets/home_footer_cards.dart';
 import 'package:flight_path/features/home/widgets/lesson_day_card.dart';
+import 'package:flight_path/features/home/widgets/mention_instructor_nudge_card.dart';
 import 'package:flight_path/features/home/widgets/quick_stats_row.dart';
 import 'package:flight_path/features/home/widgets/recent_activity_section.dart';
 import 'package:flight_path/features/home/widgets/recency_warning_card.dart';
+import 'package:flight_path/features/home/widgets/study_streak_card.dart';
+import 'package:flight_path/features/home/widgets/test_prep_countdown_card.dart';
+import 'package:flight_path/features/home/widgets/this_week_digest_card.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/providers/walkthrough_provider.dart';
@@ -187,6 +193,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final suggestedExercise = ref.watch(suggestedExerciseProvider);
 
     return Scaffold(
+      floatingActionButton: Semantics(
+        label: 'Open AI Instructor',
+        button: true,
+        child: FloatingActionButton.small(
+          onPressed: () => context.push('/ask-ai'),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.auto_awesome_rounded),
+        ),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
@@ -254,6 +270,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   orElse: () => const SizedBox.shrink(),
                 ),
 
+                // -- 0. Test prep countdown (only when within 21 days of skills test)
+                const TestPrepCountdownCard(),
+
                 // -- 1. Greeting header
                 appUserAsync.when(
                   data: (user) => GreetingHeader(user: user),
@@ -267,6 +286,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 20),
                 ],
 
+                // -- 2b. Study streak card
+                const StudyStreakCard(),
+
                 // -- 3. Current Exercise card
                 CurrentExerciseCard(
                   suggestedExercise: suggestedExercise,
@@ -278,6 +300,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 // -- 3b. Lesson day card
                 const LessonDayCard(),
+
+                // -- 3c. This week digest
+                const ThisWeekDigestCard(),
+
+                // -- 3d. First solo milestone (shown when ex12 done, ex14 not yet)
+                const FirstSoloMilestoneCard(),
+
+                // -- 3e. Daily Question
+                const DailyQuestionCard(),
 
                 // -- 4. Weather preview card
                 const WeatherPreviewCard(),
@@ -297,6 +328,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   error: (_, __) =>
                       const RecentActivitySection(lessons: []),
                 ),
+
+                // -- 5b. Mention instructor nudge
+                const MentionInstructorNudgeCard(),
 
                 // -- 10. Streak card
                 const StreakCard(),

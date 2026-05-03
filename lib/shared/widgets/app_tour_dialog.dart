@@ -38,6 +38,13 @@ const _pages = [
         'read the brief, practice flashcards, and chat with your AI instructor.',
   ),
   _TourPage(
+    icon: Icons.auto_awesome_rounded,
+    title: 'AI Instructor',
+    description:
+        'Chat with your AI flight instructor. Ask about theory, procedures, '
+        'weather, or anything from your training.',
+  ),
+  _TourPage(
     icon: AppIcons.menuBook,
     title: 'Logbook',
     description:

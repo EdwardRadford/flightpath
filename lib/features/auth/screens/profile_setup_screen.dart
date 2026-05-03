@@ -14,6 +14,7 @@ import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
 import 'package:flight_path/features/auth/providers/auth_provider.dart';
 import 'package:flight_path/features/auth/services/auth_service.dart';
+import 'package:flight_path/shared/services/welcome_service.dart';
 
 // ── Exercise name lookup ──────────────────────────────────────────────────────
 const Map<int, String> _exerciseNames = {

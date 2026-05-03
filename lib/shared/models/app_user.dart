@@ -38,6 +38,9 @@ class AppUser {
   /// The date on which the user was last seen active, used to compute the streak.
   final DateTime? lastActiveDate;
 
+  /// The date on which the user is scheduled to sit their skills test.
+  final DateTime? skillsTestDate;
+
   const AppUser({
     required this.uid,
     required this.displayName,
@@ -60,6 +63,7 @@ class AppUser {
     this.lastDebriefAt,
     this.studyStreak = 0,
     this.lastActiveDate,
+    this.skillsTestDate,
   });
 
   /// Constructs an [AppUser] from a Firestore document snapshot.
@@ -94,6 +98,7 @@ class AppUser {
       lastDebriefAt: (data['last_debrief_at'] as Timestamp?)?.toDate(),
       studyStreak: (data['study_streak'] ?? 0).toInt(),
       lastActiveDate: (data['last_active_date'] as Timestamp?)?.toDate(),
+      skillsTestDate: (data['skills_test_date'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -179,6 +184,7 @@ class AppUser {
     'study_streak': studyStreak,
     if (lastActiveDate != null)
       'last_active_date': Timestamp.fromDate(lastActiveDate!),
+    if (skillsTestDate != null) 'skills_test_date': Timestamp.fromDate(skillsTestDate!),
   };
 
   /// Returns a copy with the given fields replaced.
@@ -202,6 +208,7 @@ class AppUser {
     DateTime? lastDebriefAt,
     int? studyStreak,
     DateTime? lastActiveDate,
+    DateTime? skillsTestDate,
   }) {
     return AppUser(
       uid: uid,
@@ -229,6 +236,15 @@ class AppUser {
       lastDebriefAt: lastDebriefAt ?? this.lastDebriefAt,
       studyStreak: studyStreak ?? this.studyStreak,
       lastActiveDate: lastActiveDate ?? this.lastActiveDate,
+      skillsTestDate: skillsTestDate ?? this.skillsTestDate,
     );
+  }
+
+  /// True when the skills test is within the next 21 days and hasn't passed yet.
+  bool get isInTestPrepWindow {
+    if (skillsTestDate == null) return false;
+    final now = DateTime.now();
+    if (skillsTestDate!.isBefore(now)) return false;
+    return skillsTestDate!.difference(now).inDays <= 21;
   }
 }

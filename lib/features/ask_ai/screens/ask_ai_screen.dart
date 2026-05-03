@@ -20,7 +20,6 @@ import 'package:flight_path/features/exercises/providers/exercise_provider.dart'
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/services/hive_service.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
-import 'package:flight_path/shared/widgets/empty_state_widget.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
 // Cap persisted history so the Hive box can't grow unbounded across sessions.
@@ -316,6 +315,33 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
       );
       if (mounted) setState(() => _isListening = false);
       _micPulse.stop();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _addGreeting());
+  }
+
+  void _addGreeting() {
+    if (!mounted) return;
+    final user = ref.read(appUserProvider).valueOrNull;
+    final firstName = (user?.displayName ?? '').split(' ').first;
+    final name = firstName.isNotEmpty ? firstName : 'there';
+    final exNum = user?.currentExerciseNumber ?? 1;
+    final exId = 'ex_${exNum.toString().padLeft(2, '0')}';
+    final exTitle = AppConstants.exerciseTitles[exId] ?? 'your exercise';
+    final aircraft = AppConstants.aircraftTypes[user?.aircraftType ?? ''] ?? 'your aircraft';
+
+    if (_messages.isEmpty) {
+      setState(() {
+        _messages.add(_ChatMessage(
+          role: 'assistant',
+          content: 'Hi $name, working on Exercise $exNum: $exTitle in your $aircraft. What can I help with?',
+          timestamp: DateTime.now(),
+        ));
+      });
     }
   }
 
@@ -626,7 +652,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
             Icon(Icons.auto_awesome, color: AppColors.primary, size: 22),
             SizedBox(width: 8),
             Text(
-              'Ask AI',
+              'AI Instructor',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -636,13 +662,14 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
         ),
         leading: const BackButton(),
         actions: [
-          if (_messages.isNotEmpty)
+          if (_messages.length > 1)
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
               tooltip: 'Clear conversation',
               onPressed: () async {
                 setState(() => _messages.clear());
                 await _clearPersistedHistory();
+                _addGreeting();
               },
             ),
         ],
@@ -654,14 +681,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => FocusScope.of(context).unfocus(),
-              child: _messages.isEmpty
-                  ? const EmptyStateWidget(
-                      icon: Icons.auto_awesome_rounded,
-                      title: 'Ask anything',
-                      subtitle:
-                          'Your AI Instructor is ready. Ask about theory, procedures, weather — anything from your training.',
-                    )
-                  : ListView.builder(
+              child: ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                       itemCount: _messages.length + (_isLoading ? 1 : 0),

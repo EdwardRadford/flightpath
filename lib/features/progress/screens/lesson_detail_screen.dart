@@ -11,11 +11,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
+import 'package:flight_path/shared/services/pdf_export_service.dart';
 import 'package:flight_path/shared/utils/exercise_helpers.dart';
 
 /// Read-only view of a single lesson with all recorded data.
@@ -162,6 +164,24 @@ class _LessonDetailBody extends ConsumerWidget {
     required this.onDelete,
   });
 
+  Future<void> _sharePdf(BuildContext context) async {
+    try {
+      final file = await PdfExportService.exportLessonSummaryPdf(lesson);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Lesson summary',
+      );
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Export not available in this build — flagged for v1.1'),
+          ),
+        );
+      }
+    }
+  }
+
   Color _ratingColor(int? rating) {
     if (rating == null) return AppColors.onSurfaceVariant;
     if (rating <= 2) return AppColors.error;
@@ -202,6 +222,7 @@ class _LessonDetailBody extends ConsumerWidget {
       parameters: {'exercise_id': primaryKey},
     );
 
+    final cs = Theme.of(context).colorScheme;
     final primaryName = exerciseLongName(primaryKey);
     final date = lesson.lessonDate ?? lesson.scheduledDate ?? lesson.createdAt;
     final ratingColor = _ratingColor(lesson.studentRating);
@@ -211,6 +232,15 @@ class _LessonDetailBody extends ConsumerWidget {
         title: const Text('Lesson Detail'),
         elevation: 0,
         actions: [
+          Semantics(
+            label: 'Share lesson summary',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Share lesson summary',
+              onPressed: () => _sharePdf(context),
+            ),
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
@@ -541,6 +571,63 @@ class _LessonDetailBody extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
           ],
+
+
+          // Mention to instructor
+          if (lesson.aiMentionToInstructor.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Mention to your instructor',
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    lesson.aiMentionToInstructor,
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.8),
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Low-rating AI chip
+          if (lesson.studentRating != null && lesson.studentRating! <= 2)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Semantics(
+                label: 'Talk this through with AI Instructor',
+                button: true,
+                child: ActionChip(
+                  avatar: const Icon(Icons.auto_awesome_rounded, size: 16),
+                  label: const Text('Want to talk this through?'),
+                  onPressed: () => context.push(
+                    '/ask-ai',
+                    extra: {
+                      'prefill':
+                          'I want to talk through my ${lesson.exerciseId} lesson — I rated it ${lesson.studentRating}/5.',
+                    },
+                  ),
+                ),
+              ),
+            ),
 
           // Empty state if no notes
           if (lesson.instructorNotes.isEmpty &&

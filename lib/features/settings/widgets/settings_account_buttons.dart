@@ -9,6 +9,112 @@ import 'package:flight_path/shared/services/content_cache_service.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
 
 // ---------------------------------------------------------------------------
+// Type-to-confirm delete account dialog
+// ---------------------------------------------------------------------------
+class _DeleteConfirmDialog extends StatefulWidget {
+  final ColorScheme cs;
+  const _DeleteConfirmDialog({required this.cs});
+
+  @override
+  State<_DeleteConfirmDialog> createState() => _DeleteConfirmDialogState();
+}
+
+class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
+  final _controller = TextEditingController();
+  bool _matches = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final m = _controller.text == 'DELETE';
+      if (m != _matches) setState(() => _matches = m);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = widget.cs;
+    return AlertDialog(
+      title: Text('Delete Account', style: TextStyle(color: cs.onSurface)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'This deletes all your lessons, progress, and Pro access. '
+            'Cannot be undone.',
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.7),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Type DELETE to confirm:',
+            style: TextStyle(
+              color: cs.onSurface,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            autocorrect: false,
+            style: TextStyle(color: cs.onSurface),
+            decoration: InputDecoration(
+              hintText: 'DELETE',
+              hintStyle: TextStyle(color: cs.onSurface.withValues(alpha: 0.4)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: cs.outline),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: cs.error, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),
+          ),
+        ),
+        TextButton(
+          onPressed: _matches
+              ? () => Navigator.of(context).pop(true)
+              : null,
+          child: Text(
+            'Delete Account',
+            style: TextStyle(
+              color: _matches ? cs.error : cs.onSurface.withValues(alpha: 0.3),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Notifications section
 // ---------------------------------------------------------------------------
 class SettingsNotificationsSection extends StatelessWidget {
@@ -222,38 +328,7 @@ class _SettingsDeleteAccountButtonState
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          'Delete Account',
-          style: TextStyle(color: cs.onSurface),
-        ),
-        content: Text(
-          'This will permanently delete your account and all your lesson data. '
-          'This cannot be undone.',
-          style: TextStyle(
-              color: cs.onSurface.withValues(alpha: 0.6), height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              'Cancel',
-              style:
-                  TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              'Delete Account',
-              style: TextStyle(
-                color: cs.error,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+      builder: (ctx) => _DeleteConfirmDialog(cs: cs),
     );
 
     if (confirmed != true) return;

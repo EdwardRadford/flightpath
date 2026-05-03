@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
@@ -127,6 +129,48 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
   }
 
+  Future<void> _generatePreviewLink(BuildContext context) async {
+    try {
+      final callable = FirebaseFunctions.instanceFor(region: 'europe-west2')
+          .httpsCallable('generateInstructorPreviewLink');
+      final result = await callable.call<dynamic>({});
+      final url = (result.data as Map<String, dynamic>?)?['url'] as String? ?? '';
+      if (!mounted) return;
+      if (url.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not generate preview link.')),
+        );
+        return;
+      }
+      // Show URL with copy option
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Instructor preview link'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Share this link with your instructor. Valid for 30 days.'),
+              const SizedBox(height: 16),
+              SelectableText(url),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not generate preview link. Please try again.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(appUserProvider);
@@ -238,7 +282,66 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 20),
+
+                // ── Skills test date ────────────────────────────────────
+                const _FieldLabel('Skills Test Date'),
+                const SizedBox(height: 8),
+                Builder(
+                  builder: (context) {
+                    final cs = Theme.of(context).colorScheme;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Skills test date'),
+                      subtitle: Text(
+                        user?.skillsTestDate != null
+                            ? '${user!.skillsTestDate!.day}/${user.skillsTestDate!.month}/${user.skillsTestDate!.year}'
+                            : 'Not set',
+                        style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),
+                      ),
+                      trailing: const Icon(Icons.calendar_today_outlined, size: 18),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: user?.skillsTestDate ?? DateTime.now().add(const Duration(days: 30)),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null && mounted) {
+                          final uid = ref.read(currentUserIdProvider);
+                          if (uid == null) return;
+                          // Save to Firestore
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(uid)
+                              .update({'skills_test_date': Timestamp.fromDate(picked)});
+                          // Refresh provider
+                          ref.invalidate(appUserProvider);
+                        }
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // ── Instructor preview link ─────────────────────────────
+                Builder(
+                  builder: (context) {
+                    final cs = Theme.of(context).colorScheme;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Instructor preview link'),
+                      subtitle: Text(
+                        'Share your training progress with your instructor',
+                        style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 12),
+                      ),
+                      trailing: const Icon(Icons.share_outlined, size: 18),
+                      onTap: () => _generatePreviewLink(context),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 28),
 
                 // ── Save button ─────────────────────────────────────────
                 ElevatedButton(

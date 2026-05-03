@@ -17,11 +17,16 @@ import '../../shared/widgets/main_shell.dart';
 
 // Auth screens
 import '../../features/auth/screens/welcome_screen.dart';
+import '../../features/auth/screens/welcome_flow_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/disclaimer_screen.dart';
 import '../../features/auth/screens/profile_setup_screen.dart';
 import '../../features/auth/screens/password_reset_screen.dart';
+import '../../features/exercises/screens/pre_skills_test_screen.dart';
+import '../../features/exercises/screens/pre_qxc_screen.dart';
+import '../../features/exercises/screens/pre_solo_readiness_screen.dart';
+import '../../features/exercises/screens/test_prep_hub_screen.dart';
 
 // Shell (bottom-nav) screens
 import '../../features/home/screens/home_screen.dart';
@@ -62,6 +67,7 @@ import '../../features/settings/screens/profile_edit_screen.dart';
 import '../../features/settings/screens/notification_preferences_screen.dart';
 import '../../features/settings/screens/whats_new_screen.dart';
 import '../../features/settings/screens/privacy_policy_screen.dart';
+import '../../features/settings/screens/bug_report_screen.dart';
 
 // Learn sub-screens
 import '../../features/learn/screens/rt_practice_screen.dart';
@@ -215,6 +221,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/welcome',
         builder: (context, state) => const WelcomeScreen(),
       ),
+      GoRoute(
+        path: '/welcome-flow',
+        builder: (context, state) => const WelcomeFlowScreen(),
+      ),
 
       // ── Auth routes (no bottom nav) ──────────────────────────────────────
       GoRoute(
@@ -287,6 +297,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => LogbookEntryScreen(
           existingLesson: state.extra is Lesson ? state.extra as Lesson : null,
         ),
+      ),
+
+      // ── Special exercise routes (must come before /:exerciseId) ─────────
+      GoRoute(
+        path: '/exercises/pre-skills-test',
+        builder: (context, state) => const PreSkillsTestScreen(),
+      ),
+      GoRoute(
+        path: '/exercises/pre-qxc',
+        builder: (context, state) => const PreQxcScreen(),
+      ),
+      GoRoute(
+        path: '/exercises/pre-solo-readiness',
+        builder: (context, state) => const PreSoloReadinessScreen(),
+      ),
+      GoRoute(
+        path: '/test-prep',
+        builder: (context, state) => const TestPrepHubScreen(),
       ),
 
       // ── Exercise prep routes (full screen) ────────────────────────────────
@@ -511,6 +539,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           state: state,
           child: const PrivacyPolicyScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/settings/bug-report',
+        builder: (context, state) => const BugReportScreen(),
       ),
 
       // ── Learn sub-routes ─────────────────────────────────────────────────

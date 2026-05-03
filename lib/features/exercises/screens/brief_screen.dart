@@ -418,8 +418,30 @@ class _BriefScreenState extends ConsumerState<BriefScreen> {
                 _StaticChecklist(checklistText: content.preFlightChecklist),
               ],
 
-              // Action buttons
-              const SizedBox(height: 32),
+              // 12. AI Instructor chip
+              const SizedBox(height: 16),
+              Semantics(
+                label: 'Ask AI Instructor about this exercise',
+                button: true,
+                child: ActionChip(
+                  avatar: const Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  label: const Text('Ask the AI Instructor about this'),
+                  onPressed: () => context.push(
+                    '/ask-ai',
+                    extra: {
+                      'prefill':
+                          'Can you help me understand the brief for \${content.exerciseName}?',
+                    },
+                  ),
+                ),
+              ),
+
+              // 13. Done button
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 52,
