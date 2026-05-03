@@ -130,18 +130,12 @@ class RtPracticeState {
   /// Non-null when an error should be displayed to the user.
   final String? errorMessage;
 
-  /// Monotonically incremented every time the server signals a premium
-  /// monthly soft-cap crossing. Consumers compare ticks to detect new
-  /// signals (a transient, non-blocking informational flag).
-  final int softCapWarningTick;
-
   const RtPracticeState({
     required this.currentScenario,
     required this.messages,
     required this.isLoading,
     required this.scenariosUsedThisSession,
     this.errorMessage,
-    this.softCapWarningTick = 0,
   });
 
   RtPracticeState copyWith({
@@ -151,7 +145,6 @@ class RtPracticeState {
     int? scenariosUsedThisSession,
     String? errorMessage,
     bool clearError = false,
-    int? softCapWarningTick,
   }) {
     return RtPracticeState(
       currentScenario: currentScenario ?? this.currentScenario,
@@ -160,7 +153,6 @@ class RtPracticeState {
       scenariosUsedThisSession:
           scenariosUsedThisSession ?? this.scenariosUsedThisSession,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      softCapWarningTick: softCapWarningTick ?? this.softCapWarningTick,
     );
   }
 }
@@ -331,7 +323,6 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
       final atcText = data?['reply'] as String? ??
           'Unable to generate ATC response. Please try again.';
       final feedbackData = data?['feedback'] as Map<String, dynamic>?;
-      final softCapWarning = data?['softCapWarning'] == true;
 
       final atcMessage = <String, String>{'role': 'atc', 'content': atcText};
       if (feedbackData != null) {
@@ -345,9 +336,6 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
       state = state.copyWith(
         messages: [...state.messages, atcMessage],
         isLoading: false,
-        softCapWarningTick: softCapWarning
-            ? state.softCapWarningTick + 1
-            : state.softCapWarningTick,
       );
       return RtSendResult.ok;
     } on FirebaseFunctionsException catch (e) {
@@ -416,7 +404,6 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
       final data = result.data as Map<String, dynamic>?;
       final hintText = data?['reply'] as String? ??
           'Unable to generate a hint right now. Try again.';
-      final softCapWarning = data?['softCapWarning'] == true;
 
       // Hint reply is shown as a system/hint bubble (role: 'hint')
       final updated = [
@@ -426,9 +413,6 @@ class RtPracticeNotifier extends StateNotifier<RtPracticeState> {
       state = state.copyWith(
         messages: updated,
         isLoading: false,
-        softCapWarningTick: softCapWarning
-            ? state.softCapWarningTick + 1
-            : state.softCapWarningTick,
       );
     } on FirebaseFunctionsException catch (e) {
       FirebaseCrashlytics.instance.recordError(e, e.stackTrace);

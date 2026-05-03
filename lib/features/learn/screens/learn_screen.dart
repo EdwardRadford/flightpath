@@ -142,7 +142,6 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
       final data = result.data as Map<String, dynamic>?;
       final aiText = data?['reply'] as String? ??
           'Sorry, I couldn\'t process that right now. Please try again.';
-      final softCapWarning = data?['softCapWarning'] == true;
 
       if (!mounted) return;
       setState(() {
@@ -152,21 +151,6 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
           timestamp: DateTime.now(),
         ));
       });
-
-      if (softCapWarning) {
-        final shouldShow = await consumeSoftCapWarningGate();
-        if (shouldShow && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                "You've used over 1,000 AI messages this month. "
-                "Heads up — heavy use is fine, just letting you know.",
-              ),
-              duration: Duration(seconds: 6),
-            ),
-          );
-        }
-      }
     } on FirebaseFunctionsException catch (e) {
       FirebaseCrashlytics.instance.recordError(e, e.stackTrace);
       String errorMsg;

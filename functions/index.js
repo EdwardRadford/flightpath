@@ -272,14 +272,6 @@ function mapAnthropicError(err, genericMessage) {
 const AI_MESSAGE_DAILY_LIMIT = 3;
 
 /**
- * Premium-tier monthly soft cap. Crossing this threshold does NOT block —
- * the function still returns a successful response, but flags `softCapWarning`
- * so the client can show a polite informational SnackBar. Mirrors
- * `kAskAiPremiumMonthlySoftCap` in lib/features/ask_ai/providers/ask_ai_provider.dart.
- */
-const AI_MESSAGE_PREMIUM_MONTHLY_SOFT_CAP = 1000;
-
-/**
  * Returns today's date as YYYY-MM-DD in UTC. Using UTC means the daily
  * counter rolls over at 00:00 UTC for everyone — predictable and avoids
  * timezone-driven race conditions across the function fleet.
@@ -288,16 +280,6 @@ const AI_MESSAGE_PREMIUM_MONTHLY_SOFT_CAP = 1000;
  */
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
-}
-
-/**
- * Returns the current month as YYYY-MM in UTC. Used for the premium
- * monthly soft-cap counter; rolls over implicitly when a new month begins.
- *
- * @returns {string}
- */
-function monthKey() {
-  return new Date().toISOString().slice(0, 7);
 }
 
 /**
@@ -318,36 +300,29 @@ function userIsPremium(userData) {
 
 /**
  * Atomically reads, validates, and increments the user's Ask-AI message
- * counters.
+ * counter.
  *
  * Free users:
  *   - Capped at AI_MESSAGE_DAILY_LIMIT messages per UTC day.
  *   - Throws HttpsError('resource-exhausted', ...) when the daily cap is hit.
  *
  * Premium users:
- *   - NOT blocked. Increments a per-month counter at
- *     `ai_message_counts/{uid}` under field `monthly_{YYYY-MM}` so usage
- *     is observable. New month = new field; no explicit reset needed.
- *   - Returns `{ softCapWarning: true }` once the monthly count crosses
- *     AI_MESSAGE_PREMIUM_MONTHLY_SOFT_CAP. Caller decides what to do with
- *     the flag — typically forward it to the client for a one-shot SnackBar.
+ *   - NOT blocked, NOT counted. Returns immediately without writing.
  *
  * Uses a Firestore transaction so concurrent function invocations cannot
- * race past either cap. The same transaction reads `users/{uid}` for the
+ * race past the cap. The same transaction reads `users/{uid}` for the
  * premium check to keep the operation single-shot.
  *
  * @param {string} uid  Authenticated user's Firebase UID.
- * @returns {Promise<{ softCapWarning: boolean }>}
+ * @returns {Promise<void>}
  */
 async function checkAndIncrementAiMessageCount(uid) {
   const db = getFirestore();
   const userRef = db.doc(`users/${uid}`);
   const counterRef = db.doc(`ai_message_counts/${uid}`);
   const today = todayKey();
-  const month = monthKey();
-  const monthlyField = `monthly_${month}`;
 
-  return await db.runTransaction(async (tx) => {
+  await db.runTransaction(async (tx) => {
     const [userSnap, counterSnap] = await Promise.all([
       tx.get(userRef),
       tx.get(counterRef),
@@ -355,27 +330,14 @@ async function checkAndIncrementAiMessageCount(uid) {
 
     const isPremium =
       userSnap.exists && userIsPremium(userSnap.data() || {});
-    const data = counterSnap.exists ? (counterSnap.data() || {}) : {};
 
     if (isPremium) {
-      // Premium path: track monthly usage, never block. Preserve any
-      // existing fields (incl. previous months for potential analytics).
-      const currentMonthly = Number(data[monthlyField] || 0);
-      const nextMonthly = currentMonthly + 1;
-
-      tx.set(
-        counterRef,
-        {
-          [monthlyField]: nextMonthly,
-          updated_at: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-
-      return {
-        softCapWarning: nextMonthly > AI_MESSAGE_PREMIUM_MONTHLY_SOFT_CAP,
-      };
+      // Premium path: never block, never count. Soft cap removed —
+      // pricing analysis showed even heavy use is comfortably profitable.
+      return;
     }
+
+    const data = counterSnap.exists ? (counterSnap.data() || {}) : {};
 
     // Free path: enforce daily cap.
     const sameDay = data.date === today;
@@ -389,8 +351,7 @@ async function checkAndIncrementAiMessageCount(uid) {
     }
 
     // Replace the doc on the free path — daily counters don't accumulate
-    // across days, and we don't want stale `monthly_*` fields lingering on
-    // a free account that previously had premium.
+    // across days.
     tx.set(
       counterRef,
       {
@@ -400,8 +361,6 @@ async function checkAndIncrementAiMessageCount(uid) {
       },
       { merge: false },
     );
-
-    return { softCapWarning: false };
   });
 }
 
@@ -590,10 +549,9 @@ exports.getAiDebrief = onCall(
     requireAppCheck(request);
     await checkRateLimit(request.auth.uid);
 
-    // Enforce the daily message cap (free) / track monthly usage (premium).
+    // Enforce the daily message cap (free-tier only). Premium users bypass.
     // Throws HttpsError('resource-exhausted') for free users at the cap.
-    const { softCapWarning } =
-      await checkAndIncrementAiMessageCount(request.auth.uid);
+    await checkAndIncrementAiMessageCount(request.auth.uid);
 
     const { exerciseId, lessonData } = request.data || {};
 
@@ -800,7 +758,6 @@ exports.getAiDebrief = onCall(
       improve: debrief.improve.trim(),
       focus: debrief.focus.trim(),
       mentionToInstructor: mentionToInstructor.trim(),
-      softCapWarning,
     };
   }
 );
@@ -836,13 +793,11 @@ exports.getAiChat = onCall(
     await checkRateLimit(request.auth.uid);
 
     // Enforce daily message cap server-side (free-tier only). Premium users
-    // bypass the daily cap but their monthly counter is incremented;
-    // crossing the soft cap surfaces `softCapWarning` for the client.
-    // Throws HttpsError('resource-exhausted') when free cap is hit — the
-    // client maps this to the limit-reached UI. Increments on success;
-    // worst case the user gets one fewer message if Anthropic later fails.
-    const { softCapWarning } =
-      await checkAndIncrementAiMessageCount(request.auth.uid);
+    // bypass entirely. Throws HttpsError('resource-exhausted') when free cap
+    // is hit — the client maps this to the limit-reached UI. Increments on
+    // success; worst case the user gets one fewer message if Anthropic later
+    // fails.
+    await checkAndIncrementAiMessageCount(request.auth.uid);
 
     const { messages, exerciseContext, debriefContext, mode } = request.data || {};
 
@@ -1030,7 +985,7 @@ exports.getAiChat = onCall(
       throw new HttpsError('internal', 'AI returned an empty response. Please try again.');
     }
 
-    return { reply: replyText.trim(), softCapWarning };
+    return { reply: replyText.trim() };
   }
 );
 
@@ -1106,13 +1061,9 @@ exports.getAiChatStream = onRequest(
     }
 
     // --- Daily message cap (server-enforced, free-tier only) ---
-    // Premium users get their monthly counter bumped here; the returned
-    // softCapWarning is emitted as a control SSE event below so the client
-    // can show an informational SnackBar without blocking the stream.
-    let softCapWarning = false;
+    // Premium users bypass entirely.
     try {
-      const result = await checkAndIncrementAiMessageCount(uid);
-      softCapWarning = !!result?.softCapWarning;
+      await checkAndIncrementAiMessageCount(uid);
     } catch (err) {
       // HttpsError('resource-exhausted') → 429 with a stable type so the
       // Flutter client can switch on it and show the limit-reached UI.
@@ -1265,12 +1216,6 @@ exports.getAiChatStream = onRequest(
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    // Emit the soft-cap warning (premium-only) up front as a control event.
-    // The client treats this as informational — it does not block streaming.
-    if (softCapWarning) {
-      res.write(`data: ${JSON.stringify({ type: 'soft_cap_warning' })}\n\n`);
-    }
-
     logger.info('getAiChatStream called', {
       uid,
       messageCount: sanitisedMessages.length,
@@ -1339,10 +1284,9 @@ exports.getAiRtPractice = onCall(
     requireAppCheck(request);
     await checkRateLimit(request.auth.uid);
 
-    // Enforce the daily message cap (free) / track monthly usage (premium).
+    // Enforce the daily message cap (free-tier only). Premium users bypass.
     // Throws HttpsError('resource-exhausted') for free users at the cap.
-    const { softCapWarning } =
-      await checkAndIncrementAiMessageCount(request.auth.uid);
+    await checkAndIncrementAiMessageCount(request.auth.uid);
 
     const { scenario, messages, exerciseId, hint, airfieldIcao } = request.data || {};
 
@@ -1509,7 +1453,6 @@ exports.getAiRtPractice = onCall(
       const hintText = extractTextFromResponse(hintResponse);
       return {
         reply: hintText.trim() || 'Unable to generate a hint. Please try again.',
-        softCapWarning,
       };
     }
 
@@ -1598,8 +1541,8 @@ exports.getAiRtPractice = onCall(
     }
 
     return feedback
-      ? { reply, feedback, softCapWarning }
-      : { reply, softCapWarning };
+      ? { reply, feedback }
+      : { reply };
   }
 );
 

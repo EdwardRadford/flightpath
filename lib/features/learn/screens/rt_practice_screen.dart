@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
-import 'package:flight_path/features/ask_ai/providers/ask_ai_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/widgets/empty_state_widget.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
@@ -180,30 +179,6 @@ class _RtPracticeScreenState extends ConsumerState<RtPracticeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // React to soft-cap warning ticks emitted by the RT practice notifier.
-    // Non-blocking, premium-only informational SnackBar; gated to once per
-    // UTC day per user via SharedPreferences.
-    ref.listen<int>(
-      rtPracticeProvider.select((s) => s.softCapWarningTick),
-      (prev, next) async {
-        if (prev == null || next <= prev) return;
-        // Capture the messenger before the async gap so we don't reach
-        // back through `context` after an `await`.
-        final messenger = ScaffoldMessenger.of(context);
-        final shouldShow = await consumeSoftCapWarningGate();
-        if (!shouldShow || !mounted) return;
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text(
-              "You've used over 1,000 AI messages this month. "
-              "Heads up — heavy use is fine, just letting you know.",
-            ),
-            duration: Duration(seconds: 6),
-          ),
-        );
-      },
-    );
-
     final rtState = ref.watch(rtPracticeProvider);
     final isPremium = ref.watch(premiumStatusProvider).valueOrNull ?? false;
     final atLimit = !isPremium &&
