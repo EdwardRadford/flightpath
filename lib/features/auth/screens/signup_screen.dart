@@ -2,9 +2,11 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/auth/providers/auth_provider.dart';
@@ -27,6 +29,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _loading = false;
+
+  // Tap recognizers for the Terms / Privacy links in the legal footer.
+  // Held as fields so they can be disposed cleanly.
+  late final TapGestureRecognizer _termsTap = TapGestureRecognizer()
+    ..onTap = () => _openLegalUrl('https://getflightpath.app/terms');
+  late final TapGestureRecognizer _privacyTap = TapGestureRecognizer()
+    ..onTap = () => _openLegalUrl('https://getflightpath.app/privacy');
+
+  Future<void> _openLegalUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      _showError('Could not open link. Please try again later.');
+    }
+  }
 
   Future<void> _handleBackPress() async {
     final hasContent = _nameController.text.isNotEmpty ||
@@ -62,6 +80,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
+    _termsTap.dispose();
+    _privacyTap.dispose();
     super.dispose();
   }
 
@@ -231,7 +251,50 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       ? 'Passwords do not match'
                       : null,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+                // Apple Guideline 5.1.1(v) — visible privacy + terms link at
+                // account creation. Applies to email signup, Google, and Apple
+                // sign-in below; placing it here keeps it within reading
+                // distance of every CTA.
+                Builder(
+                  builder: (context) {
+                    final base =
+                        Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
+                              height: 1.4,
+                            );
+                    final link = base?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    );
+                    return Text.rich(
+                      TextSpan(
+                        style: base,
+                        children: [
+                          const TextSpan(
+                              text: 'By continuing you agree to our '),
+                          TextSpan(
+                            text: 'Terms',
+                            style: link,
+                            recognizer: _termsTap,
+                          ),
+                          const TextSpan(text: ' and '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: link,
+                            recognizer: _privacyTap,
+                          ),
+                          const TextSpan(text: '.'),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _loading ? null : _signUp,
                   child: _loading

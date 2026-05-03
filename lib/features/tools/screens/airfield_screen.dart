@@ -465,7 +465,7 @@ class _ComingSoon extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Coming soon',
+                      'Detailed briefings coming in 2026',
                       style: TextStyle(
                         color: cs.onSurface,
                         fontSize: 16,
@@ -476,8 +476,10 @@ class _ComingSoon extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  "We're building airfield-specific content for UK training fields.\n"
-                  "This airfield's data is coming soon.",
+                  'Detailed airfield briefings are part of our 2026 expansion. '
+                  'For now, the AI Instructor can answer field-specific '
+                  'questions — try asking about ICAO codes, runway directions, '
+                  'or local procedures.',
                   style: TextStyle(
                     color: cs.onSurface.withValues(alpha: 0.75),
                     fontSize: 14,

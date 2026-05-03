@@ -2,7 +2,9 @@
 // powered by Claude via a Firebase Cloud Function.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -19,9 +21,20 @@ import 'package:flight_path/features/ask_ai/widgets/ask_ai_shared_widgets.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
+import 'package:flight_path/shared/services/connectivity_service.dart';
 import 'package:flight_path/shared/services/hive_service.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
+
+/// Internal sentinel for non-200 HTTP responses from the AI stream endpoint.
+/// Lets the outer catch branch cleanly on status code without re-parsing
+/// generic Exception strings.
+class _AiStreamHttpException implements Exception {
+  final int statusCode;
+  _AiStreamHttpException(this.statusCode);
+  @override
+  String toString() => '_AiStreamHttpException($statusCode)';
+}
 
 // Cap persisted history so the Hive box can't grow unbounded across sessions.
 const int _kMaxPersistedMessages = 50;
@@ -467,7 +480,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
           _streamingMessageIndex = null;
           _messages.add(ChatMessage(
             role: 'assistant',
-            content: 'Something went wrong. Check your connection and try again.',
+            content: _classifyAiError(e),
             timestamp: DateTime.now(),
           ));
           _isLoading = false;
@@ -475,6 +488,50 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
         _scrollToBottom();
       }
     }
+  }
+
+  /// Maps a thrown error from the AI request into actionable user copy.
+  /// Three cases: offline, auth/App Check failure, generic server error.
+  String _classifyAiError(Object error) {
+    // 1. Offline — check connectivity provider first, then fall back to
+    //    socket/handshake failures that can fire even when Connectivity says
+    //    we're online (e.g. captive portal, DNS down).
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline ||
+        error is SocketException ||
+        error is HandshakeException ||
+        error is HttpException ||
+        error is http.ClientException ||
+        error is TimeoutException) {
+      return "You're offline. The AI needs an internet connection — try "
+          'again when you\'re reconnected.';
+    }
+
+    // 2. Auth / App Check / Firebase auth issues — surface a sign-out hint.
+    if (error is FirebaseAuthException) {
+      return "Couldn't verify your account. Try signing out and back in if "
+          'this keeps happening.';
+    }
+    if (error is FirebaseFunctionsException) {
+      const authCodes = {
+        'unauthenticated',
+        'internal',
+        'permission-denied',
+      };
+      if (authCodes.contains(error.code)) {
+        return "Couldn't verify your account. Try signing out and back in if "
+            'this keeps happening.';
+      }
+    }
+    if (error is _AiStreamHttpException) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        return "Couldn't verify your account. Try signing out and back in if "
+            'this keeps happening.';
+      }
+    }
+
+    // 3. Server / unknown — calmer "have a moment" copy + retry banner.
+    return 'The AI service is having a moment. Tap to retry.';
   }
 
   Future<void> _sendMessageStreaming({
@@ -542,7 +599,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
             return;
           }
         }
-        throw Exception('Stream request failed with status ${response.statusCode}');
+        throw _AiStreamHttpException(response.statusCode);
       }
 
       final buffer = StringBuffer();
@@ -642,10 +699,19 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     final messagesRemaining = limitState.messagesRemaining;
     final isPremium =
         ref.watch(premiumStatusProvider).valueOrNull ?? false;
-    final showRemainingHint =
-        !isPremium && !limitReached && messagesRemaining < kAskAiFreeDailyLimit;
-    final showLowWarning =
-        !isPremium && !limitReached && messagesRemaining <= 2 && messagesRemaining > 0;
+    // Hide all free-tier counters/hints until the user has actually sent a
+    // message — a "0 / 3 free" row on a brand-new chat reads hostile. Once
+    // they engage (or a previous session's count is non-zero), surface it.
+    final hasUserSent = _messages.any((m) => m.role == 'user');
+    final showFreeMeters =
+        !isPremium && (hasUserSent || limitState.dailyMessageCount > 0);
+    final showRemainingHint = showFreeMeters &&
+        !limitReached &&
+        messagesRemaining < kAskAiFreeDailyLimit;
+    final showLowWarning = showFreeMeters &&
+        !limitReached &&
+        messagesRemaining <= 2 &&
+        messagesRemaining > 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -768,12 +834,15 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
               ),
             ),
 
-          // ── Free usage counter (always visible for free users) ────
-          if (!isPremium && !limitReached && !showLowWarning && !showRemainingHint)
+          // ── Free usage counter (free users, after first send) ────
+          if (showFreeMeters &&
+              !limitReached &&
+              !showLowWarning &&
+              !showRemainingHint)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Text(
-                '${limitState.dailyMessageCount} / $kAskAiFreeDailyLimit free messages today',
+                '${limitState.dailyMessageCount} of $kAskAiFreeDailyLimit free messages used today — upgrade for unlimited',
                 style: TextStyle(
                   color: AppColors.onSurfaceVariant,
                   fontSize: 12,

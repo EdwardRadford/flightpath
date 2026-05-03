@@ -146,11 +146,14 @@ class PrepareHubPlaceholderBody extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Content for this exercise is coming soon.',
+              'Exercise content is being added throughout 2026. Use the AI '
+              'Instructor for tailored answers about this exercise — it has '
+              'full syllabus context.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.onSurfaceVariant,
                 fontSize: 14,
+                height: 1.5,
               ),
             ),
           ],
