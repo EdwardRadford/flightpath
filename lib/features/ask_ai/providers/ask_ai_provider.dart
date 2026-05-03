@@ -37,6 +37,38 @@ String _kDailyDateKey() {
 
 const int kAskAiFreeDailyLimit = 3;
 
+/// Premium-tier monthly soft cap. The server tracks monthly usage and
+/// returns `softCapWarning: true` once a premium user crosses this number;
+/// the client shows a one-time-per-day informational SnackBar. Mirrors
+/// `AI_MESSAGE_PREMIUM_MONTHLY_SOFT_CAP` in functions/index.js — keep in sync.
+const int kAskAiPremiumMonthlySoftCap = 1000;
+
+// ---------------------------------------------------------------------------
+// Soft-cap SnackBar — once per day per user.
+// ---------------------------------------------------------------------------
+
+String _kSoftCapShownDateKey() {
+  final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anon';
+  return 'ask_ai_soft_cap_shown_$uid';
+}
+
+String _todayUtcString() {
+  final now = DateTime.now().toUtc();
+  return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+}
+
+/// Returns true if the soft-cap SnackBar has NOT yet been shown today
+/// (per-user, UTC day). Marks today as "shown" as a side effect — callers
+/// should treat this as a one-shot consume.
+Future<bool> consumeSoftCapWarningGate() async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = _kSoftCapShownDateKey();
+  final today = _todayUtcString();
+  if (prefs.getString(key) == today) return false;
+  await prefs.setString(key, today);
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------

@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/constants/exercise_criteria.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
+import 'package:flight_path/features/ask_ai/providers/ask_ai_provider.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
 import 'package:flight_path/features/lesson_log/providers/lesson_provider.dart';
 import 'package:flight_path/features/lesson_log/widgets/lesson_form.dart';
@@ -705,6 +706,9 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         name: 'ai_debrief_generated',
         parameters: {'exercise_id': widget.exerciseId},
       );
+      if (data['softCapWarning'] == true) {
+        await _maybeShowSoftCapWarning();
+      }
     } catch (e, st) {
       FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       FirebaseAnalytics.instance.logEvent(
@@ -712,6 +716,22 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         parameters: {'exercise_id': widget.exerciseId},
       );
     }
+  }
+
+  /// Premium-only informational SnackBar: server has signalled a monthly
+  /// soft-cap crossing. Gated to once per UTC day per user.
+  Future<void> _maybeShowSoftCapWarning() async {
+    final shouldShow = await consumeSoftCapWarningGate();
+    if (!shouldShow || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          "You've used over 1,000 AI messages this month. "
+          "Heads up — heavy use is fine, just letting you know.",
+        ),
+        duration: Duration(seconds: 6),
+      ),
+    );
   }
 
   Future<void> _callNextFocusAi({
@@ -778,6 +798,9 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
         await firestore.updateLesson(uid, lessonId, {
           'next_focus_suggestion': suggestion,
         });
+      }
+      if (data['softCapWarning'] == true) {
+        await _maybeShowSoftCapWarning();
       }
     } catch (e, st) {
       FirebaseCrashlytics.instance.recordError(e, st, fatal: false);

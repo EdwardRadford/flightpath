@@ -62,15 +62,6 @@ class FirestoreService {
   CollectionReference<Map<String, dynamic>> get shareLinksCollection =>
       _db.collection('share_links');
 
-  /// Top-level conversations collection.
-  CollectionReference<Map<String, dynamic>> get conversationsCollection =>
-      _db.collection('conversations');
-
-  /// Messages subcollection within a conversation: `conversations/{id}/messages`.
-  CollectionReference<Map<String, dynamic>> messagesCollection(
-          String conversationId) =>
-      _db.collection('conversations').doc(conversationId).collection('messages');
-
   // ---------------------------------------------------------------------------
   // Document ID helpers
   // ---------------------------------------------------------------------------

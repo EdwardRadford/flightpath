@@ -564,6 +564,25 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
 
         final type = event['type'] as String?;
 
+        if (type == 'soft_cap_warning') {
+          // Premium-only informational signal — the server says we've
+          // crossed the monthly soft cap. Non-blocking; show a polite
+          // SnackBar at most once per UTC day.
+          final shouldShow = await consumeSoftCapWarningGate();
+          if (shouldShow && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  "You've used over 1,000 AI messages this month. "
+                  "Heads up — heavy use is fine, just letting you know.",
+                ),
+                duration: Duration(seconds: 6),
+              ),
+            );
+          }
+          continue;
+        }
+
         if (type == 'delta') {
           final chunk = event['text'] as String? ?? '';
           buffer.write(chunk);
