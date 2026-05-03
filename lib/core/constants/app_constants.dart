@@ -6,7 +6,7 @@
 class AppConstants {
   // Subscription — one-time lifetime purchase (£49.99)
   static const String entitlementId = 'pro';
-  static const double premiumPriceGbp = 49.0;
+  static const double premiumPriceGbp = 49.99;
 
   // Free tier — personalised window based on where the student is in training.
   // Students get their current exercise ± 2 either side (5 exercises total).
