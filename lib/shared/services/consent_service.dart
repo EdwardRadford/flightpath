@@ -11,9 +11,10 @@
 // choices at any time from Settings -> Privacy.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:flight_path/shared/services/notification_service.dart';
 
 /// SharedPreferences keys for consent decisions.
 class ConsentKeys {
@@ -65,17 +66,18 @@ class ConsentService {
   /// Applies the persisted consent state to the live SDKs. Call once at
   /// startup before [runApp] so disabled services never collect even briefly.
   /// Safe to call repeatedly.
+  ///
+  /// Notifications are intentionally NOT applied here because FCM
+  /// initialisation needs an authenticated user (token storage writes to
+  /// `users/{uid}`) and we don't want the iOS native notification prompt
+  /// firing before sign-in. [MainShell] runs the post-sign-in init via
+  /// [NotificationService.initFcm] gated on the persisted consent state.
   static Future<void> applyAll() async {
     final analytics = await isGranted(ConsentKeys.analytics);
     final crash = await isGranted(ConsentKeys.crashlytics);
-    final notifications = await isGranted(ConsentKeys.notifications);
 
     await _applyConsent(ConsentKeys.analytics, analytics);
     await _applyConsent(ConsentKeys.crashlytics, crash);
-    // Don't request notification permission at startup — only when the user
-    // has explicitly opted in. The token request triggers a system prompt on
-    // iOS, so we never want this to happen without consent.
-    await _applyConsent(ConsentKeys.notifications, notifications);
   }
 
   // ---------------------------------------------------------------------------
@@ -95,18 +97,21 @@ class ConsentService {
           break;
         case ConsentKeys.notifications:
           if (granted) {
-            // Request OS permission and obtain an FCM token. The full FCM
-            // wiring (token storage, topic subscriptions, message handlers)
-            // lives in NotificationService.initFcm and is invoked from there
-            // when the user is signed in.
-            await FirebaseMessaging.instance.requestPermission();
+            // The user has explicitly opted in via the in-app consent flow.
+            // Hand off to NotificationService.initFcm, which owns the OS
+            // permission request, token storage, topic subscriptions, and
+            // message handlers. This is the only path that can trigger the
+            // iOS native notification prompt — Apple Guideline 5.1.1.
+            //
+            // Idempotent: if FCM is already initialised this is a no-op.
+            // Covers the late-grant path where the user toggles notifications
+            // on from Settings after first launch.
+            await NotificationService.initFcm();
           } else {
-            // Drop the existing token so the device stops receiving pushes.
-            try {
-              await FirebaseMessaging.instance.deleteToken();
-            } catch (_) {
-              // Token may not exist yet on a fresh device — safe to ignore.
-            }
+            // Tear down the FCM listener and delete the stored token so the
+            // device stops receiving pushes. cleanupFcm also clears the
+            // _fcmInitialized flag so a future re-grant re-runs initFcm.
+            await NotificationService.cleanupFcm();
           }
           break;
       }

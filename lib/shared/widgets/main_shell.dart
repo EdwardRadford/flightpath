@@ -11,6 +11,7 @@ import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
 import 'package:flight_path/shared/providers/update_badge_provider.dart';
+import 'package:flight_path/shared/services/consent_service.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
 import 'package:flight_path/shared/services/notification_service.dart';
 import 'package:flight_path/shared/services/streak_service.dart';
@@ -69,13 +70,23 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   /// Fire FCM initialisation once per app session, after the user has hit
   /// the main shell (which only happens post sign-in, post profile-setup,
-  /// post disclaimer, post welcome flow). [NotificationService.initFcm]
-  /// requests notification permission and stores the token in Firestore;
-  /// it self-guards so multiple calls are no-ops.
-  void _maybeInitFcm() {
+  /// post disclaimer, post welcome flow).
+  ///
+  /// Gated on [ConsentService.isGranted] for [ConsentKeys.notifications] so
+  /// the iOS native notification prompt only fires for users who have already
+  /// opted in via the in-app consent dialog. This avoids racing
+  /// [showConsentDialog] (Apple Guideline 5.1.1).
+  ///
+  /// Late-grant path: [ConsentService.setConsent] calls
+  /// [NotificationService.initFcm] directly when the user toggles notifications
+  /// on after first launch, so we don't depend on a sign-out/sign-in cycle.
+  Future<void> _maybeInitFcm() async {
     if (_fcmInitFired) return;
     final uid = ref.read(currentUserIdProvider);
     if (uid == null) return;
+    final granted =
+        await ConsentService.isGranted(ConsentKeys.notifications);
+    if (!granted) return;
     _fcmInitFired = true;
     // Fire-and-forget — token fetch + Firestore write happen in background.
     NotificationService.initFcm();
