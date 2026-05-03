@@ -206,12 +206,16 @@ class _AirfieldListTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          airfield.name,
-                          style: TextStyle(
-                            color: cs.onSurface,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Text(
+                            airfield.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: cs.onSurface,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                         if (isHome) ...[
@@ -241,6 +245,8 @@ class _AirfieldListTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       airfield.location,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: cs.onSurface.withValues(alpha: 0.55),
                         fontSize: 13,
@@ -464,12 +470,14 @@ class _ComingSoon extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      'Detailed briefings coming in 2026',
-                      style: TextStyle(
-                        color: cs.onSurface,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Text(
+                        'Detailed briefings coming in 2026',
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -843,6 +851,8 @@ class _FrequencyCard extends StatelessWidget {
               children: [
                 Text(
                   frequency.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: cs.onSurface,
                     fontSize: 14,
@@ -852,6 +862,8 @@ class _FrequencyCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   frequency.usage,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: cs.onSurface.withValues(alpha: 0.5),
                     fontSize: 12,
@@ -860,6 +872,7 @@ class _FrequencyCard extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             frequency.frequency,
             style: const TextStyle(

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:go_router/go_router.dart';
+
 import 'package:flight_path/core/constants/skills_test_standards.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
@@ -118,45 +120,133 @@ class _MockSkillsTestScreenState extends ConsumerState<MockSkillsTestScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(
-              Icons.lock_rounded,
-              size: 48,
-              color: cs.onSurface.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Pro feature',
-              style: TextStyle(
-                color: cs.onSurface,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+            // ── Pro lock card ──────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: cs.outline),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.lock_rounded,
+                          color: AppColors.primary,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Pro feature',
+                          style: TextStyle(
+                            color: cs.onSurface,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'The Mock Skills Test self-assessment is part of Pro. '
+                    'Unlock CAA examiner standards for all 16 exercises plus '
+                    'a shareable summary you can show your instructor.',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.7),
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => showPremiumPaywall(
+                        context,
+                        source: 'mock_skills_test',
+                      ),
+                      child: const Text('Unlock Pro'),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'The Mock Skills Test self-assessment is available to Pro users. '
-              'Upgrade to unlock CAA examiner standards for all 16 exercises.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: cs.onSurface.withValues(alpha: 0.6),
-                fontSize: 14,
-                height: 1.5,
+            const SizedBox(height: 16),
+            // ── Free fallback: AI Instructor ───────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: cs.outline),
               ),
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => showPremiumPaywall(
-                  context,
-                  source: 'mock_skills_test',
-                ),
-                child: const Text('Unlock Pro'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: AppColors.primary,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'In the meantime',
+                          style: TextStyle(
+                            color: cs.onSurface,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Use the AI Instructor to simulate a skills test — ask it '
+                    'to quiz you on Principles of Flight, Air Law, or '
+                    'Navigation, or to walk through an exercise debrief.',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.7),
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => context.push('/ask-ai'),
+                      child: const Text('Open AI Instructor'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
