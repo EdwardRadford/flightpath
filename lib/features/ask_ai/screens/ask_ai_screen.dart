@@ -17,6 +17,7 @@ import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/ask_ai/providers/ask_ai_provider.dart';
 import 'package:flight_path/features/ask_ai/widgets/ask_ai_shared_widgets.dart';
 import 'package:flight_path/features/exercises/providers/exercise_provider.dart';
+import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/services/hive_service.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
@@ -102,6 +103,13 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
         if (!mounted || _debriefAutoSent) return;
         _debriefAutoSent = true;
         _sendDebriefIntro();
+      });
+    } else {
+      // Generic mode: drop in a personalised greeting once the frame is up,
+      // but only if no persisted history was restored.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_messages.isEmpty) _addGreeting();
       });
     }
   }
@@ -318,12 +326,6 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _addGreeting());
-  }
-
   void _addGreeting() {
     if (!mounted) return;
     final user = ref.read(appUserProvider).valueOrNull;
@@ -336,7 +338,7 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
 
     if (_messages.isEmpty) {
       setState(() {
-        _messages.add(_ChatMessage(
+        _messages.add(ChatMessage(
           role: 'assistant',
           content: 'Hi $name, working on Exercise $exNum: $exTitle in your $aircraft. What can I help with?',
           timestamp: DateTime.now(),

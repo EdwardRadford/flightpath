@@ -13,7 +13,6 @@ import 'package:flight_path/core/theme/app_icons.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/features/home/widgets/current_exercise_card.dart';
-import 'package:flight_path/features/home/widgets/daily_question_card.dart';
 import 'package:flight_path/features/home/widgets/first_solo_milestone_card.dart';
 import 'package:flight_path/features/home/widgets/greeting_header.dart';
 import 'package:flight_path/features/home/widgets/home_footer_cards.dart';
@@ -306,9 +305,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 // -- 3d. First solo milestone (shown when ex12 done, ex14 not yet)
                 const FirstSoloMilestoneCard(),
-
-                // -- 3e. Daily Question
-                const DailyQuestionCard(),
 
                 // -- 4. Weather preview card
                 const WeatherPreviewCard(),
