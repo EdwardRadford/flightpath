@@ -48,7 +48,7 @@ const _pages = [
     headline: 'Ready for Takeoff',
     subtext:
         'Exercises 1–3 are free. Unlock all 19 exercises, AI-powered debriefs, '
-        'and the full question bank with a one-time Pro upgrade — £49.\n\n'
+        'and the full question bank with a one-time Pro upgrade — £49.99.\n\n'
         'Create your account to get started.',
   ),
 ];

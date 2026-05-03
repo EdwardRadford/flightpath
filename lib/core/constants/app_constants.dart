@@ -4,7 +4,7 @@
 
 /// Application-wide constants — business rules and exercise metadata.
 class AppConstants {
-  // Subscription — one-time lifetime purchase (£49)
+  // Subscription — one-time lifetime purchase (£49.99)
   static const String entitlementId = 'pro';
   static const double premiumPriceGbp = 49.0;
 
