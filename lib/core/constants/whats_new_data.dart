@@ -45,7 +45,6 @@ const List<WhatsNewEntry> whatsNewEntries = [
     changes: [
       'Fixed Google Sign-In crash on iOS',
       'Fixed logbook not loading after sign-in',
-      'Fixed quiz questions showing A/B instead of True/False',
       'Fixed Exercise 18C sub-node appearing off-screen',
       'Improved AI debrief — instructor rating now optional',
       'Fixed share progress screen showing incorrect lesson order',
@@ -56,7 +55,7 @@ const List<WhatsNewEntry> whatsNewEntries = [
     date: 'March 2026',
     changes: [
       'Complete PPL training companion with 19 CAA exercises',
-      'Interactive quizzes and flashcards for every exercise',
+      'Interactive flashcards for every exercise',
       'Digital pilot logbook',
       'AI-powered post-lesson debriefs',
       'Light and dark theme support',

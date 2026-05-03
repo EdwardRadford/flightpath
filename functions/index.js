@@ -412,8 +412,6 @@ async function fetchStudentContext(uid) {
         if (ex.before_you_fly_viewed) steps.push('before-you-fly');
         if (ex.weather_checked) steps.push('weather');
         if (ex.self_brief_completed) steps.push('self-brief');
-        if (ex.quiz_passed) steps.push('quiz passed');
-        else if (ex.quiz_attempted) steps.push('quiz attempted');
         const status = ex.status || 'not_started';
         const attempts = Number(ex.times_attempted || 0);
         const best = ex.best_rating != null ? `, best rating ${ex.best_rating}/5` : '';
@@ -464,7 +462,6 @@ async function fetchStudentContext(uid) {
       const exLabel = exerciseLabel(exId, sub || undefined);
       const sr = l.student_rating != null ? `s${l.student_rating}` : 's-';
       const ir = l.instructor_rating != null ? `i${l.instructor_rating}` : 'i-';
-      const qz = l.quiz_score ? ` q${l.quiz_score}` : '';
       // Pick the most useful note in priority order, capped at ~100 chars.
       const note =
         clean(l.ai_debrief_focus, 100) ||
@@ -472,7 +469,7 @@ async function fetchStudentContext(uid) {
         clean(l.personal_reflection, 100) ||
         clean(l.ai_debrief_improve, 100);
       const noteSuffix = note ? ` — ${note}` : '';
-      lessonLines.push(`- ${dateStr} — ${exLabel} (${sr}/${ir}${qz})${noteSuffix}`);
+      lessonLines.push(`- ${dateStr} — ${exLabel} (${sr}/${ir})${noteSuffix}`);
     });
 
     const currentExLabel = exerciseLabel(`ex_${String(currentExNum).padStart(2, '0')}`);
@@ -482,7 +479,7 @@ async function fetchStudentContext(uid) {
     ];
     if (exerciseProgressLine) sections.push(exerciseProgressLine);
     if (lessonLines.length > 0) {
-      sections.push(`Recent lessons (newest first, format: date — Exercise N: name (self/inst rating, quiz), key note):`);
+      sections.push(`Recent lessons (newest first, format: date — Exercise N: name (self/inst rating), key note):`);
       sections.push(lessonLines.join('\n'));
     } else {
       sections.push('Recent lessons: none logged yet.');
@@ -516,7 +513,6 @@ async function fetchStudentContext(uid) {
  *       instructorRating:   number (1–5) | null,
  *       instructorNotes:    string | null,
  *       personalReflection: string | null,
- *       quizScore:          number (0–100) | null,
  *       ratingHistory:      number[]
  *     }
  *   }
@@ -559,7 +555,6 @@ exports.getAiDebrief = onCall(
       instructorRating,
       instructorNotes,
       personalReflection,
-      quizScore,
       ratingHistory,
     } = lessonData;
 
@@ -585,13 +580,6 @@ exports.getAiDebrief = onCall(
     for (const r of ratingHistory) {
       if (!Number.isInteger(r) || r < 1 || r > 5) {
         throw new HttpsError('invalid-argument', 'lessonData.ratingHistory must contain integers between 1 and 5.');
-      }
-    }
-
-    // Validate quizScore if provided
-    if (quizScore != null) {
-      if (!Number.isInteger(quizScore) || quizScore < 0 || quizScore > 100) {
-        throw new HttpsError('invalid-argument', 'lessonData.quizScore must be an integer between 0 and 100.');
       }
     }
 
@@ -643,7 +631,6 @@ exports.getAiDebrief = onCall(
 
     if (safeNotes) lines.push(`Instructor notes: ${safeNotes}`);
     if (safeReflection) lines.push(`Student personal reflection: ${safeReflection}`);
-    if (quizScore != null) lines.push(`Quiz score: ${quizScore}%`);
 
     if (ratingHistory.length > 0) {
       lines.push(`Rating history (oldest to newest): ${ratingHistory.join(', ')}`);

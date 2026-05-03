@@ -32,7 +32,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 'Flight Path Training collects the information you provide when creating an account, '
                 'including your name, email address, and training details such as your aircraft '
                 'type, flight school, and home airfield. We also collect data about your '
-                'exercise progress, lesson records, and quiz scores to power the app\'s '
+                'exercise progress and lesson records to power the app\'s '
                 'personalised features.',
           ),
           _Section(

@@ -1,5 +1,5 @@
 // Exercise content model — read-only content from the Firestore
-// `exercise_content` collection (brief, tips, quiz metadata, media URLs).
+// `exercise_content` collection (brief, tips, media URLs).
 // NO toFirestore() — this collection is never written to by the app.
 import 'package:cloud_firestore/cloud_firestore.dart';
 

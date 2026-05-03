@@ -217,7 +217,7 @@ class _SettingsOfflineDownloadTileState
           ),
         ),
         subtitle: Text(
-          'Save all exercises, briefs, and quizzes for offline use',
+          'Save all exercises and briefs for offline use',
           style: TextStyle(
             color: cs.onSurface
                 .withValues(alpha: _downloading ? 0.3 : 0.6),

@@ -16,14 +16,6 @@
         { "fieldPath": "is_active", "order": "ASCENDING" },
         { "fieldPath": "expires_at", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "quiz_questions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "exercise_id", "order": "ASCENDING" },
-        { "fieldPath": "sub_exercise", "order": "ASCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []

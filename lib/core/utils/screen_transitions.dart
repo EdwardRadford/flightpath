@@ -51,7 +51,7 @@ CustomTransitionPage<void> fadeSlideTransition({
 }
 
 /// A horizontal slide transition — used for navigating deeper into content
-/// (e.g. exercise -> brief -> quiz).
+/// (e.g. exercise -> brief -> flashcards).
 CustomTransitionPage<void> slideTransition({
   required GoRouterState state,
   required Widget child,
