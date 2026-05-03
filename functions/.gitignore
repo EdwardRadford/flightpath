@@ -2,3 +2,4 @@
 node_modules/
 create-test-accounts.js
 set-pro-account.js
+serviceAccountKey.json
