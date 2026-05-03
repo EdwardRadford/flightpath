@@ -6,7 +6,7 @@ import 'package:flight_path/core/constants/app_constants.dart';
 import 'package:flight_path/core/theme/app_theme.dart';
 import 'package:flight_path/shared/models/app_user.dart';
 import 'package:flight_path/shared/providers/app_user_provider.dart';
-import 'package:flight_path/shared/services/welcome_service.dart';
+import 'package:flight_path/shared/providers/welcome_provider.dart';
 
 class WelcomeFlowScreen extends ConsumerStatefulWidget {
   const WelcomeFlowScreen({super.key});
@@ -27,13 +27,15 @@ class _WelcomeFlowScreenState extends ConsumerState<WelcomeFlowScreen> {
 
   Future<void> _skip() async {
     final user = ref.read(appUserProvider).valueOrNull;
-    if (user != null) await WelcomeService.markCompleted(user.uid);
+    if (user != null) {
+      await markWelcomeCompletedAndRefresh(ref, user);
+    }
     if (!mounted) return;
     context.go('/home');
   }
 
   Future<void> _complete(AppUser user) async {
-    await WelcomeService.markCompleted(user.uid);
+    await markWelcomeCompletedAndRefresh(ref, user);
     if (!mounted) return;
     // Navigate to the user's current exercise
     final exNum = user.currentExerciseNumber;

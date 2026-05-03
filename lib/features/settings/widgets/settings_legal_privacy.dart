@@ -362,7 +362,7 @@ class _SettingsConsentSectionState extends State<SettingsConsentSection> {
           SwitchListTile(
             value: _crashlytics,
             onChanged: (v) => _setConsent(ConsentKeys.crashlytics, v),
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             title: Text(
               'Crash reports',
               style: TextStyle(color: cs.onSurface, fontSize: 15),
@@ -380,7 +380,7 @@ class _SettingsConsentSectionState extends State<SettingsConsentSection> {
           SwitchListTile(
             value: _analytics,
             onChanged: (v) => _setConsent(ConsentKeys.analytics, v),
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             title: Text(
               'Analytics',
               style: TextStyle(color: cs.onSurface, fontSize: 15),
@@ -398,7 +398,7 @@ class _SettingsConsentSectionState extends State<SettingsConsentSection> {
           SwitchListTile(
             value: _notifications,
             onChanged: (v) => _setConsent(ConsentKeys.notifications, v),
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             title: Text(
               'Push notifications',
               style: TextStyle(color: cs.onSurface, fontSize: 15),

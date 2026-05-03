@@ -200,7 +200,7 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
             ),
             const SizedBox(height: 8),
              Text(
-              '\u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(0)} \u2014 one payment, no subscription.',
+              '\u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(2)} \u2014 one payment, no subscription.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant,
@@ -263,7 +263,7 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
                         ],
                       )
                     : Text(
-                        'Get lifetime access \u2014 \u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(0)}',
+                        'Get lifetime access \u2014 \u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),

@@ -23,6 +23,7 @@ import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/subscription_provider.dart';
 import 'package:flight_path/shared/services/connectivity_service.dart';
 import 'package:flight_path/shared/services/hive_service.dart';
+import 'package:flight_path/shared/services/log_buffer_service.dart';
 import 'package:flight_path/shared/utils/input_sanitiser.dart';
 import 'package:flight_path/shared/widgets/premium_paywall.dart';
 
@@ -605,12 +606,16 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
         error is HttpException ||
         error is http.ClientException ||
         error is TimeoutException) {
+      LogBufferService.log(
+          'AskAi: classified as offline (${error.runtimeType})');
       return "You're offline. The AI needs an internet connection — try "
           'again when you\'re reconnected.';
     }
 
     // 2. Auth / App Check / Firebase auth issues — surface a sign-out hint.
     if (error is FirebaseAuthException) {
+      LogBufferService.log(
+          'AskAi: FirebaseAuthException code=${error.code}');
       return "Couldn't verify your account. Try signing out and back in if "
           'this keeps happening.';
     }
@@ -620,12 +625,16 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
         'internal',
         'permission-denied',
       };
+      LogBufferService.log(
+          'AskAi: FirebaseFunctionsException code=${error.code}');
       if (authCodes.contains(error.code)) {
         return "Couldn't verify your account. Try signing out and back in if "
             'this keeps happening.';
       }
     }
     if (error is _AiStreamHttpException) {
+      LogBufferService.log(
+          'AskAi: stream HTTP ${error.statusCode}');
       if (error.statusCode == 401 || error.statusCode == 403) {
         return "Couldn't verify your account. Try signing out and back in if "
             'this keeps happening.';
@@ -633,6 +642,8 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
     }
 
     // 3. Server / unknown — calmer "have a moment" copy + retry banner.
+    LogBufferService.log(
+        'AskAi: unclassified error ${error.runtimeType}: $error');
     return 'The AI service is having a moment. Tap to retry.';
   }
 
@@ -659,8 +670,14 @@ class _AskAiScreenState extends ConsumerState<AskAiScreen>
       request.headers['Content-Type'] = 'application/json';
       request.headers['Authorization'] = 'Bearer $token';
       // Server fetches student context from Firestore; client no longer
-      // sends it in the body.
+      // sends it in the body. We do flag examiner mode when the student
+      // is inside their skills-test prep window so the function flips
+      // tone (rigorous, CAA tolerances, less encouragement).
       final body = <String, dynamic>{'messages': history};
+      final user = ref.read(appUserProvider).valueOrNull;
+      if (user != null && user.isInTestPrepWindow) {
+        body['mode'] = 'examiner';
+      }
       request.body = jsonEncode(body);
 
       final response = await client.send(request);

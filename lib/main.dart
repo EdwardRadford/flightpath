@@ -12,6 +12,7 @@ import 'shared/providers/accessibility_provider.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/services/consent_service.dart';
 import 'shared/services/hive_service.dart';
+import 'shared/services/log_buffer_service.dart';
 import 'shared/services/subscription_service.dart';
 
 Future<void> main() async {
@@ -41,8 +42,20 @@ Future<void> main() async {
   // the moment consent is granted — but collection itself is gated by
   // setCrashlyticsCollectionEnabled, which ConsentService.applyAll has just
   // set to the persisted value (defaulting to off).
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  //
+  // LogBufferService.log() also captures a one-line summary so the in-app
+  // bug report includes recent diagnostics even when Crashlytics consent is
+  // off (the buffer is in-memory only — never leaves the device until the
+  // user explicitly attaches it to a bug report).
+  FlutterError.onError = (details) {
+    LogBufferService.log(
+        'FlutterError: ${details.exceptionAsString()} '
+        '(library=${details.library ?? "?"})');
+    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+  };
   PlatformDispatcher.instance.onError = (error, stack) {
+    LogBufferService.log(
+        'PlatformDispatcher.onError: ${error.runtimeType}: $error');
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
@@ -56,14 +69,74 @@ Future<void> main() async {
   runApp(const ProviderScope(child: FlightPathApp()));
 }
 
-class FlightPathApp extends ConsumerWidget {
+class FlightPathApp extends ConsumerStatefulWidget {
   const FlightPathApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FlightPathApp> createState() => _FlightPathAppState();
+}
+
+class _FlightPathAppState extends ConsumerState<FlightPathApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Seed AppColors with the current platform brightness so the 345 legacy
+    // accessor sites resolve to the correct surface/onSurface variants on
+    // first paint. _resolveActiveBrightness re-reads the persisted theme
+    // mode preference once it loads.
+    final platformBrightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    AppColors.updateBrightness(platformBrightness);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    // Only react when the user is on ThemeMode.system. For explicit light/
+    // dark choices the AppColors brightness is driven by the themeMode
+    // listener in build() below.
+    final themeMode = ref.read(themeModeProvider);
+    if (themeMode != ThemeMode.system) return;
+    final platformBrightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    AppColors.updateBrightness(platformBrightness);
+    if (mounted) setState(() {});
+  }
+
+  /// Resolve the brightness that should drive the legacy [AppColors]
+  /// accessors based on the user's [ThemeMode] preference and the OS
+  /// brightness when the user picked "System".
+  Brightness _resolveActiveBrightness(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return Brightness.light;
+      case ThemeMode.dark:
+        return Brightness.dark;
+      case ThemeMode.system:
+        return WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
     final accessibility = ref.watch(accessibilityProvider);
+
+    // Keep the brightness-blind AppColors accessors in sync with the active
+    // theme. Resolved here in build so it tracks both:
+    //  - explicit ThemeMode changes from the settings toggle
+    //  - platform brightness changes via didChangePlatformBrightness above
+    //    (which calls setState → re-runs build → re-runs this line).
+    AppColors.updateBrightness(_resolveActiveBrightness(themeMode));
 
     return MaterialApp.router(
       title: 'Flight Path Training',

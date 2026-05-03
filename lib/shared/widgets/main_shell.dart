@@ -12,9 +12,11 @@ import 'package:flight_path/shared/providers/app_user_provider.dart';
 import 'package:flight_path/shared/providers/auth_provider.dart';
 import 'package:flight_path/shared/providers/update_badge_provider.dart';
 import 'package:flight_path/shared/services/firestore_service.dart';
+import 'package:flight_path/shared/services/notification_service.dart';
 import 'package:flight_path/shared/services/streak_service.dart';
 import 'package:flight_path/shared/widgets/connectivity_banner.dart';
 import 'package:flight_path/shared/widgets/consent_dialog.dart';
+import 'package:flight_path/shared/widgets/offline_sync_indicator.dart';
 
 typedef _Tab = ({String path, String label, IconData icon, IconData activeIcon});
 
@@ -44,6 +46,11 @@ class _MainShellState extends ConsumerState<MainShell> {
   /// Tracks whether the streak update has been fired this app session.
   static bool _streakUpdated = false;
 
+  /// Tracks whether FCM has been initialised this app session.
+  /// FCM init is idempotent (NotificationService guards on _fcmInitialized)
+  /// but we also gate here so we don't keep awaiting it on every rebuild.
+  static bool _fcmInitFired = false;
+
   /// Index of the tab that was active before the most recent navigation.
   /// Used to determine the slide direction of the AnimatedSwitcher.
   int _prevIndex = 0;
@@ -53,10 +60,25 @@ class _MainShellState extends ConsumerState<MainShell> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateStreak();
+      _maybeInitFcm();
       // Show the first-launch consent dialog once the disclaimer has been
       // acknowledged. ConsentService.hasBeenPrompted() guards re-display.
       if (mounted) showConsentDialog(context);
     });
+  }
+
+  /// Fire FCM initialisation once per app session, after the user has hit
+  /// the main shell (which only happens post sign-in, post profile-setup,
+  /// post disclaimer, post welcome flow). [NotificationService.initFcm]
+  /// requests notification permission and stores the token in Firestore;
+  /// it self-guards so multiple calls are no-ops.
+  void _maybeInitFcm() {
+    if (_fcmInitFired) return;
+    final uid = ref.read(currentUserIdProvider);
+    if (uid == null) return;
+    _fcmInitFired = true;
+    // Fire-and-forget — token fetch + Firestore write happen in background.
+    NotificationService.initFcm();
   }
 
   void _updateStreak() {
@@ -111,6 +133,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       body: Column(
         children: [
           const ConnectivityBanner(),
+          const OfflineSyncIndicator(),
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 220),

@@ -107,7 +107,7 @@ class PremiumUpsellCard extends StatelessWidget {
                 ),
               ),
               child: Text(
-                '$primaryLabel £${AppConstants.premiumPriceGbp.toStringAsFixed(0)}',
+                '$primaryLabel £${AppConstants.premiumPriceGbp.toStringAsFixed(2)}',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),

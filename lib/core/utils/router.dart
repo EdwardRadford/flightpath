@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/screen_transitions.dart';
 import '../../shared/providers/auth_provider.dart';
 import '../../shared/providers/app_user_provider.dart';
+import '../../shared/providers/welcome_provider.dart';
 import '../../shared/services/deep_link_service.dart';
 import '../../shared/services/notification_service.dart';
 import '../../shared/models/lesson.dart';
@@ -90,7 +91,6 @@ import '../../features/exercises/screens/before_you_fly_screen.dart';
 import '../../features/exercises/screens/debrief_screen.dart' as exercise_debrief;
 import '../../features/exercises/screens/milestone_celebration_screen.dart';
 import '../../features/exercises/screens/lesson_day_screen.dart';
-import '../../features/exercises/screens/pre_solo_readiness_screen.dart';
 
 // Progress sub-screens (stub replacements)
 import '../../features/progress/screens/hours_minimums_screen.dart';
@@ -138,6 +138,11 @@ class _RouterNotifier extends ChangeNotifier {
       }
     });
     _ref.listen(onboardingCompleteProvider, (prev, next) => notifyListeners());
+    // Welcome-flow gate: re-evaluate when the result resolves so a freshly
+    // signed-up user is sent to /welcome-flow as soon as the check returns.
+    _ref.listen(shouldShowWelcomeFlowProvider, (prev, next) {
+      if (prev?.valueOrNull != next.valueOrNull) notifyListeners();
+    });
   }
 
   String? redirect(BuildContext context, GoRouterState state) {
@@ -185,6 +190,19 @@ class _RouterNotifier extends ChangeNotifier {
     if (!user.disclaimerAcknowledged) {
       return loc == '/disclaimer' ? null : '/disclaimer';
     }
+
+    // Welcome flow — shown once per user account, after disclaimer.
+    // The provider auto-completes existing accounts created before the
+    // flow shipped (see WelcomeService.shouldShowWelcomeFlow).
+    final welcomeAsync = _ref.read(shouldShowWelcomeFlowProvider);
+    if (welcomeAsync.isLoading) return null;
+    final shouldShowWelcome = welcomeAsync.valueOrNull ?? false;
+    if (shouldShowWelcome) {
+      return loc == '/welcome-flow' ? null : '/welcome-flow';
+    }
+    // User has completed (or auto-skipped) the flow — don't keep them
+    // stuck on /welcome-flow if they navigate back to it.
+    if (loc == '/welcome-flow') return '/home';
 
     final pendingLink = _ref.read(pendingDeepLinkProvider);
     if (pendingLink != null && isAuthRoute) {
@@ -308,10 +326,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/exercises/pre-qxc',
         builder: (context, state) => const PreQxcScreen(),
       ),
-      GoRoute(
-        path: '/exercises/pre-solo-readiness',
-        builder: (context, state) => const PreSoloReadinessScreen(),
-      ),
+      // /exercises/pre-solo-readiness is registered further below with
+      // query-string handling so prepare_hub can pass the composite
+      // exercise id. The handler defaults to 'ex_14' when no query is
+      // supplied, so plain /exercises/pre-solo-readiness from the home
+      // milestone card still works.
       GoRoute(
         path: '/test-prep',
         builder: (context, state) => const TestPrepHubScreen(),
@@ -491,6 +510,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra;
           if (extra is Map<String, dynamic>) {
+            // Two map shapes are accepted:
+            //  - {'prefill': String}            → prefill the input field
+            //  - {'exerciseId': ..., 'subExercise': ...} → debrief mode
+            final prefill = extra['prefill'];
+            if (prefill is String) {
+              return AskAiScreen(initialMessage: prefill);
+            }
             return AskAiScreen(
               debriefExerciseId: extra['exerciseId'] as String?,
               debriefSubExercise: extra['subExercise'] as String?,
