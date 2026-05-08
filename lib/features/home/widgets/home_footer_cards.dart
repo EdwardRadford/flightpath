@@ -48,6 +48,7 @@ class DebriefNudgeCard extends ConsumerWidget {
             });
 
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -71,9 +72,11 @@ class DebriefNudgeCard extends ConsumerWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: cs.surface,
+          color: AppColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: cs.outline),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.25),
+          ),
         ),
         child: Row(
           children: [
@@ -97,18 +100,18 @@ class DebriefNudgeCard extends ConsumerWidget {
                 children: [
                   Text(
                     'Debrief your last lesson',
-                    style: TextStyle(
+                    style: tt.bodyLarge?.copyWith(
                       color: cs.onSurface,
-                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     'It only takes 2 minutes',
-                    style: TextStyle(
+                    style: tt.labelLarge?.copyWith(
                       color: cs.onSurface.withValues(alpha: 0.55),
-                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0,
                     ),
                   ),
                 ],
@@ -137,53 +140,47 @@ class StreakCard extends ConsumerWidget {
 
     final streak = user.studyStreak;
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outline),
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.local_fire_department_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
+          Icon(Icons.local_fire_department_rounded,
+              color: AppColors.primary, size: 22),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   streak >= 2 ? '$streak day streak' : 'Start your streak',
-                  style: TextStyle(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.bodyMedium?.copyWith(
                     color: cs.onSurface,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 3),
                 Text(
                   streak >= 2
                       ? 'Study today to keep it going'
-                      : 'Open the app every day to build a streak',
-                  style: TextStyle(
+                      : 'Open daily to build a streak',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.labelLarge?.copyWith(
                     color: cs.onSurface.withValues(alpha: 0.55),
-                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0,
                   ),
                 ),
               ],
@@ -202,53 +199,47 @@ class AskAiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
       onTap: () => context.push('/ask-ai'),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: cs.outline),
         ),
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.auto_awesome_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
+            Icon(Icons.auto_awesome_rounded,
+                color: AppColors.primary, size: 22),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'Ask Your AI Instructor',
-                    style: TextStyle(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.bodyMedium?.copyWith(
                       color: cs.onSurface,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 3),
                   Text(
-                    'Get answers to any PPL question',
-                    style: TextStyle(
+                    'Answers to any PPL question',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.labelLarge?.copyWith(
                       color: cs.onSurface.withValues(alpha: 0.55),
-                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0,
                     ),
                   ),
                 ],
@@ -257,7 +248,7 @@ class AskAiCard extends StatelessWidget {
             Icon(
               Icons.chevron_right_rounded,
               color: cs.onSurface.withValues(alpha: 0.3),
-              size: 22,
+              size: 20,
             ),
           ],
         ),
@@ -286,41 +277,44 @@ class WeatherPreviewCard extends ConsumerWidget {
     if (state.noDataForStation) {
       final icao = ref.watch(appUserProvider).valueOrNull?.airfieldIcao ?? '';
       return Padding(
-        padding: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.only(bottom: 12),
         child: GestureDetector(
         onTap: () => context.push('/tools/weather'),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.wb_cloudy_outlined, color: AppColors.primary, size: 20),
-              ),
-              const SizedBox(width: 14),
+              Icon(Icons.wb_cloudy_outlined,
+                  color: AppColors.primary, size: 22),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       icao.isNotEmpty ? icao.toUpperCase() : 'Weather',
-                      style: Theme.of(context).textTheme.labelLarge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     Text(
                       'No live data — tap to check nearby',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0,
                           ),
                     ),
                   ],
@@ -353,34 +347,22 @@ class WeatherPreviewCard extends ConsumerWidget {
     final icao = ref.watch(appUserProvider).valueOrNull?.airfieldIcao ?? '';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
       onTap: () => context.push('/tools/weather'),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: cs.outline),
         ),
         child: Row(
           children: [
-            // Icon badge
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.wb_sunny_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
+            Icon(Icons.wb_sunny_rounded,
+                color: AppColors.primary, size: 22),
+            const SizedBox(width: 12),
 
             // ICAO + temp/wind line
             Expanded(
@@ -402,9 +384,8 @@ class WeatherPreviewCard extends ConsumerWidget {
                           ),
                           child: Text(
                             icao.toUpperCase(),
-                            style: const TextStyle(
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
                               color: AppColors.primary,
-                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.6,
                             ),
@@ -423,9 +404,8 @@ class WeatherPreviewCard extends ConsumerWidget {
                         ),
                         child: Text(
                           badgeLabel,
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color: badgeColor,
-                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.6,
                           ),
@@ -436,9 +416,8 @@ class WeatherPreviewCard extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${data.temperature.round()}°C  ·  ${data.windSpeed}',
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: cs.onSurface,
-                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -465,6 +444,7 @@ class UpgradePromptCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final user = ref.watch(appUserProvider).valueOrNull;
 
     return Padding(
@@ -473,14 +453,7 @@ class UpgradePromptCard extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary.withValues(alpha: 0.12),
-            AppColors.primary.withValues(alpha: 0.06),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.35),
@@ -507,9 +480,8 @@ class UpgradePromptCard extends ConsumerWidget {
               Expanded(
                 child: Text(
                   'Unlock All 19 Exercises',
-                  style: TextStyle(
+                  style: tt.titleMedium?.copyWith(
                     color: cs.onSurface,
-                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -519,9 +491,8 @@ class UpgradePromptCard extends ConsumerWidget {
           const SizedBox(height: 12),
           Text(
             "You're on the free plan. Upgrade once to unlock every exercise and AI debriefs.",
-            style: TextStyle(
+            style: tt.bodySmall?.copyWith(
               color: cs.onSurface.withValues(alpha: 0.65),
-              fontSize: 13,
               height: 1.5,
             ),
           ),
@@ -548,8 +519,8 @@ class UpgradePromptCard extends ConsumerWidget {
               ),
               child: Text(
                 'Upgrade to Pro — £${AppConstants.premiumPriceGbp.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 15,
+                style: tt.bodyLarge?.copyWith(
+                  color: Colors.white,
                   fontWeight: FontWeight.w700,
                 ),
               ),

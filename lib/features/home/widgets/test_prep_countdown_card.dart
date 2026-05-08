@@ -20,8 +20,9 @@ class TestPrepCountdownCard extends ConsumerWidget {
 
         final daysLeft = user.skillsTestDate!.difference(DateTime.now()).inDays;
 
+        final tt = Theme.of(context).textTheme;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Semantics(
             label: 'Skills test in $daysLeft days — open test prep hub',
             button: true,
@@ -29,7 +30,7 @@ class TestPrepCountdownCard extends ConsumerWidget {
               onTap: () => context.push('/test-prep'),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: cs.surface,
                   borderRadius: BorderRadius.circular(12),
@@ -39,24 +40,31 @@ class TestPrepCountdownCard extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
+                    Icon(Icons.event_rounded,
+                        color: AppColors.primary, size: 22),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             'Skills test in $daysLeft ${daysLeft == 1 ? 'day' : 'days'}',
-                            style: TextStyle(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: tt.bodyMedium?.copyWith(
                               color: cs.onSurface,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 4),
                           Text(
                             'Open test prep hub',
-                            style: TextStyle(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: tt.labelLarge?.copyWith(
                               color: AppColors.primary,
-                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 0,
                             ),
                           ),
                         ],
@@ -64,7 +72,8 @@ class TestPrepCountdownCard extends ConsumerWidget {
                     ),
                     Icon(
                       Icons.chevron_right_rounded,
-                      color: cs.onSurface.withValues(alpha: 0.5),
+                      color: cs.onSurface.withValues(alpha: 0.4),
+                      size: 20,
                     ),
                   ],
                 ),

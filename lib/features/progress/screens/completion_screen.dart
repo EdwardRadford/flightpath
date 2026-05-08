@@ -314,11 +314,7 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
-        ),
+        color: AppColors.primary,
       ),
       child: Column(
         children: [

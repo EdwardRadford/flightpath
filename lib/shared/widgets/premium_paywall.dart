@@ -157,11 +157,16 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final priceWhole = AppConstants.premiumPriceGbp.floor();
+    final priceFraction =
+        ((AppConstants.premiumPriceGbp - priceWhole) * 100).round();
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Handle
             Container(
@@ -172,49 +177,65 @@ class _PremiumPaywallSheetState extends State<PremiumPaywallSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
 
-            // Icon
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.workspace_premium_rounded,
+            // Eyebrow (formerly title) \u2014 small uppercase
+            Text(
+              'FLIGHT PATH PRO',
+              textAlign: TextAlign.center,
+              style: tt.labelLarge?.copyWith(
                 color: AppColors.primary,
-                size: 40,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
 
-            // Title
-             Text(
-              'Unlock Flight Path Training Pro',
-              style: TextStyle(
-                color: AppColors.onSurface,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
+            // Price \u2014 the visual anchor
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: TextStyle(
+                  color: AppColors.onSurface,
+                  fontSize: 64,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0,
+                  letterSpacing: -1.5,
+                ),
+                children: [
+                  const TextSpan(text: '\u00A3'),
+                  TextSpan(text: '$priceWhole'),
+                  if (priceFraction > 0)
+                    TextSpan(
+                      text: '.${priceFraction.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 8),
-             Text(
-              '\u00A3${AppConstants.premiumPriceGbp.toStringAsFixed(2)} \u2014 one payment, no subscription.',
+            Text(
+              'LIFETIME  \u00B7  ONE-TIME',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: tt.labelLarge?.copyWith(
                 color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.6,
               ),
             ),
-            const SizedBox(height: 4),
-             Text(
+            const SizedBox(height: 12),
+            Text(
               'Less than the cost of a single flying lesson.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: tt.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
 
             // Feature list
             _FeatureRow(icon: Icons.auto_awesome_rounded, text: 'AI debrief after every lesson \u2014 know what to fix before you fly again'),

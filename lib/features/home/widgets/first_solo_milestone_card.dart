@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flight_path/core/theme/app_theme.dart';
-import 'package:flight_path/shared/providers/app_user_provider.dart';
 
-// Provider to read user exercise statuses — read from Firestore
-// Uses the appUserProvider to get uid, then reads user_exercises subcollection.
+// Provider to read user exercise statuses — read from Firestore.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -64,18 +62,19 @@ class FirstSoloMilestoneCard extends ConsumerWidget {
     final soloAsync = ref.watch(_soloMilestoneProvider);
     final cs = Theme.of(context).colorScheme;
 
+    final tt = Theme.of(context).textTheme;
     return soloAsync.when(
       data: (state) {
         if (state == null) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Semantics(
             label: 'Approaching first solo milestone',
             child: GestureDetector(
               onTap: () => context.push('/exercises/pre-solo-readiness'),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: cs.surface,
                   borderRadius: BorderRadius.circular(12),
@@ -83,26 +82,38 @@ class FirstSoloMilestoneCard extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.3),
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      'Approaching first solo',
-                      style: TextStyle(
-                        color: cs.onSurface,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                    Icon(Icons.emoji_events_rounded,
+                        color: AppColors.primary, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Approaching first solo',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: tt.bodyMedium?.copyWith(
+                                color: cs.onSurface,
+                                fontWeight: FontWeight.w600,
+                              )),
+                          Text('${state.completedCount}/13 pre-solo exercises complete',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: tt.labelLarge?.copyWith(
+                                color: cs.onSurface.withValues(alpha: 0.55),
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 0,
+                              )),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'You\'ve completed ${state.completedCount}/13 exercises before solo. '
-                      'Pre-Solo Readiness Check awaits when your instructor signs you off.',
-                      style: TextStyle(
-                        color: cs.onSurface.withValues(alpha: 0.7),
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.3),
+                      size: 20,
                     ),
                   ],
                 ),

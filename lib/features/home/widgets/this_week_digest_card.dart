@@ -13,6 +13,7 @@ class ThisWeekDigestCard extends ConsumerWidget {
     final recentAsync = ref.watch(recentLessonsProvider);
     final userAsync = ref.watch(appUserProvider);
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return recentAsync.when(
       data: (lessons) {
@@ -30,7 +31,8 @@ class ThisWeekDigestCard extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
-        String copy;
+        String title;
+        String subtitle;
         if (weekLessons.isNotEmpty) {
           final n = weekLessons.length;
           final ratings = weekLessons
@@ -39,28 +41,54 @@ class ThisWeekDigestCard extends ConsumerWidget {
           final avgRating = ratings.isEmpty
               ? null
               : ratings.reduce((a, b) => a + b) / ratings.length;
-          copy = 'Since 7 days ago: $n lesson${n == 1 ? '' : 's'} logged'
-              '${avgRating != null ? ', average rating ${avgRating.toStringAsFixed(1)}/5' : ''}.';
+          title = 'This week: $n lesson${n == 1 ? '' : 's'}';
+          subtitle = avgRating != null
+              ? 'Average rating ${avgRating.toStringAsFixed(1)}/5.'
+              : 'Logged in the last 7 days.';
         } else {
-          copy = 'No lessons this week. A flashcard session is a useful way to keep momentum.';
+          title = 'No lessons this week';
+          subtitle = 'A flashcard session keeps momentum.';
         }
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: cs.surface,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.outline),
             ),
-            child: Text(
-              copy,
-              style: TextStyle(
-                color: cs.onSurface,
-                fontSize: 15,
-                height: 1.5,
-              ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_view_week_rounded,
+                    color: AppColors.primary, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: tt.bodyMedium?.copyWith(
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w600,
+                          )),
+                      Text(subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: tt.labelLarge?.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.55),
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0,
+                          )),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         );

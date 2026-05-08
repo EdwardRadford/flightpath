@@ -182,15 +182,10 @@ class _VisualisationScreenState extends ConsumerState<VisualisationScreen> {
                         height: 88,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              AppColors.primary.withValues(alpha: 0.15),
-                              AppColors.primary.withValues(alpha: 0.05),
-                            ],
-                          ),
+                          color: AppColors.primary.withValues(alpha: 0.10),
                           border: Border.all(
                             color: AppColors.primary.withValues(alpha: 0.25),
-                            width: 2,
+                            width: 1,
                           ),
                         ),
                         child: const Icon(

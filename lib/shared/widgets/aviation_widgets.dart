@@ -280,8 +280,9 @@ class AccentStatsCard extends StatelessWidget {
 // 4. Instrument Bezel Empty State Icon
 // ---------------------------------------------------------------------------
 
-/// An icon with a circular gradient background resembling a cockpit instrument
-/// bezel. Used in empty states.
+/// A flat circular icon background used in empty states. Originally a
+/// gradient + drop-shadow "instrument bezel" — flattened 2026-05-08 to
+/// remove the AI-generated look from every empty state in the app.
 class InstrumentBezelIcon extends StatelessWidget {
   final IconData icon;
   final double size;
@@ -303,33 +304,11 @@ class InstrumentBezelIcon extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: isDark
-              ? [
-                  AppColors.surfaceVariantDark,
-                  AppColors.surfaceDark,
-                ]
-              : [
-                  AppColors.surfaceVariantLight,
-                  AppColors.backgroundLight,
-                ],
-          stops: const [0.4, 1.0],
-        ),
+        color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariantLight,
         border: Border.all(
-          color: isDark
-              ? AppColors.primary.withValues(alpha: 0.2)
-              : AppColors.primary.withValues(alpha: 0.15),
-          width: 2,
+          color: AppColors.primary.withValues(alpha: 0.25),
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Icon(
         icon,

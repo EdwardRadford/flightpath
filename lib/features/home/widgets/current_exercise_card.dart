@@ -53,11 +53,10 @@ class CurrentExerciseCard extends StatelessWidget {
 
   Widget _buildCard(BuildContext context, SuggestedExercise? suggested) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // No suggested exercise — all complete or no data
     if (suggested == null) {
-      return _buildAllCompleteCard(context, cs, isDark);
+      return _buildAllCompleteCard(context, cs);
     }
 
     final compositeId = suggested.subExerciseId != null
@@ -92,19 +91,11 @@ class CurrentExerciseCard extends StatelessWidget {
     final doneCount = prepItems.where((item) => item.done).length;
     final allPrepped = doneCount == prepItems.length;
 
+    final tt = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? const [
-                  AppColors.heroGradientStart,
-                  AppColors.heroGradientEnd,
-                ]
-              : [AppColors.primaryLight, AppColors.surfaceVariantLight],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.35),
@@ -135,9 +126,8 @@ class CurrentExerciseCard extends StatelessWidget {
                     children: [
                       Text(
                         'CURRENT EXERCISE',
-                        style: TextStyle(
+                        style: tt.labelMedium?.copyWith(
                           color: AppColors.primary,
-                          fontSize: 10,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.8,
                         ),
@@ -145,9 +135,8 @@ class CurrentExerciseCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         suggested.reason,
-                        style: TextStyle(
+                        style: tt.bodyMedium?.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.55),
-                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -160,9 +149,8 @@ class CurrentExerciseCard extends StatelessWidget {
             // Exercise name
             Text(
               displayName,
-              style: TextStyle(
+              style: tt.headlineSmall?.copyWith(
                 color: cs.onSurface,
-                fontSize: 22,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -170,9 +158,8 @@ class CurrentExerciseCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 fullName,
-                style: TextStyle(
+                style: tt.bodySmall?.copyWith(
                   color: cs.onSurface.withValues(alpha: 0.55),
-                  fontSize: 13,
                 ),
               ),
             ],
@@ -206,11 +193,10 @@ class CurrentExerciseCard extends StatelessWidget {
                         allPrepped
                             ? 'Preparation Complete'
                             : '$doneCount of ${prepItems.length} completed',
-                        style: TextStyle(
+                        style: tt.labelLarge?.copyWith(
                           color: allPrepped
                               ? AppColors.success
                               : AppColors.warning,
-                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.3,
                         ),
@@ -238,9 +224,8 @@ class CurrentExerciseCard extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Rating trend',
-                style: TextStyle(
+                style: tt.labelMedium?.copyWith(
                   color: cs.onSurface.withValues(alpha: 0.55),
-                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.4,
                 ),
@@ -277,8 +262,10 @@ class CurrentExerciseCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       allPrepped ? "You're Ready!" : 'Continue Preparing',
-                      style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600),
+                      style: tt.bodyLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -290,22 +277,13 @@ class CurrentExerciseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAllCompleteCard(
-      BuildContext context, ColorScheme cs, bool isDark) {
+  Widget _buildAllCompleteCard(BuildContext context, ColorScheme cs) {
+    final tt = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? const [
-                  AppColors.heroGradientStart,
-                  AppColors.heroGradientEnd,
-                ]
-              : [AppColors.primaryLight, AppColors.surfaceVariantLight],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.35),
@@ -330,9 +308,8 @@ class CurrentExerciseCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'All Exercises Complete',
-                  style: TextStyle(
+                  style: tt.titleMedium?.copyWith(
                     color: cs.onSurface,
-                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -342,9 +319,8 @@ class CurrentExerciseCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Great work! Review your progress or revisit any exercise from the exercises tab.',
-            style: TextStyle(
+            style: tt.bodySmall?.copyWith(
               color: cs.onSurface.withValues(alpha: 0.6),
-              fontSize: 13,
               height: 1.5,
             ),
           ),
@@ -354,9 +330,11 @@ class CurrentExerciseCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () => context.push('/progress'),
               icon: const Icon(Icons.insights_rounded, size: 18),
-              label: const Text('View Progress',
-                  style:
-                      TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              label: Text('View Progress',
+                  style: tt.bodyLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  )),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: Colors.white,
@@ -385,6 +363,7 @@ class _PrepCheckItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
     return Semantics(
       label: '$label: ${done ? 'completed' : 'not completed'}',
       child: Column(
@@ -398,9 +377,8 @@ class _PrepCheckItem extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
+            style: tt.labelMedium?.copyWith(
               color: done ? AppColors.success : AppColors.onSurfaceVariant,
-              fontSize: 11,
               fontWeight: done ? FontWeight.w600 : FontWeight.w400,
             ),
           ),

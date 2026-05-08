@@ -48,18 +48,18 @@ class LessonDayCard extends StatelessWidget {
                   children: [
                     Text(
                       'Flying today?',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: cs.onSurface,
-                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       'Check weather, get ATIS, and review before you go.',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: cs.onSurface.withValues(alpha: 0.55),
-                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0,
                         height: 1.4,
                       ),
                     ),
@@ -82,9 +82,12 @@ class LessonDayCard extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
+              child: Text(
                 'Start pre-flight prep',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),

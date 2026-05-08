@@ -7,20 +7,22 @@ import 'package:flight_path/shared/providers/app_user_provider.dart';
 class StudyStreakCard extends ConsumerWidget {
   const StudyStreakCard({super.key});
 
-  String _copy(int streak) {
-    if (streak <= 3) {
-      return 'You\'ve opened Flight Path Training ${streak == 1 ? '1 day' : '$streak days'} in a row.';
-    } else if (streak <= 6) {
-      return '$streak-day streak. The recommended cadence for steady PPL progression is 3–4 days a week.';
-    } else {
-      return '$streak-day streak. You\'re well above the recommended cadence — make sure your schedule allows the rest you need too.';
-    }
+  String _title(int streak) {
+    if (streak == 1) return '1 day streak';
+    return '$streak day streak';
+  }
+
+  String _subtitle(int streak) {
+    if (streak <= 3) return 'Keep it going.';
+    if (streak <= 6) return '3–4 days a week is the recommended cadence.';
+    return 'Well above the recommended cadence — rest matters too.';
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(appUserProvider);
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return userAsync.when(
       data: (user) {
@@ -28,21 +30,44 @@ class StudyStreakCard extends ConsumerWidget {
         final streak = user.studyStreak;
         if (streak == 0) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: cs.surface,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.outline),
             ),
-            child: Text(
-              _copy(streak),
-              style: TextStyle(
-                color: cs.onSurface,
-                fontSize: 15,
-                height: 1.5,
-              ),
+            child: Row(
+              children: [
+                Icon(Icons.local_fire_department_rounded,
+                    color: AppColors.primary, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_title(streak),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: tt.bodyMedium?.copyWith(
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w600,
+                          )),
+                      Text(_subtitle(streak),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: tt.labelLarge?.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.55),
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0,
+                          )),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         );

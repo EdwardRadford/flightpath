@@ -88,19 +88,17 @@ class _StatCard extends StatelessWidget {
               Text(value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: cs.onSurface,
-                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                   )),
               const SizedBox(height: 2),
-              // Bumped from fontSize 10 / alpha 0.5 to 12 / alpha 0.75 —
-              // previous combination failed WCAG AA contrast in dark mode.
+              // alpha 0.75 maintains WCAG AA contrast on surface in dark mode.
               Text(label,
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: cs.onSurface.withValues(alpha: 0.75),
-                    fontSize: 12,
                     fontWeight: FontWeight.w500,
+                    letterSpacing: 0,
                   )),
             ],
           ),

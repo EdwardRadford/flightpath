@@ -15,6 +15,7 @@ class RecentActivitySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     if (lessons.isEmpty) {
       return const EmptyRecentActivity();
@@ -33,9 +34,8 @@ class RecentActivitySection extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text('Recent Activity',
-                  style: TextStyle(
+                  style: tt.titleSmall?.copyWith(
                     color: cs.onSurface,
-                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                   )),
             ),
@@ -46,8 +46,10 @@ class RecentActivitySection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                textStyle: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w600),
+                textStyle: tt.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
               ),
               child: const Text('View All'),
             ),
@@ -110,9 +112,8 @@ class EmptyRecentActivity extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Ready for your first lesson?',
-            style: TextStyle(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: cs.onSurface,
-              fontSize: 17,
               fontWeight: FontWeight.w700,
             ),
             textAlign: TextAlign.center,
@@ -120,9 +121,8 @@ class EmptyRecentActivity extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Start by exploring the exercises to build your preparation plan.',
-            style: TextStyle(
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: cs.onSurface.withValues(alpha: 0.55),
-              fontSize: 14,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
@@ -140,10 +140,10 @@ class EmptyRecentActivity extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Browse Exercises',
-                style: TextStyle(
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -210,18 +210,18 @@ class _LessonListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(displayName,
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: cs.onSurface,
-                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                       )),
                   const SizedBox(height: 3),
                   Row(
                     children: [
                       Text(formattedDate,
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
                             color: cs.onSurface.withValues(alpha: 0.5),
-                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0,
                           )),
                       if (lesson.status == LessonStatus.completed &&
                           lesson.studentRating != null) ...[
@@ -267,12 +267,13 @@ class _StarRating extends StatelessWidget {
         const Icon(Icons.star_rounded, color: AppColors.warning, size: 13),
         const SizedBox(width: 2),
         Text('$rating/5',
-            style: TextStyle(
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: Theme.of(context)
                   .colorScheme
                   .onSurface
                   .withValues(alpha: 0.5),
-              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0,
             )),
       ],
     );

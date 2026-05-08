@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:flight_path/core/theme/app_theme.dart';
-import 'package:flight_path/features/home/providers/home_provider.dart';
 import 'package:flight_path/shared/models/lesson.dart';
 
 final _nudgeStateProvider = FutureProvider<_NudgeState?>((ref) async {
@@ -82,13 +80,14 @@ class MentionInstructorNudgeCard extends ConsumerWidget {
             : 'your instructor';
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
             decoration: BoxDecoration(
               color: cs.surface,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,9 +97,8 @@ class MentionInstructorNudgeCard extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         'Worth mentioning to $instructorLabel next session',
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: cs.onSurface,
-                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -135,9 +133,8 @@ class MentionInstructorNudgeCard extends ConsumerWidget {
                     ),
                     child: Text(
                       state.mentionText,
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: cs.onSurface.withValues(alpha: 0.8),
-                        fontSize: 14,
                         height: 1.5,
                       ),
                     ),

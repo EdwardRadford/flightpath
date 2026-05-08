@@ -37,62 +37,51 @@ class RecencyWarningCard extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final compositeId = compositeExerciseId(ue.exerciseId, ue.subExercise);
 
+    final tt = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
       onTap: () => context.push('/exercises/$compositeId/before-you-fly'),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: cs.outline),
         ),
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.schedule_rounded,
-                color: AppColors.warning,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
+            Icon(Icons.schedule_rounded,
+                color: AppColors.warning, size: 22),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Recency check',
-                    style: TextStyle(
-                      color: cs.onSurface,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Your last flight was $daysSince days ago. Consider reviewing before your next lesson.',
-                    style: TextStyle(
-                      color: cs.onSurface.withValues(alpha: 0.55),
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                  ),
+                  Text('Recency check',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: tt.bodyMedium?.copyWith(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w600,
+                      )),
+                  Text('Last flight $daysSince days ago — review before next lesson',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: tt.labelLarge?.copyWith(
+                        color: cs.onSurface.withValues(alpha: 0.55),
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0,
+                      )),
                 ],
               ),
             ),
             Icon(
               Icons.chevron_right_rounded,
               color: cs.onSurface.withValues(alpha: 0.3),
-              size: 22,
+              size: 20,
             ),
           ],
         ),

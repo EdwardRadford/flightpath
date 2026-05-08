@@ -218,49 +218,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // -- Aircraft type warning banner
+                // -- Aircraft type warning banner.
+                // Single tappable target with a chevron — no embedded link CTA.
                 appUserAsync.maybeWhen(
                   data: (user) {
                     if (user != null && user.aircraftType.isEmpty) {
-                      return Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade700,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(AppIcons.warning,
-                                color: Colors.white, size: 20),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text(
-                                'Set your aircraft type in Settings to unlock all features',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                      return Semantics(
+                        label: 'Set your aircraft type in Settings',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () => context.push('/settings'),
+                          child: Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.warning.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.warning.withValues(alpha: 0.45),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () => context.push('/settings'),
-                              child: const Text(
-                                'Go to Settings',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  decoration: TextDecoration.underline,
-                                  decorationColor: Colors.white,
+                            child: Row(
+                              children: [
+                                const Icon(AppIcons.warning,
+                                    color: AppColors.warning, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Set your aircraft type in Settings to unlock all features',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                          fontWeight: FontWeight.w500,
+                                          height: 1.5,
+                                        ),
+                                  ),
                                 ),
-                              ),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.4),
+                                  size: 20,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       );
                     }
@@ -269,53 +279,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   orElse: () => const SizedBox.shrink(),
                 ),
 
-                // -- 0. Test prep countdown (only when within 21 days of skills test)
-                const TestPrepCountdownCard(),
-
-                // -- 1. Greeting header
+                // -- Greeting header
                 appUserAsync.when(
                   data: (user) => GreetingHeader(user: user),
                   loading: () => const GreetingHeader(user: null),
                   error: (_, __) => const GreetingHeader(user: null),
                 ),
 
-                // -- 2. Quick Stats Row
+                // -- Quick Stats Row
                 if (quickStats != null) ...[
                   QuickStatsRow(stats: quickStats),
                   const SizedBox(height: 20),
                 ],
 
-                // -- 2b. Study streak card
-                const StudyStreakCard(),
+                // ───────────────────────────────────────────────────────────
+                // Priority block — 3 full-size cards
+                // ───────────────────────────────────────────────────────────
 
-                // -- 3. Current Exercise card
+                // 1. Current Exercise (always full-size)
                 CurrentExerciseCard(
                   suggestedExercise: suggestedExercise,
                   ref: ref,
                 ),
 
-                // -- 3a. Recency warning (hidden when not applicable)
-                const RecencyWarningCard(),
-
-                // -- 3b. Lesson day card
+                // 2. Lesson Day (always full-size)
                 const LessonDayCard(),
 
-                // -- 3c. This week digest
-                const ThisWeekDigestCard(),
-
-                // -- 3d. First solo milestone (shown when ex12 done, ex14 not yet)
-                const FirstSoloMilestoneCard(),
-
-                // -- 4. Weather preview card
-                const WeatherPreviewCard(),
-
-                // -- 6. Debrief nudge (shown when > 3 days since last debrief)
+                // 3. Debrief Nudge (only when applicable, full-size)
                 const DebriefNudgeCard(),
 
-                // -- 7. Ask AI card
+                // ───────────────────────────────────────────────────────────
+                // Secondary "more" stack — compact rows
+                // ───────────────────────────────────────────────────────────
+
+                // Test prep countdown (only when within 21 days of skills test)
+                const TestPrepCountdownCard(),
+
+                // Study streak (compact)
+                const StudyStreakCard(),
+
+                // This week digest (compact)
+                const ThisWeekDigestCard(),
+
+                // Recency warning (hidden when not applicable, compact)
+                const RecencyWarningCard(),
+
+                // First solo milestone (shown when ex12 done, ex14 not yet, compact)
+                const FirstSoloMilestoneCard(),
+
+                // Weather preview (compact)
+                const WeatherPreviewCard(),
+
+                // Ask AI (compact)
                 const AskAiCard(),
 
-                // -- 9. Recent Activity (limited to 3)
+                // Streak (compact)
+                const StreakCard(),
+
+                // Mention instructor nudge (compact)
+                const MentionInstructorNudgeCard(),
+
+                // Recent Activity (limited to 3)
                 recentAsync.when(
                   data: (lessons) => RecentActivitySection(
                     lessons: lessons.take(3).toList(),
@@ -325,13 +349,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const RecentActivitySection(lessons: []),
                 ),
 
-                // -- 5b. Mention instructor nudge
-                const MentionInstructorNudgeCard(),
-
-                // -- 10. Streak card
-                const StreakCard(),
-
-                // -- 11. Upgrade prompt (shown for free users only)
+                // Upgrade prompt (shown for free users only)
                 if (!(ref.watch(premiumStatusProvider).valueOrNull ?? false))
                   const UpgradePromptCard(),
 

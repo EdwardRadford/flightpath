@@ -35,9 +35,8 @@ class GreetingHeader extends StatelessWidget {
                 firstName.isNotEmpty
                     ? '${_greeting()}, $firstName'
                     : _greeting(),
-                style: TextStyle(
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: cs.onSurface,
-                  fontSize: 24,
                   fontWeight: FontWeight.w700,
                   height: 1.2,
                 ),
@@ -45,9 +44,8 @@ class GreetingHeader extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 _subtitleText(user),
-                style: TextStyle(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: cs.onSurface.withValues(alpha: 0.55),
-                  fontSize: 14,
                 ),
               ),
             ],
