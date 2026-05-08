@@ -1,19 +1,32 @@
 #!/usr/bin/env ruby
 # Adds ios/Runner/PrivacyInfo.xcprivacy to the Runner target's Copy Bundle
 # Resources build phase if it isn't already there. Idempotent — safe to run
-# on every build.
+# on every build, no-op if the reference already exists.
 #
-# Required by Apple App Store from May 2024. Without this, the manifest sits
-# next to the build but isn't bundled into the .app, so reviewers see a
-# missing-manifest warning.
+# Why: Apple requires the privacy manifest to be bundled inside the .app
+# from May 2024. The file lives on disk at ios/Runner/PrivacyInfo.xcprivacy
+# but isn't listed in Runner.xcodeproj. Ed builds via Codemagic only and
+# never opens Xcode, so the standard "drag into Xcode" fix isn't workable.
+# This script patches the pbxproj programmatically.
 #
-# Run from repo root via Codemagic. Requires the `xcodeproj` gem
-# (`gem install xcodeproj` in the workflow before invoking this).
+# Usage: run from repo root (Codemagic does this).
+#   ruby tool/add_privacy_manifest.rb
+#
+# Requires: the `xcodeproj` gem. Tested with xcodeproj 1.25.x (the version
+# bundled with recent fastlane, which is preinstalled on Codemagic mac_mini
+# images). Any 1.x release should work — the API surface used here
+# (Project.open, target.resources_build_phase, group.new_reference,
+# recursive_children) has been stable since 1.0.
 
 require 'xcodeproj'
 
 project_path = File.join(__dir__, '..', 'ios', 'Runner.xcodeproj')
 manifest_path_in_runner = 'PrivacyInfo.xcprivacy'  # relative to ios/Runner
+
+# Sanity check the manifest exists on disk. If we add a reference to a
+# missing file, Xcode shows a red filename and the build silently omits it.
+manifest_disk_path = File.join(__dir__, '..', 'ios', 'Runner', manifest_path_in_runner)
+abort "PrivacyInfo.xcprivacy not found at #{manifest_disk_path}" unless File.exist?(manifest_disk_path)
 
 project = Xcodeproj::Project.open(project_path)
 runner_target = project.targets.find { |t| t.name == 'Runner' }
@@ -43,6 +56,8 @@ end
 
 if already_in_phase
   puts 'PrivacyInfo.xcprivacy already in Copy Bundle Resources — nothing to do'
+  # Still call save() below so file-reference-only adds get persisted; if
+  # both checks were no-ops, save() writes an unchanged project (cheap).
 else
   resources_phase.add_file_reference(existing_ref)
   puts 'Added PrivacyInfo.xcprivacy to Copy Bundle Resources'

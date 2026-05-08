@@ -36,10 +36,6 @@ workflows:
         script: flutter analyze --no-fatal-infos
       - name: Unit tests
         script: flutter test
-      - name: Add PrivacyInfo to Xcode project
-        script: |
-          gem install xcodeproj
-          ruby tool/add_privacy_manifest.rb
       - name: Set up code signing
         script: |
           set -e
@@ -91,6 +87,20 @@ workflows:
           rm -f Podfile.lock
           rm -rf Pods
           pod install --repo-update
+      - name: Register PrivacyInfo.xcprivacy with Xcode project
+        script: |
+          # Apple requires the privacy manifest to be bundled inside the
+          # .app from May 2024. The file at ios/Runner/PrivacyInfo.xcprivacy
+          # exists on disk, but isn't listed in Runner.xcodeproj's Copy
+          # Bundle Resources phase. Ed builds via Codemagic only and never
+          # opens Xcode, so we patch the pbxproj programmatically every
+          # build via the `xcodeproj` Ruby gem. Idempotent — the script
+          # is a no-op if the reference already exists.
+          #
+          # Must run AFTER `pod install` (which rewrites pbxproj) and
+          # BEFORE `flutter build ipa`.
+          gem install xcodeproj --no-document --silent
+          ruby tool/add_privacy_manifest.rb
       - name: Build IPA
         script: |
           # Ensure flutterfire CLI is on PATH for the iOS Run Script phase
