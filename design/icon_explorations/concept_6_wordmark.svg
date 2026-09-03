@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 6 wordmark - Logbook signature lockup -->
+  <!-- Cormorant Garamond - a literary, slightly italic-feeling text serif -->
+  <!-- with low contrast and warm humanist proportions. Pairs naturally with -->
+  <!-- handwritten ink. Single typeface, single accent (dark teal #0F766E). -->
+
+  <!-- Mark scaled to 320x320 -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#F6F1E7"/>
+    <g stroke="#0F0F0F" stroke-width="2" opacity="0.08" stroke-dasharray="14 12" fill="none">
+      <line x1="120" y1="668" x2="904" y2="668"/>
+    </g>
+    <path fill="#0F0F0F" d="
+      M 156 700
+      C 180 612, 224 528, 296 460
+      C 360 400, 420 376, 452 408
+      C 472 432, 444 488, 376 540
+      C 320 580, 268 600, 220 596
+      C 268 612, 332 612, 396 588
+      C 480 556, 568 504, 656 444
+      C 728 396, 792 360, 836 348
+      C 868 340, 884 348, 880 364
+      C 872 384, 836 396, 776 412
+      C 700 432, 612 472, 524 520
+      C 444 564, 372 604, 312 632
+      C 264 656, 224 672, 196 684
+      L 188 716
+      C 220 704, 264 688, 320 660
+      C 384 628, 460 588, 544 540
+      C 632 488, 720 444, 800 416
+      C 868 392, 916 388, 920 412
+      C 920 432, 880 452, 808 472
+      C 720 496, 624 532, 532 576
+      C 444 620, 364 660, 296 692
+      C 244 716, 200 730, 168 732
+      C 152 732, 144 720, 156 700 Z"/>
+    <path fill="#0F766E" d="
+      M 868 488
+      C 896 480, 916 488, 916 504
+      C 916 520, 896 528, 872 524
+      C 852 520, 844 508, 852 496
+      C 856 490, 862 488, 868 488 Z"/>
+    <rect x="640" y="780" width="180" height="6" fill="#0F766E"/>
+  </g>
+
+  <!-- Wordmark - Cormorant Garamond. Literary text serif with low contrast -->
+  <!-- and humanist warmth. Pairs naturally with handwritten ink. -->
+  <text x="372" y="220"
+        font-family="'Cormorant Garamond', 'EB Garamond', Georgia, serif"
+        font-size="184"
+        font-weight="500"
+        font-style="italic"
+        letter-spacing="-3"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

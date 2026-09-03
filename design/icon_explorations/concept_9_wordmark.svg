@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 9 wordmark - Windsock REFINED v5 lockup
+       Mark mirrors v5: pole shortened, cone unchanged, bbox re-centred.
+       Pole : cone ratio 1.65:1. Single accent red-orange (#EA580C).
+       Wordmark in Young Serif.
+  -->
+
+  <!-- Mark scaled to 320x320 (scale 0.3125 of the 1024 master) -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#F6F1E7"/>
+
+    <g transform="translate(-2.98 126.50)">
+      <!-- Mast (shortened: y=148..643) -->
+      <path fill="#0F0F0F" d="M 343 148 C 339 260, 339 480, 345 643 L 369 643 C 375 480, 375 260, 371 148 C 367 142, 347 142, 343 148 Z"/>
+      <!-- Cross-bar -->
+      <path fill="#0F0F0F" d="M 289 128 C 320 120, 394 120, 425 128 C 425 134, 425 142, 425 148 C 394 156, 320 156, 289 148 C 285 142, 285 134, 289 128 Z"/>
+      <!-- Ground anchors (raised: y=633..649) -->
+      <path fill="#0F0F0F" d="M 277 633 C 308 627, 340 633, 357 643 C 340 647, 312 649, 293 647 C 281 645, 273 639, 277 633 Z"/>
+      <path fill="#0F0F0F" d="M 437 633 C 406 627, 374 633, 357 643 C 374 647, 402 649, 421 647 C 433 645, 441 639, 437 633 Z"/>
+
+      <!-- Cone envelope (orange) -->
+      <path fill="#EA580C" d="M 447 200 C 487 200, 567 218, 627 232 C 667 242, 707 250, 747 252 C 751 256, 751 284, 747 288 C 707 290, 667 298, 627 308 C 567 322, 487 340, 447 340 C 441 336, 439 320, 439 270 C 439 220, 441 204, 447 200 Z"/>
+
+      <!-- Gap bands (cream) -->
+      <path fill="#F6F1E7" d="M 507 212 C 527 215, 547 218, 567 222 L 567 318 C 547 322, 527 325, 507 328 L 507 212 Z"/>
+      <path fill="#F6F1E7" d="M 627 233 C 647 236, 667 239, 687 243 L 687 297 C 667 301, 647 304, 627 307 L 627 233 Z"/>
+
+      <!-- Cone rims -->
+      <path fill="#0F0F0F" d="M 447 196 C 487 196, 567 214, 627 228 C 667 238, 707 246, 747 248 L 751 252 C 711 250, 671 242, 627 232 C 567 218, 487 200, 447 200 L 447 196 Z"/>
+      <path fill="#0F0F0F" d="M 447 344 C 487 344, 567 326, 627 312 C 667 302, 707 294, 747 292 L 751 288 C 711 290, 671 298, 627 308 C 567 322, 487 340, 447 340 L 447 344 Z"/>
+      <path fill="#0F0F0F" d="M 747 248 C 751 252, 751 288, 747 292 L 751 288 C 755 288, 755 252, 751 252 L 747 248 Z"/>
+      <path fill="#0F0F0F" d="M 447 196 C 441 218, 439 240, 439 270 C 439 300, 441 322, 447 344 L 443 344 C 435 322, 433 300, 433 270 C 433 240, 435 218, 443 196 L 447 196 Z"/>
+
+      <!-- Band dividers -->
+      <path fill="#0F0F0F" d="M 507 212 C 505 250, 505 290, 507 328 L 501 328 C 499 290, 499 250, 501 212 C 503 209, 505 209, 507 212 Z"/>
+      <path fill="#0F0F0F" d="M 567 222 C 565 256, 565 284, 567 318 L 561 318 C 559 284, 559 256, 561 222 C 563 219, 565 219, 567 222 Z"/>
+      <path fill="#0F0F0F" d="M 627 233 C 625 256, 625 284, 627 307 L 621 307 C 619 284, 619 256, 621 233 C 623 230, 625 230, 627 233 Z"/>
+      <path fill="#0F0F0F" d="M 687 243 C 685 261, 685 279, 687 297 L 681 297 C 679 279, 679 261, 681 243 C 683 240, 685 240, 687 243 Z"/>
+
+      <!-- Suspension cords -->
+      <path fill="#0F0F0F" d="M 357 150 C 380 162, 415 182, 446 200 L 449 198 C 418 178, 382 158, 358 146 L 357 150 Z"/>
+      <path fill="#0F0F0F" d="M 357 152 C 376 178, 410 218, 441 247 L 444 245 C 414 216, 379 174, 358 148 L 357 152 Z"/>
+      <path fill="#0F0F0F" d="M 358 152 C 374 198, 408 252, 441 293 L 444 291 C 412 250, 377 196, 359 148 L 358 152 Z"/>
+      <path fill="#0F0F0F" d="M 358 154 C 374 222, 408 296, 446 340 L 449 338 C 412 294, 378 220, 359 150 L 358 154 Z"/>
+
+      <!-- Pivot ink-bead -->
+      <path fill="#0F0F0F" d="M 349 144 C 363 144, 373 150, 373 156 C 373 164, 363 170, 357 170 C 347 170, 339 164, 339 156 C 339 150, 343 144, 349 144 Z"/>
+    </g>
+  </g>
+
+  <!-- Wordmark - Young Serif. One-weight slab-terminal display serif. -->
+  <text x="372" y="216"
+        font-family="'Young Serif', 'Source Serif Pro', Georgia, serif"
+        font-size="168"
+        font-weight="400"
+        font-style="normal"
+        letter-spacing="-2"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

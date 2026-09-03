@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Concept 6 - Pilot's logbook signature -->
+  <!-- A single calligraphic ink stroke that reads as both a hand signature -->
+  <!-- AND a flight path. Loops, arcs, ends in a small ink-bead. References -->
+  <!-- the discipline of logging every flight - the PPL is famously a -->
+  <!-- logbook discipline, and FlightPath is the digital expression of that -->
+  <!-- ritual. The mark IS the act of signing your logbook entry. -->
+  <!-- Background: warm cream paper. Accent: dark teal #0F766E. -->
+  <!-- Single brush-stroke, no straight lines, no diagram crosshairs. -->
+
+  <!-- Paper -->
+  <rect width="1024" height="1024" fill="#F6F1E7"/>
+
+  <!-- Faint baseline rule - the kind of feint line on a logbook page. -->
+  <!-- Sits behind the signature so it reads as written ON the page. -->
+  <!-- Dashed, very low contrast, vanishes at favicon size. -->
+  <g stroke="#0F0F0F" stroke-width="2" opacity="0.08" stroke-dasharray="14 12" fill="none">
+    <line x1="120" y1="668" x2="904" y2="668"/>
+  </g>
+
+  <!-- The signature stroke. One continuous calligraphic gesture: -->
+  <!--   - rises from a small heel at lower-left -->
+  <!--   - sweeps up into a generous ascender loop (the F of "Flight") -->
+  <!--   - arcs across the page like a flight path traced by a fingertip -->
+  <!--   - ends in a small downward flick that tucks into the baseline -->
+  <!-- Drawn as a closed filled path so the brush has organic weight variation -->
+  <!-- (heavy on downstrokes, fine on upstrokes - real ink-pen behaviour). -->
+  <path fill="#0F0F0F" d="
+    M 156 700
+    C 180 612, 224 528, 296 460
+    C 360 400, 420 376, 452 408
+    C 472 432, 444 488, 376 540
+    C 320 580, 268 600, 220 596
+    C 268 612, 332 612, 396 588
+    C 480 556, 568 504, 656 444
+    C 728 396, 792 360, 836 348
+    C 868 340, 884 348, 880 364
+    C 872 384, 836 396, 776 412
+    C 700 432, 612 472, 524 520
+    C 444 564, 372 604, 312 632
+    C 264 656, 224 672, 196 684
+    L 188 716
+    C 220 704, 264 688, 320 660
+    C 384 628, 460 588, 544 540
+    C 632 488, 720 444, 800 416
+    C 868 392, 916 388, 920 412
+    C 920 432, 880 452, 808 472
+    C 720 496, 624 532, 532 576
+    C 444 620, 364 660, 296 692
+    C 244 716, 200 730, 168 732
+    C 152 732, 144 720, 156 700 Z"/>
+
+  <!-- The terminal ink-bead - same family as round 2. Small dot at the very -->
+  <!-- end of the signature where the pen lifted. Dark teal accent. -->
+  <path fill="#0F766E" d="
+    M 868 488
+    C 896 480, 916 488, 916 504
+    C 916 520, 896 528, 872 524
+    C 852 520, 844 508, 852 496
+    C 856 490, 862 488, 868 488 Z"/>
+
+  <!-- A single short underline tick - the small pen-stroke a pilot makes -->
+  <!-- under their signature in a logbook to mark it final. Same teal. -->
+  <!-- Sits just below the signature, off-centre right. Survives at 1024, -->
+  <!-- vanishes by favicon size. -->
+  <rect x="640" y="780" width="180" height="6" fill="#0F766E"/>
+
+</svg>

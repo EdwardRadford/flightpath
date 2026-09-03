@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Concept 8 - Propeller in motion -->
+  <!-- Three overlapping curved brushstrokes radiating from a centre point,
+       suggesting the blur of a moving prop. Unambiguously aviation, but
+       captures motion not engineering. Each arc is a tapered single
+       brush-stroke (closed filled path, weight tapers organically), drawn
+       at three rotations around a small ink-bead hub. The hub IS the
+       round-2 ink-bead device, this time as the propeller spinner.
+       Background: warm cream paper. Accent: deep prop-blue #1E3A8A.
+       No straight lines, no diagram axes. -->
+
+  <!-- Paper -->
+  <rect width="1024" height="1024" fill="#F6F1E7"/>
+
+  <!-- Blade 1 - upper left to lower right diagonal sweep.
+       Drawn as a closed filled curve so the brush has weight that swells
+       toward the centre and tapers at the tip. -->
+  <path fill="#0F0F0F" d="
+    M 196 256
+    C 268 232, 340 240, 420 296
+    C 472 332, 504 376, 524 420
+    C 544 464, 540 480, 520 484
+    C 500 488, 472 472, 432 432
+    C 388 388, 348 352, 296 320
+    C 252 296, 216 280, 196 256 Z"/>
+
+  <!-- Blade 1 - inner ghost (a softer second pulse of pigment, like a
+       brushstroke that crossed itself). Same family as concept 5's
+       crescent device. Sits inboard of the main blade. -->
+  <path fill="#0F0F0F" opacity="0.18" d="
+    M 252 296
+    C 312 296, 372 320, 428 360
+    C 460 384, 480 408, 488 432
+    C 472 416, 440 392, 400 364
+    C 348 332, 296 308, 252 296 Z"/>
+
+  <!-- Blade 2 - upper right to lower left diagonal sweep (mirror of blade 1).
+       Same construction, rotated. -->
+  <path fill="#0F0F0F" d="
+    M 828 256
+    C 756 232, 684 240, 604 296
+    C 552 332, 520 376, 500 420
+    C 480 464, 484 480, 504 484
+    C 524 488, 552 472, 592 432
+    C 636 388, 676 352, 728 320
+    C 772 296, 808 280, 828 256 Z"/>
+
+  <path fill="#0F0F0F" opacity="0.18" d="
+    M 772 296
+    C 712 296, 652 320, 596 360
+    C 564 384, 544 408, 536 432
+    C 552 416, 584 392, 624 364
+    C 676 332, 728 308, 772 296 Z"/>
+
+  <!-- Blade 3 - lower vertical sweep (third blade of the prop).
+       Heavier anchor at the centre, tapering down and out to the right tip
+       below the hub - suggests the third blade caught mid-rotation. -->
+  <path fill="#0F0F0F" d="
+    M 480 504
+    C 504 540, 528 612, 552 696
+    C 572 768, 588 832, 600 880
+    C 604 900, 596 908, 580 904
+    C 560 896, 544 868, 528 824
+    C 504 760, 484 692, 472 624
+    C 464 580, 464 540, 480 504 Z"/>
+
+  <path fill="#0F0F0F" opacity="0.18" d="
+    M 504 552
+    C 524 612, 544 676, 564 740
+    C 576 780, 584 812, 588 836
+    C 580 808, 568 768, 552 712
+    C 532 644, 516 596, 504 552 Z"/>
+
+  <!-- Hub - ink-bead spinner at the geometric centre. Lozenge-shaped,
+       hand-painted, sits at the convergence of all three blades.
+       Deep prop-blue accent. This is the round-2 ink-bead, repurposed. -->
+  <path fill="#1E3A8A" d="
+    M 488 432
+    C 528 424, 568 436, 576 464
+    C 580 496, 552 520, 512 524
+    C 472 528, 444 512, 444 484
+    C 444 460, 460 440, 488 432 Z"/>
+
+  <!-- A single fine arc above the hub - the leading-edge motion smear
+       that suggests the blades are still moving. Curved cream-on-ink
+       cut visible only at large sizes; vanishes at favicon size. -->
+  <path fill="#F6F1E7" opacity="0.55" d="
+    M 460 460
+    C 480 452, 520 452, 548 460
+    C 540 466, 510 470, 488 470
+    C 472 470, 460 466, 460 460 Z"/>
+
+</svg>

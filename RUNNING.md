@@ -22,7 +22,7 @@ emulator on the Windows dev PC.
 ## First-time setup
 
 ```powershell
-cd D:\ed-sync\Projects\Apps\flightpath
+cd D:\ed-sync\Projects\apps\flightpath
 copy tool\.env.local.example tool\.env.local
 ```
 
@@ -65,7 +65,7 @@ the box.
 
 **One-time setup:** the `.vscode/launch.json` file isn't committed (the
 setup tool couldn't write into `.vscode/` on this machine). Create it
-manually at `D:\ed-sync\Projects\Apps\flightpath\.vscode\launch.json`
+manually at `D:\ed-sync\Projects\apps\flightpath\.vscode\launch.json`
 with this content:
 
 ```json

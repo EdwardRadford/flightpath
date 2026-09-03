@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Concept 7 - Approach lights on final -->
+  <!-- The view from a 1-mile final at dusk: a row of small ink-bead approach -->
+  <!-- lights stepping toward you, with a soft brushstroke horizon line behind. -->
+  <!-- Atmospheric, distinctive, the most specifically aviation of the three -->
+  <!-- new concepts - and it reuses the round-2 ink-bead device meaningfully -->
+  <!-- (each light IS a bead). -->
+  <!-- Background: deep dusk-navy #14213D. Accent: amber #D97706. -->
+  <!-- Cream paper inverted to dark to evoke night/dusk approach. -->
+
+  <!-- Field - dusk navy. Not a gradient. Single flat colour. -->
+  <rect width="1024" height="1024" fill="#14213D"/>
+
+  <!-- The horizon brush-stroke. Single tapered stroke, anchored heavy on the -->
+  <!-- right and tapering left, sits across the upper-middle of the icon. -->
+  <!-- Drawn as a closed filled path so weight tapers organically. Cream paper -->
+  <!-- colour - the warmer light at the horizon line at sunset / civil twilight. -->
+  <path fill="#F6F1E7" opacity="0.92" d="
+    M 120 444
+    C 240 432, 420 428, 600 432
+    C 740 436, 860 440, 920 436
+    L 920 460
+    C 860 468, 740 472, 600 468
+    C 420 464, 240 460, 120 472 Z"/>
+
+  <!-- Heavy "wet" anchor on the right end of the horizon stroke. -->
+  <path fill="#F6F1E7" opacity="0.92" d="
+    M 920 436
+    C 944 432, 956 444, 952 460
+    C 944 468, 928 472, 912 468
+    C 908 456, 912 444, 920 436 Z"/>
+
+  <!-- Approach lights. Five ink-beads in a row, perspective foreshortened: -->
+  <!-- nearest light biggest at the bottom, smallest at the top vanishing -->
+  <!-- toward the horizon. Each is a hand-painted lozenge in the round-2 -->
+  <!-- ink-bead style. Amber accent - the actual colour of approach -->
+  <!-- centreline lights. Stepping up the centre of the icon. -->
+
+  <!-- Light 1 - nearest, largest, lowest. -->
+  <path fill="#D97706" d="
+    M 480 884
+    C 524 876, 568 884, 572 904
+    C 572 928, 528 940, 484 932
+    C 452 924, 444 904, 452 892
+    C 460 884, 470 880, 480 884 Z"/>
+
+  <!-- Light 2 -->
+  <path fill="#D97706" d="
+    M 488 776
+    C 520 770, 552 778, 556 794
+    C 556 812, 524 822, 492 816
+    C 468 810, 462 796, 468 786
+    C 474 780, 482 776, 488 776 Z"/>
+
+  <!-- Light 3 -->
+  <path fill="#D97706" d="
+    M 492 684
+    C 518 680, 540 686, 542 700
+    C 542 714, 518 722, 494 718
+    C 476 714, 470 704, 476 696
+    C 480 688, 486 684, 492 684 Z"/>
+
+  <!-- Light 4 -->
+  <path fill="#D97706" d="
+    M 496 600
+    C 514 596, 530 602, 532 612
+    C 532 624, 514 630, 496 626
+    C 484 622, 480 614, 484 608
+    C 488 602, 492 600, 496 600 Z"/>
+
+  <!-- Light 5 - furthest, smallest, sits just below the horizon line. -->
+  <path fill="#D97706" d="
+    M 500 528
+    C 512 526, 522 530, 522 538
+    C 522 546, 510 550, 498 548
+    C 490 546, 488 540, 490 534
+    C 492 530, 496 528, 500 528 Z"/>
+
+</svg>

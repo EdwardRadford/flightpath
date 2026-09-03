@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Concept 4 - Aerofoil -->
+  <!-- A wing seen from the side, abstracted to the cross-section curve every -->
+  <!-- pilot draws on the back of a kneeboard while explaining lift to a -->
+  <!-- non-pilot. Asymmetric camber: rounded leading edge, gentle upper curve, -->
+  <!-- flatter underside, sharp trailing edge. Sculptural and unmistakably -->
+  <!-- aviation, but organic - no straight lines, no diagram crosshairs. -->
+  <!-- Background: pilot-green #059669. Foil in warm white. Single accent. -->
+
+  <!-- Field -->
+  <rect width="1024" height="1024" fill="#059669"/>
+
+  <!-- The aerofoil. NACA-ish 4-digit-cambered profile, tilted to a small -->
+  <!-- angle of attack so it reads as flying, not parked. Single closed path. -->
+  <!-- Leading edge bottom-left, trailing edge top-right. -->
+  <path fill="#F4EFE3" d="
+    M 196 644
+    C 168 612, 168 568, 212 540
+    C 280 496, 380 460, 488 432
+    C 596 404, 712 384, 808 380
+    C 856 378, 884 384, 880 396
+    C 872 412, 832 420, 760 432
+    C 644 452, 528 480, 420 516
+    C 332 544, 268 580, 232 616
+    C 216 632, 208 640, 196 644 Z"/>
+
+  <!-- A single airflow streamline curving over the top of the foil. -->
+  <!-- Same warm white, thin, follows the camber line. The classic -->
+  <!-- "lift comes from this shape" diagram simplified to one curve. -->
+  <!-- It's far enough above the foil that it survives at favicon size -->
+  <!-- as a separate gesture rather than disappearing into the wing. -->
+  <path fill="none" stroke="#F4EFE3" stroke-width="14" stroke-linecap="round" d="
+    M 168 360
+    C 312 308, 480 280, 660 280
+    C 760 280, 840 296, 884 312"/>
+
+  <!-- Trailing-edge kick - a tiny hint of the wake curling up off the -->
+  <!-- back of the aerofoil. Reads as motion at 1024, vanishes at 16. -->
+  <path fill="none" stroke="#F4EFE3" stroke-width="10" stroke-linecap="round" d="
+    M 884 396
+    C 908 408, 920 432, 916 460"/>
+</svg>

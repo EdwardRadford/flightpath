@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 5 wordmark - Sun above horizon lockup -->
+  <!-- DM Serif Display: high-contrast, slightly editorial display serif with -->
+  <!-- a touch of warmth. Different from Fraunces (round 2) and Instrument -->
+  <!-- Serif (round 2) - one typeface per concept. Single accent (dawn-coral). -->
+
+  <!-- Mark scaled to 320x320 -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#F6F1E7"/>
+    <path fill="#F87171" d="
+      M 512 232
+      C 624 230, 712 308, 716 408
+      C 720 504, 632 588, 524 592
+      C 412 596, 320 520, 314 420
+      C 308 320, 396 236, 504 232
+      C 506 232, 510 232, 512 232 Z"/>
+    <path fill="#0F0F0F" opacity="0.08" d="
+      M 408 360
+      C 420 416, 460 472, 524 488
+      C 472 488, 416 460, 388 416
+      C 380 396, 388 376, 408 360 Z"/>
+    <path fill="#0F0F0F" d="
+      M 96 720
+      C 200 712, 360 708, 524 712
+      C 688 716, 832 720, 924 716
+      L 924 740
+      C 832 748, 688 752, 524 748
+      C 360 744, 200 740, 96 748 Z"/>
+    <path fill="#0F0F0F" d="
+      M 96 720
+      C 130 712, 168 708, 200 712
+      C 188 720, 156 730, 124 740
+      C 108 744, 96 740, 96 720 Z"/>
+    <path fill="#F87171" d="
+      M 916 716
+      C 944 712, 964 720, 968 732
+      C 968 748, 952 756, 928 752
+      C 908 748, 900 740, 904 728
+      C 906 720, 910 716, 916 716 Z"/>
+    <rect x="488" y="800" width="48" height="6" fill="#F87171"/>
+  </g>
+
+  <!-- Wordmark - DM Serif Display. High-contrast editorial display face. -->
+  <text x="372" y="216"
+        font-family="'DM Serif Display', 'Playfair Display', Georgia, serif"
+        font-size="172"
+        font-weight="400"
+        font-style="normal"
+        letter-spacing="-3"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

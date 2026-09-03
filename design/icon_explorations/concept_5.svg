@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Concept 5 - Sun above horizon -->
+  <!-- The pilot's morning briefing. The first solo at dawn. The calm of being -->
+  <!-- airborne at sunrise. A single soft horizon brush-stroke with a hand-painted -->
+  <!-- disc above it. Atmospheric, completely new subject from any prior round. -->
+  <!-- Background: warm cream paper. Accent: dawn-coral #F87171. No gradients, -->
+  <!-- no glow. The disc is a flat painted shape; the horizon is a tapered -->
+  <!-- single brush-stroke with the round-2 ink-bead device at its right tip. -->
+
+  <!-- Paper -->
+  <rect width="1024" height="1024" fill="#F6F1E7"/>
+
+  <!-- The sun. A flat painted disc, deliberately imperfect at the rim so it -->
+  <!-- reads as drawn rather than vector-traced. Sits centred horizontally and -->
+  <!-- in the upper half so the horizon below has room to breathe. -->
+  <path fill="#F87171" d="
+    M 512 232
+    C 624 230, 712 308, 716 408
+    C 720 504, 632 588, 524 592
+    C 412 596, 320 520, 314 420
+    C 308 320, 396 236, 504 232
+    C 506 232, 510 232, 512 232 Z"/>
+
+  <!-- A single warm-coral inner crescent left of centre. This is the wet edge -->
+  <!-- of the brush-painted disc - the place a real brush would deposit a -->
+  <!-- second pulse of pigment. Same ink-bead family as round 2. -->
+  <path fill="#0F0F0F" opacity="0.08" d="
+    M 408 360
+    C 420 416, 460 472, 524 488
+    C 472 488, 416 460, 388 416
+    C 380 396, 388 376, 408 360 Z"/>
+
+  <!-- The horizon. A single flowing brush-stroke that runs the full width -->
+  <!-- of the icon, anchored heavy on the left and tapering to a fine ink-bead -->
+  <!-- at the right. Drawn as a closed filled path so weight tapers organically -->
+  <!-- (same construction as the round-2 climbout arc - no stroke-width tricks). -->
+  <path fill="#0F0F0F" d="
+    M 96 720
+    C 200 712, 360 708, 524 712
+    C 688 716, 832 720, 924 716
+    L 924 740
+    C 832 748, 688 752, 524 748
+    C 360 744, 200 740, 96 748 Z"/>
+
+  <!-- Heavy "wet" anchor at the left start of the stroke - where the brush -->
+  <!-- first hit the paper and laid down the most pigment. -->
+  <path fill="#0F0F0F" d="
+    M 96 720
+    C 130 712, 168 708, 200 712
+    C 188 720, 156 730, 124 740
+    C 108 744, 96 740, 96 720 Z"/>
+
+  <!-- Ink-bead at the right tip of the horizon stroke - the round-2 signature. -->
+  <!-- Sits on the horizon line, lozenge-shaped, carries the eye to the right. -->
+  <path fill="#F87171" d="
+    M 916 716
+    C 944 712, 964 720, 968 732
+    C 968 748, 952 756, 928 752
+    C 908 748, 900 740, 904 728
+    C 906 720, 910 716, 916 716 Z"/>
+
+  <!-- A faint reflection tick under the horizon - one short bar centred below -->
+  <!-- the sun, suggesting the sun's reflection on a sea/lake/wet runway. -->
+  <!-- Disappears at favicon size; present at 1024. Same coral. -->
+  <rect x="488" y="800" width="48" height="6" fill="#F87171"/>
+
+</svg>

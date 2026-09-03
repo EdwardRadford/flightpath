@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Concept 1 - Runway 27 -->
+  <!-- Looking down a runway from short final. Hard square, no rounding (iOS masks). -->
+  <!-- Tarmac near-black, painted threshold + designator in white, centreline in -->
+  <!-- runway-marker yellow #F4C600. Single accent. No gradients. -->
+
+  <!-- Tarmac -->
+  <rect width="1024" height="1024" fill="#0F0F0F"/>
+
+  <!-- Threshold stripes - the painted bars at the start of every runway -->
+  <g fill="#F2F2F2">
+    <rect x="96"  y="780" width="80" height="120"/>
+    <rect x="200" y="780" width="80" height="120"/>
+    <rect x="304" y="780" width="80" height="120"/>
+    <rect x="408" y="780" width="80" height="120"/>
+    <rect x="536" y="780" width="80" height="120"/>
+    <rect x="640" y="780" width="80" height="120"/>
+    <rect x="744" y="780" width="80" height="120"/>
+    <rect x="848" y="780" width="80" height="120"/>
+  </g>
+
+  <!-- Centreline dashes climbing into the distance (runway-marker yellow) -->
+  <!-- These also encode the brand "FlightPath" - a path you're flying down -->
+  <g fill="#F4C600">
+    <rect x="492" y="660" width="40" height="80"/>
+    <rect x="492" y="540" width="40" height="64"/>
+    <rect x="496" y="440" width="32" height="48"/>
+    <rect x="500" y="368" width="24" height="36"/>
+  </g>
+
+  <!-- Runway designator "27" - painted-tarmac stencil, ICAO Annex 14 style -->
+  <!-- Built as stacked rectangles for a hard, painted-with-a-roller look -->
+  <g fill="#F2F2F2">
+
+    <!-- "2" - bounds 220,220 -> 460,720 (240 wide, 500 tall) -->
+    <rect x="220" y="220" width="240" height="88"/>      <!-- top bar -->
+    <rect x="372" y="308" width="88"  height="184"/>     <!-- upper-right vertical -->
+    <rect x="220" y="448" width="240" height="88"/>      <!-- middle bar -->
+    <rect x="220" y="536" width="88"  height="184"/>     <!-- lower-left vertical -->
+    <rect x="220" y="632" width="240" height="88"/>      <!-- bottom bar -->
+
+    <!-- "7" - bounds 564,220 -> 804,720 -->
+    <rect x="564" y="220" width="240" height="88"/>      <!-- top bar -->
+    <!-- Diagonal descender drawn as a parallelogram for a painted feel -->
+    <polygon points="744,308 804,308 660,720 600,720"/>
+  </g>
+</svg>

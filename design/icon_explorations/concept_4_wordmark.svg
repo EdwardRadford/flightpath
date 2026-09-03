@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 4 wordmark - Aerofoil lockup -->
+  <!-- Instrument Serif - tall, editorial, slightly literary. Single typeface, -->
+  <!-- single accent (#059669 pilot-green) reserved for the field of the mark. -->
+
+  <!-- Mark scaled to 320x320 -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#059669"/>
+    <path fill="#F4EFE3" d="
+      M 196 644
+      C 168 612, 168 568, 212 540
+      C 280 496, 380 460, 488 432
+      C 596 404, 712 384, 808 380
+      C 856 378, 884 384, 880 396
+      C 872 412, 832 420, 760 432
+      C 644 452, 528 480, 420 516
+      C 332 544, 268 580, 232 616
+      C 216 632, 208 640, 196 644 Z"/>
+    <path fill="none" stroke="#F4EFE3" stroke-width="14" stroke-linecap="round" d="
+      M 168 360
+      C 312 308, 480 280, 660 280
+      C 760 280, 840 296, 884 312"/>
+    <path fill="none" stroke="#F4EFE3" stroke-width="10" stroke-linecap="round" d="
+      M 884 396
+      C 908 408, 920 432, 916 460"/>
+  </g>
+
+  <!-- Wordmark - Instrument Serif Regular. Editorial, calm, humanist. -->
+  <text x="372" y="216"
+        font-family="'Instrument Serif', 'EB Garamond', Georgia, serif"
+        font-size="172"
+        font-weight="400"
+        font-style="normal"
+        letter-spacing="-3"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

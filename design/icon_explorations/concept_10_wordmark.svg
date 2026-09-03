@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 10 wordmark - Control yoke lockup -->
+  <!-- EB Garamond: warm classical text serif, low contrast, humanist
+       proportions. Reads as a pilot's manual or W&B handbook - quiet,
+       not display. Single typeface, single accent (tan leather #92400E). -->
+
+  <!-- Mark scaled to 320x320 -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#F6F1E7"/>
+    <path fill="#0F0F0F" d="M 144 568 C 132 528, 152 488, 196 472 C 232 460, 268 472, 288 504 C 308 540, 320 580, 340 612 C 360 640, 388 656, 420 656 C 448 656, 472 644, 488 620 C 504 596, 512 568, 524 540 C 532 522, 544 516, 556 540 C 568 568, 576 596, 592 620 C 608 644, 632 656, 660 656 C 692 656, 720 640, 740 612 C 760 580, 772 540, 792 504 C 812 472, 848 460, 884 472 C 928 488, 948 528, 936 568 C 924 604, 884 624, 836 612 C 820 608, 808 604, 796 600 C 800 624, 796 644, 780 660 C 752 688, 700 696, 656 684 C 620 676, 596 656, 576 632 C 564 620, 552 612, 540 612 C 528 612, 516 620, 504 632 C 484 656, 460 676, 424 684 C 380 696, 328 688, 300 660 C 284 644, 280 624, 284 600 C 272 604, 260 608, 244 612 C 196 624, 156 604, 144 568 Z"/>
+    <path fill="#0F0F0F" d="M 516 632 C 524 700, 528 760, 532 820 L 552 820 C 556 760, 560 700, 568 632 C 560 624, 524 624, 516 632 Z"/>
+    <path fill="#0F0F0F" d="M 504 800 C 528 792, 556 792, 580 800 C 572 820, 556 836, 540 836 C 524 836, 512 820, 504 800 Z"/>
+    <path fill="#92400E" d="M 508 540 C 540 528, 568 540, 572 564 C 572 588, 548 600, 516 596 C 488 592, 476 580, 480 560 C 484 548, 494 540, 508 540 Z"/>
+    <path fill="#92400E" d="M 232 528 C 256 520, 276 528, 276 544 C 276 560, 256 568, 236 564 C 224 560, 220 552, 224 540 C 226 532, 228 528, 232 528 Z"/>
+    <path fill="#92400E" d="M 832 528 C 856 520, 876 528, 876 544 C 876 560, 856 568, 836 564 C 824 560, 820 552, 824 540 C 826 532, 828 528, 832 528 Z"/>
+    <path fill="#0F0F0F" opacity="0.18" d="M 488 568 C 508 580, 540 584, 568 580 C 548 596, 512 600, 488 588 C 484 584, 484 576, 488 568 Z"/>
+  </g>
+
+  <!-- Wordmark - EB Garamond. Warm classical text serif. -->
+  <text x="372" y="218"
+        font-family="'EB Garamond', 'Garamond', Georgia, serif"
+        font-size="180"
+        font-weight="500"
+        font-style="normal"
+        letter-spacing="-2"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

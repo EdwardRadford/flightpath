@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 7 wordmark - Approach lights lockup -->
+  <!-- Newsreader: a humanist text serif designed for long-form reading, -->
+  <!-- with a calm editorial tone. Different from Fraunces, Instrument Serif, -->
+  <!-- DM Serif Display, and Cormorant. Single typeface, single accent. -->
+
+  <!-- Mark scaled to 320x320 -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#14213D"/>
+    <path fill="#F6F1E7" opacity="0.92" d="
+      M 120 444
+      C 240 432, 420 428, 600 432
+      C 740 436, 860 440, 920 436
+      L 920 460
+      C 860 468, 740 472, 600 468
+      C 420 464, 240 460, 120 472 Z"/>
+    <path fill="#F6F1E7" opacity="0.92" d="
+      M 920 436
+      C 944 432, 956 444, 952 460
+      C 944 468, 928 472, 912 468
+      C 908 456, 912 444, 920 436 Z"/>
+    <path fill="#D97706" d="
+      M 480 884
+      C 524 876, 568 884, 572 904
+      C 572 928, 528 940, 484 932
+      C 452 924, 444 904, 452 892
+      C 460 884, 470 880, 480 884 Z"/>
+    <path fill="#D97706" d="
+      M 488 776
+      C 520 770, 552 778, 556 794
+      C 556 812, 524 822, 492 816
+      C 468 810, 462 796, 468 786
+      C 474 780, 482 776, 488 776 Z"/>
+    <path fill="#D97706" d="
+      M 492 684
+      C 518 680, 540 686, 542 700
+      C 542 714, 518 722, 494 718
+      C 476 714, 470 704, 476 696
+      C 480 688, 486 684, 492 684 Z"/>
+    <path fill="#D97706" d="
+      M 496 600
+      C 514 596, 530 602, 532 612
+      C 532 624, 514 630, 496 626
+      C 484 622, 480 614, 484 608
+      C 488 602, 492 600, 496 600 Z"/>
+    <path fill="#D97706" d="
+      M 500 528
+      C 512 526, 522 530, 522 538
+      C 522 546, 510 550, 498 548
+      C 490 546, 488 540, 490 534
+      C 492 530, 496 528, 500 528 Z"/>
+  </g>
+
+  <!-- Wordmark - Newsreader. Calm humanist text serif, designed for reading. -->
+  <text x="372" y="216"
+        font-family="'Newsreader', 'Source Serif Pro', Georgia, serif"
+        font-size="168"
+        font-weight="500"
+        font-style="normal"
+        font-variation-settings="'opsz' 144"
+        letter-spacing="-3"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

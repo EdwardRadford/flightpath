@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 3 wordmark - Climbout arc lockup -->
+  <!-- Fraunces (humanist soft-modern serif) at a generous size, italic -->
+  <!-- optical to sit beside the brush mark without competing. Single -->
+  <!-- typeface. Single accent (warm sand #F59E0B) reserved for the ink bead. -->
+
+  <!-- Mark scaled to 320x320 -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#F6F1E7"/>
+    <path fill="#0F0F0F" d="
+      M 152 824
+      C 244 832, 372 808, 488 720
+      C 612 624, 720 488, 800 348
+      C 836 288, 860 252, 868 244
+      L 856 248
+      C 832 264, 796 308, 752 372
+      C 660 504, 552 624, 432 712
+      C 348 776, 256 808, 168 812 Z"/>
+    <path fill="#0F0F0F" d="
+      M 152 824
+      C 232 836, 320 832, 392 800
+      C 360 808, 308 812, 252 808
+      C 216 804, 184 812, 152 824 Z"/>
+    <path fill="#F59E0B" d="
+      M 856 244
+      C 884 232, 908 232, 920 244
+      C 928 256, 920 272, 896 280
+      C 872 288, 848 280, 840 268
+      C 836 256, 844 248, 856 244 Z"/>
+    <rect x="120" y="840" width="56" height="6" fill="#F59E0B"/>
+  </g>
+
+  <!-- Wordmark - Fraunces, soft optical serif, with a subtle italic feel -->
+  <!-- via opsz axis. Single typeface across the whole brand. -->
+  <text x="372" y="208"
+        font-family="'Fraunces', 'Cormorant Garamond', Georgia, serif"
+        font-size="156"
+        font-weight="500"
+        font-style="normal"
+        font-variation-settings="'opsz' 144, 'SOFT' 50"
+        letter-spacing="-3"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

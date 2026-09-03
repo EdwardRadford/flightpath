@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FlightPath — Tutor (Instrument)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="phone">
+  <div class="island"></div>
+  <div class="status-bar">
+    <span>09:42</span>
+    <div class="icons">
+      <svg viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4"/><rect x="5" y="5" width="3" height="6"/><rect x="10" y="2" width="3" height="9"/><rect x="15" y="0" width="3" height="11"/></svg>
+      <svg viewBox="0 0 16 11" fill="currentColor"><path d="M8 11l2.5-2.5a3.54 3.54 0 00-5 0L8 11zm6-6.5a8.49 8.49 0 00-12 0l1 1a7.07 7.07 0 0110 0l1-1zm-3 3a4.24 4.24 0 00-6 0l1 1a2.83 2.83 0 014 0l1-1z"/></svg>
+      <svg viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="22" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="18" height="7" rx="1" fill="currentColor"/><rect x="23" y="3.5" width="1.5" height="4" rx="0.5" fill="currentColor"/></svg>
+    </div>
+  </div>
+
+  <div class="screen has-input">
+
+    <div class="chat-head">
+      <div class="row">
+        <div class="avatar">FP</div>
+        <div class="info">
+          <h2>The Tutor</h2>
+          <div class="status"><span class="live-dot"></span>ONLINE · ANTHROPIC · GROUNDED IN UK CAA SYLLABUS</div>
+        </div>
+      </div>
+      <div class="chat-context">
+        <div class="chip"><span class="dot"></span>EX 07 CONTEXT</div>
+        <div class="chip">PA-28-161</div>
+        <div class="chip">EGTC</div>
+        <div class="chip">23.4 hr</div>
+      </div>
+    </div>
+
+    <div class="thread">
+
+      <div class="msg user">
+        <div class="bubble">What's the difference between a stall and a spin recovery, and why are we taught them as separate exercises?</div>
+      </div>
+
+      <div class="msg assistant">
+        <div class="head">
+          <div class="avatar-sm">FP</div>
+          <div class="name">The Tutor</div>
+          <div class="time">09:38</div>
+        </div>
+        <div class="body">
+          <p>The cleanest way to think about it is in terms of <strong>what's failed</strong>.</p>
+          <p>A <strong>stall</strong> is a loss of lift caused by exceeding the critical angle of attack. The wing is still flying symmetrically. Recovery: reduce angle of attack (lower the nose), wings level with rudder, apply power as appropriate.</p>
+          <p>A <strong>spin</strong> follows a stall when one wing is more deeply stalled than the other — usually from yaw at the stall. The aircraft auto-rotates. Recovery is the standard PARE drill:</p>
+          <div class="callout">
+            <div class="lbl">PARE Drill — Spin Recovery</div>
+            <p><strong>P</strong>ower idle · <strong>A</strong>ilerons neutral · <strong>R</strong>udder full opposite to rotation · <strong>E</strong>levator forward to break the stall</p>
+          </div>
+          <p>Taught separately because the cures don't overlap — <span class="codeline">aileron in a spin will deepen it</span>. Stall lesson: don't yaw. Spin lesson: what to do when, despite that, you have.</p>
+        </div>
+      </div>
+
+      <div class="msg user">
+        <div class="bubble">And on a PA-28 — is full spin recovery part of my PPL syllabus?</div>
+      </div>
+
+      <div class="msg assistant">
+        <div class="head">
+          <div class="avatar-sm">FP</div>
+          <div class="name">The Tutor</div>
+          <div class="time">09:39</div>
+        </div>
+        <div class="body">
+          <p>For the UK PPL — <strong>no</strong>, not in the PA-28. The syllabus requires <strong>incipient spin</strong> recognition and recovery, not the developed spin.</p>
+          <p>The PA-28-161 is also placarded against intentional spinning. You'll be shown the entry conditions (yawed stall) and recover before the rotation establishes — a few seconds of departure, not multiple turns. <span class="codeline">Ex. 11A</span>, after stalling.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="chat-input">
+    <input type="text" placeholder="Ask anything from ground school to airwork…">
+    <button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FlightPath — Logbook (Instrument)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="phone">
+  <div class="island"></div>
+  <div class="status-bar">
+    <span>09:42</span>
+    <div class="icons">
+      <svg viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4"/><rect x="5" y="5" width="3" height="6"/><rect x="10" y="2" width="3" height="9"/><rect x="15" y="0" width="3" height="11"/></svg>
+      <svg viewBox="0 0 16 11" fill="currentColor"><path d="M8 11l2.5-2.5a3.54 3.54 0 00-5 0L8 11zm6-6.5a8.49 8.49 0 00-12 0l1 1a7.07 7.07 0 0110 0l1-1zm-3 3a4.24 4.24 0 00-6 0l1 1a2.83 2.83 0 014 0l1-1z"/></svg>
+      <svg viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="22" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="18" height="7" rx="1" fill="currentColor"/><rect x="23" y="3.5" width="1.5" height="4" rx="0.5" fill="currentColor"/></svg>
+    </div>
+  </div>
+
+  <div class="screen has-fab has-tabbar">
+
+    <div class="page-head">
+      <div class="h-row">
+        <h1>Logbook</h1>
+        <span class="counter">8 ENTRIES</span>
+      </div>
+      <div class="sub">All flights, in reverse chronological order. Tap an entry to view full details and export.</div>
+    </div>
+
+    <div class="log-summary">
+      <div class="stat">
+        <div class="label">Total</div>
+        <div class="val">23.4<span class="unit">hr</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Dual</div>
+        <div class="val">19.2<span class="unit">hr</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">PUT</div>
+        <div class="val">4.2<span class="unit">hr</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Lndgs</div>
+        <div class="val">11</div>
+      </div>
+    </div>
+
+    <div class="tabs-row">
+      <div class="tab active">All</div>
+      <div class="tab">Dual</div>
+      <div class="tab">Solo / PUT</div>
+      <div class="tab">By Aircraft</div>
+    </div>
+
+    <div class="log-row">
+      <div class="date-block">
+        <div class="day">04</div>
+        <div class="mo">May</div>
+        <div class="yr">2026</div>
+      </div>
+      <div class="body">
+        <div class="route">EGTC <span class="arrow">→</span> EGTC</div>
+        <div class="stats">
+          <div class="stat-tag"><span class="lbl">DUR</span><span>1.2h</span></div>
+          <div class="stat-tag"><span class="lbl">LDG</span><span>2</span></div>
+          <div class="stat-tag"><span class="lbl">TYPE</span><span>DUAL</span></div>
+        </div>
+        <h4>Climbing &amp; descending; intro to medium turns</h4>
+        <div class="ac-line"><span>G-BOTU · PA-28-161</span><span>·</span><span>INST · M.HAYWARD</span></div>
+      </div>
+    </div>
+
+    <div class="log-row">
+      <div class="date-block">
+        <div class="day">26</div>
+        <div class="mo">Apr</div>
+        <div class="yr">2026</div>
+      </div>
+      <div class="body">
+        <div class="route">EGTC <span class="arrow">→</span> EGTC</div>
+        <div class="stats">
+          <div class="stat-tag"><span class="lbl">DUR</span><span>1.0h</span></div>
+          <div class="stat-tag"><span class="lbl">LDG</span><span>1</span></div>
+          <div class="stat-tag"><span class="lbl">TYPE</span><span>DUAL</span></div>
+        </div>
+        <h4>Straight &amp; level consolidation</h4>
+        <div class="ac-line"><span>G-BOTU · PA-28-161</span><span>·</span><span>INST · M.HAYWARD</span></div>
+      </div>
+    </div>
+
+    <div class="log-row">
+      <div class="date-block">
+        <div class="day">19</div>
+        <div class="mo">Apr</div>
+        <div class="yr">2026</div>
+      </div>
+      <div class="body">
+        <div class="route">EGTC <span class="arrow">→</span> EGTC</div>
+        <div class="stats">
+          <div class="stat-tag"><span class="lbl">DUR</span><span>1.1h</span></div>
+          <div class="stat-tag"><span class="lbl">LDG</span><span>1</span></div>
+          <div class="stat-tag"><span class="lbl">TYPE</span><span>DUAL</span></div>
+        </div>
+        <h4>Effects of further controls; trim drill</h4>
+        <div class="ac-line"><span>G-BNNT · PA-28-161</span><span>·</span><span>INST · J.PATEL</span></div>
+      </div>
+    </div>
+
+    <div class="log-row">
+      <div class="date-block">
+        <div class="day">12</div>
+        <div class="mo">Apr</div>
+        <div class="yr">2026</div>
+      </div>
+      <div class="body">
+        <div class="route">EGTC <span class="arrow">→</span> EGTC</div>
+        <div class="stats">
+          <div class="stat-tag"><span class="lbl">DUR</span><span>0.4h</span></div>
+          <div class="stat-tag"><span class="lbl">LDG</span><span>1</span></div>
+          <div class="stat-tag" style="color:var(--accent)"><span class="lbl">TYPE</span><span>SOLO</span></div>
+        </div>
+        <h4>First solo circuit · runway 22</h4>
+        <div class="ac-line"><span>G-AVLS · PA-28-161</span><span>·</span><span>SUPR · M.HAYWARD</span></div>
+      </div>
+    </div>
+
+    <div class="log-row">
+      <div class="date-block">
+        <div class="day">05</div>
+        <div class="mo">Apr</div>
+        <div class="yr">2026</div>
+      </div>
+      <div class="body">
+        <div class="route">EGTC <span class="arrow">→</span> EGTC</div>
+        <div class="stats">
+          <div class="stat-tag"><span class="lbl">DUR</span><span>1.3h</span></div>
+          <div class="stat-tag"><span class="lbl">LDG</span><span>4</span></div>
+          <div class="stat-tag"><span class="lbl">TYPE</span><span>DUAL</span></div>
+        </div>
+        <h4>Circuit consolidation; flapless approach</h4>
+        <div class="ac-line"><span>G-BOTU · PA-28-161</span><span>·</span><span>INST · M.HAYWARD</span></div>
+      </div>
+    </div>
+
+    <div class="log-row">
+      <div class="date-block">
+        <div class="day">29</div>
+        <div class="mo">Mar</div>
+        <div class="yr">2026</div>
+      </div>
+      <div class="body">
+        <div class="route">EGTC <span class="arrow">→</span> EGBJ</div>
+        <div class="stats">
+          <div class="stat-tag"><span class="lbl">DUR</span><span>1.6h</span></div>
+          <div class="stat-tag"><span class="lbl">LDG</span><span>2</span></div>
+          <div class="stat-tag"><span class="lbl">TYPE</span><span>DUAL</span></div>
+        </div>
+        <h4>Engine handling; PFL practice over Cotswolds</h4>
+        <div class="ac-line"><span>G-BNNT · PA-28-161</span><span>·</span><span>INST · J.PATEL</span></div>
+      </div>
+    </div>
+
+    <div class="log-row">
+      <div class="date-block">
+        <div class="day">22</div>
+        <div class="mo">Mar</div>
+        <div class="yr">2026</div>
+      </div>
+      <div class="body">
+        <div class="route">EGTC <span class="arrow">→</span> EGTC</div>
+        <div class="stats">
+          <div class="stat-tag"><span class="lbl">DUR</span><span>1.0h</span></div>
+          <div class="stat-tag"><span class="lbl">LDG</span><span>1</span></div>
+          <div class="stat-tag"><span class="lbl">TYPE</span><span>DUAL</span></div>
+        </div>
+        <h4>Slow flight introduction</h4>
+        <div class="ac-line"><span>G-BOTU · PA-28-161</span><span>·</span><span>INST · M.HAYWARD</span></div>
+      </div>
+    </div>
+
+    <div class="log-row">
+      <div class="date-block">
+        <div class="day">15</div>
+        <div class="mo">Mar</div>
+        <div class="yr">2026</div>
+      </div>
+      <div class="body">
+        <div class="route">EGTC <span class="arrow">→</span> EGTW</div>
+        <div class="stats">
+          <div class="stat-tag"><span class="lbl">DUR</span><span>1.0h</span></div>
+          <div class="stat-tag"><span class="lbl">LDG</span><span>1</span></div>
+          <div class="stat-tag"><span class="lbl">TYPE</span><span>DUAL</span></div>
+        </div>
+        <h4>Air experience flight to Oaksey Park</h4>
+        <div class="ac-line"><span>G-AVLS · PA-28-161</span><span>·</span><span>INST · M.HAYWARD</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="fab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+    New Entry
+  </button>
+
+  <nav class="tabbar">
+    <div class="tabbar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+      Home
+    </div>
+    <div class="tabbar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      Syllabus
+    </div>
+    <div class="tabbar-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+      Logbook
+    </div>
+    <div class="tabbar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 17l6-6 4 4 8-8M14 7h7v7"/></svg>
+      Progress
+    </div>
+    <div class="tabbar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Tools
+    </div>
+  </nav>
+
+</div>
+
+</body>
+</html>

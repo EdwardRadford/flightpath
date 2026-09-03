@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FlightPath — UI Direction Explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  html, body {
+    background: #ECECEA;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: #111;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 56px 32px 80px;
+  }
+  .head {
+    border-bottom: 1px solid #C9C9C5;
+    padding-bottom: 28px;
+    margin-bottom: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .head h1 {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+  .head h1 strong { font-weight: 600; }
+  .head .meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: #555;
+    letter-spacing: 0.02em;
+    font-feature-settings: 'tnum';
+    text-align: right;
+    line-height: 1.5;
+  }
+  .head .meta .live { color: #15803D; }
+
+  .intro {
+    max-width: 720px;
+    font-size: 14px;
+    color: #444;
+    margin-bottom: 56px;
+    line-height: 1.65;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+  .direction {
+    background: white;
+    border: 1px solid #D6D6D2;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .direction-head {
+    padding: 22px 24px 16px;
+    border-bottom: 1px solid #E5E5E1;
+  }
+  .direction-head .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #777;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .direction-head h2 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.024em;
+    line-height: 1.1;
+  }
+  .direction-head .blurb {
+    margin-top: 10px;
+    font-size: 13.5px;
+    color: #444;
+    line-height: 1.6;
+  }
+
+  /* Sample row */
+  .sample {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid #E5E5E1;
+  }
+  .sample-cell {
+    padding: 18px 22px;
+    border-right: 1px solid #E5E5E1;
+  }
+  .sample-cell:last-child { border-right: none; }
+  .sample-cell .lbl {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: #888;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* Editorial sample */
+  .ed-type {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    line-height: 1;
+    color: #1A1A18;
+    font-variation-settings: 'opsz' 144, 'wght' 350, 'ital' 0;
+    letter-spacing: -0.02em;
+  }
+  .ed-type em {
+    font-variation-settings: 'opsz' 144, 'wght' 350, 'ital' 1;
+    font-style: italic;
+  }
+  .ed-type-meta {
+    font-family: 'Fraunces', serif;
+    font-size: 11px;
+    color: #777;
+    margin-top: 6px;
+    font-variation-settings: 'opsz' 9, 'wght' 500;
+    letter-spacing: 0.04em;
+  }
+
+  .ed-swatches {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .swatch {
+    flex: 1;
+    height: 38px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,0.08);
+    position: relative;
+  }
+  .swatch .hex {
+    position: absolute;
+    bottom: 4px;
+    left: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.04em;
+  }
+  .swatch.dark .hex { color: rgba(255,255,255,0.85); }
+  .swatch.light .hex { color: rgba(0,0,0,0.6); }
+
+  /* Instrument sample */
+  .in-type {
+    font-family: 'Geist', sans-serif;
+    font-size: 24px;
+    line-height: 1.05;
+    color: #0A0A0A;
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+  .in-type-meta {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: #666;
+    margin-top: 6px;
+    letter-spacing: 0.02em;
+    font-feature-settings: 'tnum';
+  }
+
+  /* Screen list */
+  .screens {
+    padding: 8px 0;
+  }
+  .screen-link {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 14px;
+    padding: 14px 24px;
+    border-bottom: 1px solid #EFEFEC;
+    text-decoration: none;
+    color: inherit;
+    align-items: center;
+    transition: background 120ms;
+  }
+  .screen-link:hover { background: #F8F8F6; }
+  .screen-link:last-child { border-bottom: none; }
+  .screen-link .num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    font-feature-settings: 'tnum';
+  }
+  .screen-link .name {
+    font-size: 14px;
+    color: #111;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+  .screen-link .name .desc {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    margin-top: 1px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    display: block;
+  }
+  .screen-link .arrow {
+    color: #999;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+  }
+  .screen-link:hover .arrow { color: #111; }
+
+  .commit-note {
+    background: #F8F8F6;
+    border-top: 1px solid #E5E5E1;
+    padding: 16px 24px;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.55;
+  }
+  .commit-note .pin {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: #2563EB;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: block;
+  }
+  .ed-pin .pin { color: #0F766E; }
+
+  .foot {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid #C9C9C5;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #777;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    letter-spacing: 0.02em;
+  }
+</style>
+<!-- Direction-specific fonts loaded for swatches -->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="head">
+    <h1>FlightPath — <strong>two directions for the app</strong></h1>
+    <div class="meta">
+      <div class="live">● LOCALHOST :4325 ACTIVE</div>
+      <div>2026-05-07 · 5 SCREENS × 2 DIRECTIONS</div>
+    </div>
+  </div>
+
+  <p class="intro">
+    A pair of opposite-flavoured UI directions for the FlightPath PPL study app, mocked at iPhone 16 Pro proportions.
+    One direction commits to calm editorial typography on cream paper; the other to a restrained instrument-panel feel
+    with monospace data and hairline rules. Each is intentionally distinct in typography, palette and information density.
+    Tap any screen below to inspect it.
+  </p>
+
+  <div class="grid">
+
+    <!-- DIRECTION A: EDITORIAL -->
+    <div class="direction">
+      <div class="direction-head">
+        <div class="label">Direction A</div>
+        <h2 style="font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'wght' 380; letter-spacing: -0.025em;">Editorial.</h2>
+        <p class="blurb">A pilot's quality periodical. Cream paper, deep teal accents, single serif typeface. Reading the syllabus the way an instructor reads AOPA — calm, considered, generous with whitespace.</p>
+      </div>
+
+      <div class="sample">
+        <div class="sample-cell">
+          <div class="lbl">Typeface · Fraunces</div>
+          <div class="ed-type">Aa <em>Bb</em> 28</div>
+          <div class="ed-type-meta">Variable opsz · 9–144</div>
+        </div>
+        <div class="sample-cell">
+          <div class="lbl">Palette</div>
+          <div class="ed-swatches">
+            <div class="swatch light" style="background: #FAF6EC;"><span class="hex">FAF6EC</span></div>
+            <div class="swatch dark" style="background: #1A1A18;"><span class="hex">1A1A18</span></div>
+            <div class="swatch dark" style="background: #0F766E;"><span class="hex">0F766E</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screens">
+        <a class="screen-link" href="editorial/home.html">
+          <span class="num">01</span>
+          <span class="name">Home <span class="desc">Greeting · current exercise · METAR · quick access</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="screen-link" href="editorial/exercises.html">
+          <span class="num">02</span>
+          <span class="name">Syllabus <span class="desc">All 28 exercises, complete · in progress · locked</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="screen-link" href="editorial/lesson_detail.html">
+          <span class="num">03</span>
+          <span class="name">Ex. 7 — Climbing &amp; Descending <span class="desc">Brief tab with dropcap, pull-quote, three flashcards</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="screen-link" href="editorial/logbook.html">
+          <span class="num">04</span>
+          <span class="name">Logbook <span class="desc">Eight flights, dates, ICAO routes, instructor notes</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="screen-link" href="editorial/ask_ai.html">
+          <span class="num">05</span>
+          <span class="name">The Tutor <span class="desc">Stall vs spin recovery · PA-28 placarding</span></span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+
+      <div class="commit-note ed-pin">
+        <span class="pin">Committed</span>
+        Fraunces (opsz axis only, single family) · Deep teal #0F766E (chosen over dawn-coral; teal sits closer to chart-legend authority and instructor calm) · Cream #FAF6EC paper · Double-rule pull-quotes · No coloured fills, only ink and accent.
+      </div>
+    </div>
+
+    <!-- DIRECTION B: INSTRUMENT -->
+    <div class="direction">
+      <div class="direction-head">
+        <div class="label">Direction B</div>
+        <h2 style="font-family: 'Geist', sans-serif; font-weight: 600; letter-spacing: -0.024em;">Instrument.</h2>
+        <p class="blurb">A modern aviation tool — SkyDemon discipline without the chrome. Hairline borders, monospace data, multi-column information density. The cockpit panel as a study app — confident, dense, professional, never cold.</p>
+      </div>
+
+      <div class="sample">
+        <div class="sample-cell">
+          <div class="lbl">Typeface · Geist</div>
+          <div class="in-type">Aa Bb 28</div>
+          <div class="in-type-meta">Mono · 21008KT 9999</div>
+        </div>
+        <div class="sample-cell">
+          <div class="lbl">Palette</div>
+          <div class="ed-swatches">
+            <div class="swatch light" style="background: #F4F4F2;"><span class="hex">F4F4F2</span></div>
+            <div class="swatch dark" style="background: #0A0A0A;"><span class="hex">0A0A0A</span></div>
+            <div class="swatch dark" style="background: #2563EB;"><span class="hex">2563EB</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screens">
+        <a class="screen-link" href="instrument/home.html">
+          <span class="num">01</span>
+          <span class="name">Home <span class="desc">METAR · TAF strip · current ex card · quick tools grid</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="screen-link" href="instrument/exercises.html">
+          <span class="num">02</span>
+          <span class="name">Syllabus <span class="desc">28 rows, micro progress bars, monospace counters</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="screen-link" href="instrument/lesson_detail.html">
+          <span class="num">03</span>
+          <span class="name">Ex. 7 — Climbing &amp; Descending <span class="desc">PA-28 reference speeds panel · three flashcards</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="screen-link" href="instrument/logbook.html">
+          <span class="num">04</span>
+          <span class="name">Logbook <span class="desc">Hours/landings stat row · 8 entries with type tags</span></span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="screen-link" href="instrument/ask_ai.html">
+          <span class="num">05</span>
+          <span class="name">The Tutor <span class="desc">Context chips · PARE drill callout · code-line refs</span></span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+
+      <div class="commit-note">
+        <span class="pin">Committed</span>
+        Geist + Geist Mono (one family pair, sans for prose, mono for data) · VFR-chart blue #2563EB (chosen over runway-yellow; blue is the proper aviation chart convention) · Light grey #F4F4F2 surface · Hairline borders only, no shadows, no gradients.
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <span>D:\ed-sync\Projects\apps\flightpath\design\ui_explorations\</span>
+    <span>SERVED · python -m http.server 4325</span>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 2 wordmark - PA-28 chart-symbol lockup -->
+  <!-- Mark on the left, "FlightPath" in JetBrains Mono Medium beside it. -->
+  <!-- Single typeface. Single accent (#2563EB VFR chart blue). -->
+
+  <!-- Mark - scaled down to 320x320 -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#FFFFFF"/>
+    <g fill="#2563EB">
+      <path d="M 488 184
+               Q 488 168 512 168
+               Q 536 168 536 184
+               L 536 312
+               L 552 320
+               L 552 568
+               L 536 576
+               L 536 760
+               L 552 768
+               L 552 808
+               L 472 808
+               L 472 768
+               L 488 760
+               L 488 576
+               L 472 568
+               L 472 320
+               L 488 312
+               Z"/>
+      <polygon points="120,360 904,360 872,464 152,464"/>
+      <polygon points="328,720 696,720 672,772 352,772"/>
+      <polygon points="496,772 528,772 520,820 504,820"/>
+      <rect x="448" y="156" width="128" height="10"/>
+    </g>
+    <g fill="#2563EB">
+      <rect x="508" y="40"  width="8" height="56"/>
+      <rect x="508" y="928" width="8" height="56"/>
+      <rect x="40"  y="508" width="56" height="8"/>
+      <rect x="928" y="508" width="56" height="8"/>
+    </g>
+  </g>
+
+  <!-- Wordmark - JetBrains Mono Medium, slight tracking -->
+  <text x="380" y="195"
+        font-family="'JetBrains Mono', 'Menlo', monospace"
+        font-size="120"
+        font-weight="500"
+        letter-spacing="-2"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

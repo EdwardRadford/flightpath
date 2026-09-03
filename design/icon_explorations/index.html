@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlightPath - icon explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400;9..144,500;9..144,600;9..144,700&family=Instrument+Serif:ital@0;1&family=DM+Serif+Display&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,500&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Young+Serif&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14110E;
+    --paper: #F6F1E7;
+    --rule: #1F1F1F;
+    --muted: #7A7268;
+    --line: #E4DDCC;
+
+    /* Concept 5 - Sun above horizon */
+    --c5-paper:  #F6F1E7;
+    --c5-ink:    #0F0F0F;
+    --c5-accent: #F87171;
+
+    /* Concept 6 - Logbook signature */
+    --c6-paper:  #F6F1E7;
+    --c6-ink:    #0F0F0F;
+    --c6-accent: #0F766E;
+
+    /* Concept 7 - Approach lights */
+    --c7-field:  #14213D;
+    --c7-paper:  #F6F1E7;
+    --c7-accent: #D97706;
+
+    /* Concept 8 - Propeller in motion */
+    --c8-paper:  #F6F1E7;
+    --c8-ink:    #0F0F0F;
+    --c8-accent: #1E3A8A;
+
+    /* Concept 9 - Windsock */
+    --c9-paper:  #F6F1E7;
+    --c9-ink:    #0F0F0F;
+    --c9-accent: #EA580C;
+
+    /* Concept 10 - Control yoke */
+    --c10-paper:  #F6F1E7;
+    --c10-ink:    #0F0F0F;
+    --c10-accent: #92400E;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Fraunces', Georgia, serif;
+    font-variation-settings: 'opsz' 14, 'SOFT' 50;
+    font-weight: 400;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 88px 48px 160px; }
+
+  header.page {
+    display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 1px solid var(--rule); padding-bottom: 24px; margin-bottom: 64px;
+  }
+  header.page h1 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 72, 'SOFT' 50;
+    font-size: 28px; font-weight: 500; letter-spacing: -0.6px; margin: 0;
+  }
+  header.page .meta { font-size: 13px; color: var(--muted); letter-spacing: 0.2px; font-feature-settings: "tnum"; }
+
+  /* Round headers */
+  .round-header {
+    margin-bottom: 36px;
+  }
+  .round-header .kicker {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2.6px;
+    color: var(--muted); margin: 0 0 8px; font-weight: 500;
+  }
+  .round-header h2 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 50;
+    font-size: 40px; font-weight: 500; letter-spacing: -1px; margin: 0;
+  }
+  .round-header h2.demoted-h { color: var(--muted); font-size: 22px; }
+  .round-header h2.under-consideration-h { color: var(--ink); font-size: 30px; }
+  .round-header p {
+    color: var(--muted); font-size: 15px; max-width: 640px; margin: 12px 0 0;
+    line-height: 1.6;
+  }
+
+  /* ============ Demoted (rejected) sections ============ */
+  .rejected-block {
+    border: 1px dashed #C7BFAE;
+    padding: 32px 40px 16px;
+    background: rgba(255,255,255,0.35);
+    margin-bottom: 56px;
+    position: relative;
+  }
+  .rejected-block::before {
+    content: "REJECTED";
+    position: absolute; top: -10px; left: 32px;
+    background: var(--paper); padding: 0 10px;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-size: 10px; letter-spacing: 2.4px; color: #B23A2A;
+    font-weight: 600;
+  }
+  .demoted-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+    margin-top: 12px;
+  }
+  .demoted {
+    display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: center;
+    padding: 12px 0;
+  }
+  .demoted .icon-thumb {
+    width: 96px; height: 96px; display: block;
+    border: 1px solid var(--line);
+    opacity: 0.85;
+    filter: saturate(0.85);
+  }
+  .demoted h3 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 96, 'SOFT' 50;
+    font-size: 18px; font-weight: 500; letter-spacing: -0.4px; margin: 0 0 4px;
+  }
+  .demoted p {
+    margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5;
+  }
+  .demoted .reason {
+    color: #B23A2A; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1.6px; margin-top: 6px;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+  }
+
+  /* ============ Under-consideration (round 3) section ============ */
+  .holding-block {
+    border: 1px solid var(--line);
+    padding: 36px 40px 24px;
+    background: rgba(255,255,255,0.5);
+    margin-bottom: 80px;
+    position: relative;
+  }
+  .holding-block::before {
+    content: "UNDER CONSIDERATION";
+    position: absolute; top: -10px; left: 32px;
+    background: var(--paper); padding: 0 10px;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-size: 10px; letter-spacing: 2.4px; color: #6B5B3A;
+    font-weight: 600;
+  }
+  .holding-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 28px;
+    margin-top: 12px;
+  }
+  .holding-card {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 8px 0;
+  }
+  .holding-card .icon-mid {
+    width: 100%; aspect-ratio: 1/1; display: block;
+    border: 1px solid var(--line);
+  }
+  .holding-card h3 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 96, 'SOFT' 50;
+    font-size: 22px; font-weight: 500; letter-spacing: -0.4px; margin: 0;
+  }
+  .holding-card .kicker-sm {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-size: 10px; letter-spacing: 2.2px; text-transform: uppercase;
+    color: var(--muted); margin: 0;
+  }
+  .holding-card p {
+    margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55;
+  }
+  .holding-card .springboard-mini {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    background: #2b2725; padding: 16px 14px; border-radius: 18px;
+    margin-top: 8px;
+  }
+  .holding-card .springboard-mini .ic {
+    width: 100%; aspect-ratio: 1/1; border-radius: 22.37%;
+    overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+  }
+  .holding-card .springboard-mini .ic.t-mail   { background: #007AFF; }
+  .holding-card .springboard-mini .ic.t-maps   { background: #34C759; }
+  .holding-card .springboard-mini .ic.t-cam    { background: #1c1c1e; }
+  .holding-card .springboard-mini .ic.t-music  { background: #FA233B; }
+  .holding-card .springboard-mini .ic.t-notes  { background: #FFD60A; }
+  .holding-card .springboard-mini .ic.t-wallet { background: #1c1c1e; }
+  .holding-card .springboard-mini .ic.t-weath  { background: #2a78c2; }
+  .holding-card .springboard-mini .ic object   { width: 100%; height: 100%; display: block; }
+
+  /* ============ Round 4 / NEW prominent sections ============ */
+  section.concept { margin-bottom: 144px; }
+  section.concept > .kicker {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2.6px;
+    color: var(--muted); margin: 0 0 12px; font-weight: 500;
+  }
+  section.concept > .title {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 70;
+    font-size: 56px; line-height: 1.05; letter-spacing: -1.4px; font-weight: 500;
+    margin: 0 0 28px;
+  }
+  section.concept > .rationale {
+    font-size: 17px; max-width: 680px; color: var(--ink);
+    margin: 0 0 64px; line-height: 1.7;
+  }
+  .recommend {
+    display: inline-block; margin-top: 12px;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+    color: #B23A2A; font-weight: 600;
+    padding: 4px 10px; border: 1px solid #B23A2A; border-radius: 2px;
+  }
+
+  .label {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 16px; font-weight: 500;
+  }
+
+  /* Big preview row */
+  .preview-row {
+    display: grid; grid-template-columns: 280px 1fr; gap: 64px;
+    align-items: center; margin-bottom: 80px;
+    padding-bottom: 80px; border-bottom: 1px solid var(--line);
+  }
+  .preview-256 { width: 256px; height: 256px; display: block; }
+  .preview-1024 { width: 100%; max-width: 540px; aspect-ratio: 1/1; display: block; }
+
+  /* Springboard mock */
+  .springboard {
+    background: #2b2725;
+    border-radius: 36px;
+    padding: 56px 28px 28px;
+    width: 380px;
+    aspect-ratio: 9/19.5;
+    display: flex; flex-direction: column; gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .springboard::before {
+    content: ""; position: absolute; top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 110px; height: 28px; background: #000; border-radius: 14px;
+  }
+  .springboard .status {
+    color: #fff; font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-weight: 600; font-size: 14px;
+    display: flex; justify-content: space-between; padding: 0 18px 8px;
+    font-feature-settings: "tnum";
+  }
+  .app-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; row-gap: 22px; }
+  .app { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .app .icon {
+    width: 64px; height: 64px;
+    border-radius: 22.37%;
+    overflow: hidden;
+    display: block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+  }
+  .app .icon svg, .app .icon object { display: block; width: 100%; height: 100%; }
+  .app .name {
+    color: #fff; font-size: 11px; line-height: 1.1;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 14;
+    font-weight: 400;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  .tile { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-family: 'Fraunces', serif; font-weight: 600; font-size: 28px;
+    font-variation-settings: 'opsz' 144;
+  }
+  .tile.notes  { background: #FFD60A; color: #1c1c1e; }
+  .tile.mail   { background: #007AFF; }
+  .tile.maps   { background: #34C759; }
+  .tile.weath  { background: #2a78c2; }
+  .tile.cam    { background: #1c1c1e; color: #f2f2f2; }
+  .tile.wallet { background: #1c1c1e; }
+  .tile.music  { background: #FA233B; }
+
+  /* App Store search row */
+  .appstore {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px 22px;
+    max-width: 560px;
+    display: grid; grid-template-columns: 80px 1fr auto; gap: 16px;
+    align-items: center;
+  }
+  .appstore .icon {
+    width: 80px; height: 80px; border-radius: 22.37%; overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  }
+  .appstore .icon svg, .appstore .icon object { width: 100%; height: 100%; display: block; }
+  .appstore .meta-name {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 96, 'SOFT' 50;
+    font-weight: 500; font-size: 18px; line-height: 1.25; color: #1c1c1e;
+  }
+  .appstore .meta-sub  { font-size: 13px; color: #6e6e73; line-height: 1.4; margin-top: 4px; }
+  .appstore .stars {
+    font-size: 12px; color: #6e6e73; margin-top: 6px; letter-spacing: 1px;
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 14;
+    font-feature-settings: "tnum";
+  }
+  .appstore .get {
+    background: #f2f2f7; color: #007AFF; font-weight: 600; font-size: 14px;
+    border: 0; border-radius: 999px; padding: 6px 18px;
+    font-family: inherit;
+  }
+
+  /* Wordmark surfaces */
+  .wordmark-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .wordmark-card {
+    padding: 60px 48px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: flex-start;
+    min-height: 200px;
+  }
+  .wordmark-card.light { background: #fff; border: 1px solid var(--line); }
+  .wordmark-card.dark  { background: #0F0F0F; }
+  .wordmark-card svg, .wordmark-card object { max-width: 100%; height: auto; }
+
+  /* Favicon zoom */
+  .fav-grid { display: flex; gap: 48px; align-items: flex-end; }
+  .fav-cell { text-align: center; }
+  .fav-cell .label { margin-bottom: 12px; }
+  .fav-16  { width: 160px; height: 160px; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid var(--line); }
+  .fav-32  { width: 160px; height: 160px; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid var(--line); }
+  .fav-actual { width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-left: 8px; }
+  .fav-actual-32 { width: 32px; height: 32px; display: inline-block; vertical-align: middle; margin-left: 8px; }
+
+  /* Mono row */
+  .mono-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .mono-card { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; }
+  .mono-card.white { background: #fff; border: 1px solid var(--line); }
+  .mono-card.black { background: #0F0F0F; }
+  .mono-card svg { width: 60%; height: auto; }
+
+  /* Splash screen mock */
+  .splash {
+    width: 320px; aspect-ratio: 9/19.5;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 40px;
+    overflow: hidden;
+  }
+  .splash svg, .splash object { width: 45%; height: auto; }
+
+  /* Website header mock */
+  .site-header {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .site-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 32px;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+  }
+  .site-bar .nav {
+    display: flex; gap: 28px; font-size: 14px; color: var(--ink);
+  }
+  .site-bar .nav a { color: inherit; text-decoration: none; }
+  .site-bar .download {
+    background: var(--ink); color: var(--paper);
+    padding: 9px 18px; border-radius: 4px; font-size: 13px; font-weight: 500;
+    font-family: inherit;
+  }
+  .site-body { padding: 56px 32px; background: var(--paper); color: var(--muted); font-size: 13px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+
+  hr.section-rule {
+    border: 0; border-top: 1px solid var(--line); margin: 80px 0;
+  }
+  hr.major-rule {
+    border: 0; border-top: 2px solid var(--rule); margin: 96px 0 64px;
+  }
+
+  .block { margin-bottom: 64px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <h1>FlightPath - icon explorations</h1>
+    <div class="meta">round 4 / 2026-05-08</div>
+  </header>
+
+  <!-- ====================================================== -->
+  <!-- ROUND 1 - REJECTED                                     -->
+  <!-- ====================================================== -->
+  <div class="round-header">
+    <p class="kicker">Round 1 - rejected</p>
+    <h2 class="demoted-h">Too boxy / too technical</h2>
+  </div>
+
+  <div class="rejected-block">
+    <div class="demoted-grid">
+
+      <div class="demoted">
+        <object data="concept_1.svg" type="image/svg+xml" class="icon-thumb" aria-label="Concept 1 thumb"></object>
+        <div>
+          <h3>01 - Runway 27</h3>
+          <p>Tarmac with painted threshold + stencilled "27".</p>
+          <div class="reason">Too boxy, too technical</div>
+        </div>
+      </div>
+
+      <div class="demoted">
+        <object data="concept_2.svg" type="image/svg+xml" class="icon-thumb" aria-label="Concept 2 thumb"></object>
+        <div>
+          <h3>02 - PA-28, plan view</h3>
+          <p>Top-down chart-symbol silhouette of a Piper PA-28.</p>
+          <div class="reason">Too boxy, too technical</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ====================================================== -->
+  <!-- ROUND 2 - REJECTED                                     -->
+  <!-- ====================================================== -->
+  <div class="round-header" style="margin-top:32px;">
+    <p class="kicker">Round 2 - rejected</p>
+    <h2 class="demoted-h">Right aesthetic, wrong subjects</h2>
+  </div>
+
+  <div class="rejected-block">
+    <div class="demoted-grid">
+
+      <div class="demoted">
+        <object data="concept_3.svg" type="image/svg+xml" class="icon-thumb" aria-label="Concept 3 thumb"></object>
+        <div>
+          <h3>03 - Climbout arc</h3>
+          <p>Single brush-stroke arc with warm-sand ink-bead at the leading edge.</p>
+          <div class="reason">Right aesthetic, wrong subject - reads as a generic squiggly line</div>
+        </div>
+      </div>
+
+      <div class="demoted">
+        <object data="concept_4.svg" type="image/svg+xml" class="icon-thumb" aria-label="Concept 4 thumb"></object>
+        <div>
+          <h3>04 - Aerofoil</h3>
+          <p>Cambered wing cross-section in pilot-green with airflow streamline.</p>
+          <div class="reason">Right aesthetic, wrong subject - aerofoil too obscure</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="major-rule">
+
+  <!-- ====================================================== -->
+  <!-- ROUND 3 - UNDER CONSIDERATION                          -->
+  <!-- ====================================================== -->
+  <div class="round-header" style="margin-top:32px;">
+    <p class="kicker">Round 3 - under consideration</p>
+    <h2 class="under-consideration-h">Three pilot-coded subjects, same brush-stroke aesthetic</h2>
+    <p>
+      Holding pattern. The hand-drawn ink direction is right; the question is
+      whether one of these three subjects is <em>the</em> mark, or whether
+      another subject would land harder. Round 4 explores the latter.
+    </p>
+  </div>
+
+  <div class="holding-block">
+    <div class="holding-grid">
+
+      <div class="holding-card">
+        <p class="kicker-sm">Concept 05</p>
+        <object data="concept_5.svg" type="image/svg+xml" class="icon-mid" aria-label="Concept 5 mid"></object>
+        <h3>Sun above horizon</h3>
+        <p>Dawn-coral disc above a tapered horizon stroke. Atmospheric, universal.</p>
+        <div class="springboard-mini">
+          <div class="ic t-mail"></div>
+          <div class="ic t-maps"></div>
+          <div class="ic t-weath"></div>
+          <div class="ic"><object data="concept_5.svg" type="image/svg+xml"></object></div>
+        </div>
+      </div>
+
+      <div class="holding-card">
+        <p class="kicker-sm">Concept 06</p>
+        <object data="concept_6.svg" type="image/svg+xml" class="icon-mid" aria-label="Concept 6 mid"></object>
+        <h3>Logbook signature</h3>
+        <p>Calligraphic ink stroke that reads as both signature and flight path. Most loaded.</p>
+        <div class="springboard-mini">
+          <div class="ic t-mail"></div>
+          <div class="ic t-maps"></div>
+          <div class="ic t-weath"></div>
+          <div class="ic"><object data="concept_6.svg" type="image/svg+xml"></object></div>
+        </div>
+      </div>
+
+      <div class="holding-card">
+        <p class="kicker-sm">Concept 07</p>
+        <object data="concept_7.svg" type="image/svg+xml" class="icon-mid" aria-label="Concept 7 mid"></object>
+        <h3>Approach lights on final</h3>
+        <p>Five amber ink-beads stepping toward a horizon on dusk-navy. Most genre-specific.</p>
+        <div class="springboard-mini">
+          <div class="ic t-mail"></div>
+          <div class="ic t-maps"></div>
+          <div class="ic t-weath"></div>
+          <div class="ic"><object data="concept_7.svg" type="image/svg+xml"></object></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="major-rule">
+
+  <!-- ====================================================== -->
+  <!-- ROUND 4 - NEW                                          -->
+  <!-- ====================================================== -->
+  <div class="round-header" style="margin-top:32px;">
+    <p class="kicker">Round 4 - new</p>
+    <h2>Three more directions in the same hand-drawn ink language</h2>
+    <p>
+      Same brush-stroke energy, ink-bead device, cream paper, single accent.
+      Three new subjects: a propeller caught mid-rotation, a windsock, and a
+      PA-28 control yoke. None repeat any prior round. New typeface for each
+      wordmark - Bodoni Moda, Young Serif, EB Garamond.
+    </p>
+  </div>
+
+  <!-- ====================================================== -->
+  <!-- CONCEPT 8 - PROPELLER IN MOTION                        -->
+  <!-- ====================================================== -->
+  <section class="concept">
+    <p class="kicker">Concept 08</p>
+    <p class="title">Propeller in motion</p>
+    <p class="rationale">
+      Three overlapping curved brushstrokes radiating from a central ink-bead
+      hub - the blur of a moving propeller, captured as gesture rather than
+      diagram. Unambiguously aviation: there is no other thing this could be.
+      Each blade is a tapered closed-fill brush-shape with a softer inner
+      ghost stroke (a second pulse of pigment, the place a real brush would
+      cross itself). The hub IS the round-2 ink-bead device, repurposed as
+      the spinner. Reads cleanly at favicon scale because the three-blade
+      asymmetric Y-form is unmistakable even when tiny. Wordmark in Bodoni
+      Moda - high-contrast modern serif, crisp and confident, pairs well
+      with the spinning energy of the mark. Accent: deep prop-blue
+      <code>#1E3A8A</code>.
+      <br><span class="recommend">My pick if pushed</span>
+    </p>
+
+    <!-- Big preview -->
+    <div class="block">
+      <div class="label">Mark / 256 + 1024</div>
+      <div class="preview-row">
+        <object data="concept_8.svg" type="image/svg+xml" class="preview-256" aria-label="Concept 8 mark at 256px"></object>
+        <object data="concept_8.svg" type="image/svg+xml" class="preview-1024" aria-label="Concept 8 mark at full size"></object>
+      </div>
+    </div>
+
+    <!-- Springboard + App Store search -->
+    <div class="grid-2 block">
+      <div>
+        <div class="label">iOS Springboard</div>
+        <div class="springboard">
+          <div class="status"><span>9:41</span><span>5G</span></div>
+          <div class="app-row">
+            <div class="app"><div class="icon"><div class="tile mail">M</div></div><div class="name">Mail</div></div>
+            <div class="app"><div class="icon"><div class="tile maps">M</div></div><div class="name">Maps</div></div>
+            <div class="app"><div class="icon"><div class="tile weath">W</div></div><div class="name">Weather</div></div>
+            <div class="app"><div class="icon"><div class="tile notes">N</div></div><div class="name">Notes</div></div>
+
+            <div class="app"><div class="icon"><div class="tile cam">C</div></div><div class="name">Camera</div></div>
+            <div class="app"><div class="icon"><object data="concept_8.svg" type="image/svg+xml" style="width:100%;height:100%;display:block"></object></div><div class="name">FlightPath</div></div>
+            <div class="app"><div class="icon"><div class="tile wallet">W</div></div><div class="name">Wallet</div></div>
+            <div class="app"><div class="icon"><div class="tile music">M</div></div><div class="name">Music</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label">App Store search result</div>
+        <div class="appstore">
+          <div class="icon"><object data="concept_8.svg" type="image/svg+xml" style="width:100%;height:100%;display:block"></object></div>
+          <div>
+            <div class="meta-name">FlightPath</div>
+            <div class="meta-sub">PPL training app for student pilots</div>
+            <div class="stars">****  4.8</div>
+          </div>
+          <button class="get">GET</button>
+        </div>
+
+        <div style="height:32px"></div>
+
+        <div class="label">Splash screen</div>
+        <div class="splash" style="background: #F6F1E7;">
+          <object data="concept_8.svg" type="image/svg+xml" aria-label="Splash mock concept 8"></object>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wordmark on light + dark -->
+    <div class="block">
+      <div class="label">Wordmark / light + dark</div>
+      <div class="wordmark-grid">
+        <div class="wordmark-card light">
+          <object data="concept_8_wordmark.svg" type="image/svg+xml" style="width:100%;max-width:520px;display:block"></object>
+        </div>
+        <div class="wordmark-card dark">
+          <svg viewBox="0 0 1280 320" width="100%" style="max-width:520px;display:block">
+            <g transform="translate(0,0) scale(0.3125)">
+              <rect width="1024" height="1024" fill="#0F0F0F"/>
+              <path fill="#F6F1E7" d="M 196 256 C 268 232, 340 240, 420 296 C 472 332, 504 376, 524 420 C 544 464, 540 480, 520 484 C 500 488, 472 472, 432 432 C 388 388, 348 352, 296 320 C 252 296, 216 280, 196 256 Z"/>
+              <path fill="#F6F1E7" d="M 828 256 C 756 232, 684 240, 604 296 C 552 332, 520 376, 500 420 C 480 464, 484 480, 504 484 C 524 488, 552 472, 592 432 C 636 388, 676 352, 728 320 C 772 296, 808 280, 828 256 Z"/>
+              <path fill="#F6F1E7" d="M 480 504 C 504 540, 528 612, 552 696 C 572 768, 588 832, 600 880 C 604 900, 596 908, 580 904 C 560 896, 544 868, 528 824 C 504 760, 484 692, 472 624 C 464 580, 464 540, 480 504 Z"/>
+              <path fill="#1E3A8A" d="M 488 432 C 528 424, 568 436, 576 464 C 580 496, 552 520, 512 524 C 472 528, 444 512, 444 484 C 444 460, 460 440, 488 432 Z"/>
+            </g>
+            <text x="372" y="218"
+                  font-family="'Bodoni Moda', serif"
+                  font-size="172" font-weight="500" letter-spacing="-2"
+                  fill="#F6F1E7">FlightPath</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favicon -->
+    <div class="block">
+      <div class="label">Favicon / pixel snapping at 16 and 32 px</div>
+      <div class="fav-grid">
+        <div class="fav-cell">
+          <div class="label">16 px (10x zoom)</div>
+          <object data="concept_8.svg" type="image/svg+xml" class="fav-16"></object>
+          <div style="margin-top:12px;font-size:13px;color:var(--muted)">actual: <object data="concept_8.svg" type="image/svg+xml" class="fav-actual"></object></div>
+        </div>
+        <div class="fav-cell">
+          <div class="label">32 px (5x zoom)</div>
+          <object data="concept_8.svg" type="image/svg+xml" class="fav-32"></object>
+          <div style="margin-top:12px;font-size:13px;color:var(--muted)">actual: <object data="concept_8.svg" type="image/svg+xml" class="fav-actual-32"></object></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mono -->
+    <div class="block">
+      <div class="label">Mono / black-on-white + white-on-black</div>
+      <div class="mono-grid">
+        <div class="mono-card white">
+          <svg viewBox="0 0 1024 1024">
+            <rect width="1024" height="1024" fill="#FFFFFF"/>
+            <g fill="#0F0F0F">
+              <path d="M 196 256 C 268 232, 340 240, 420 296 C 472 332, 504 376, 524 420 C 544 464, 540 480, 520 484 C 500 488, 472 472, 432 432 C 388 388, 348 352, 296 320 C 252 296, 216 280, 196 256 Z"/>
+              <path d="M 828 256 C 756 232, 684 240, 604 296 C 552 332, 520 376, 500 420 C 480 464, 484 480, 504 484 C 524 488, 552 472, 592 432 C 636 388, 676 352, 728 320 C 772 296, 808 280, 828 256 Z"/>
+              <path d="M 480 504 C 504 540, 528 612, 552 696 C 572 768, 588 832, 600 880 C 604 900, 596 908, 580 904 C 560 896, 544 868, 528 824 C 504 760, 484 692, 472 624 C 464 580, 464 540, 480 504 Z"/>
+              <path d="M 488 432 C 528 424, 568 436, 576 464 C 580 496, 552 520, 512 524 C 472 528, 444 512, 444 484 C 444 460, 460 440, 488 432 Z"/>
+            </g>
+          </svg>
+        </div>
+        <div class="mono-card black">
+          <svg viewBox="0 0 1024 1024">
+            <rect width="1024" height="1024" fill="#0F0F0F"/>
+            <g fill="#F6F1E7">
+              <path d="M 196 256 C 268 232, 340 240, 420 296 C 472 332, 504 376, 524 420 C 544 464, 540 480, 520 484 C 500 488, 472 472, 432 432 C 388 388, 348 352, 296 320 C 252 296, 216 280, 196 256 Z"/>
+              <path d="M 828 256 C 756 232, 684 240, 604 296 C 552 332, 520 376, 500 420 C 480 464, 484 480, 504 484 C 524 488, 552 472, 592 432 C 636 388, 676 352, 728 320 C 772 296, 808 280, 828 256 Z"/>
+              <path d="M 480 504 C 504 540, 528 612, 552 696 C 572 768, 588 832, 600 880 C 604 900, 596 908, 580 904 C 560 896, 544 868, 528 824 C 504 760, 484 692, 472 624 C 464 580, 464 540, 480 504 Z"/>
+              <path d="M 488 432 C 528 424, 568 436, 576 464 C 580 496, 552 520, 512 524 C 472 528, 444 512, 444 484 C 444 460, 460 440, 488 432 Z"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Website header -->
+    <div class="block">
+      <div class="label">Website header / getflightpath.app</div>
+      <div class="site-header">
+        <div class="site-bar">
+          <object data="concept_8_wordmark.svg" type="image/svg+xml" style="width:240px;display:block"></object>
+          <div class="nav">
+            <a>Home</a><a>Features</a><a>Pricing</a><a>Download</a>
+          </div>
+          <button class="download">Download</button>
+        </div>
+        <div class="site-body">page body region - placeholder.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <hr class="section-rule">
+
+  <!-- ====================================================== -->
+  <!-- CONCEPT 9 - WINDSOCK - REFINED v5                      -->
+  <!-- ====================================================== -->
+  <section class="concept">
+    <p class="kicker">Concept 09 <span style="display:inline-block;margin-left:14px;padding:4px 10px;border:1px solid #B23A2A;color:#B23A2A;border-radius:2px;font-size:10px;letter-spacing:1.6px;font-weight:600;">REFINED v5 - POLE SHORTENED</span></p>
+    <p class="title">Windsock</p>
+    <p class="rationale">
+      Round 5 makes one targeted change: <strong>the pole is shorter.</strong>
+      v4's mast spanned 742 px against a 300 px cone (ratio ~2.49:1) and
+      dominated the canvas. v5 trims the mast to 495 px so the
+      <strong>pole : cone ratio is 1.65 : 1</strong>, sitting at the centre
+      of the requested 1.5-1.8 window. The pole still reads as a windsock
+      pole - visibly taller than the cone - but no longer eats two thirds
+      of the height. Concretely, the mast bottom moves from path-source
+      y=890 to y=643, and the ground anchors slide up to y=633..649 at the
+      new base. The cone, cross-bar, suspension cords, ink-bead pivot,
+      5-band cone with continuous ink rim, rounded tail, and brush
+      character are all untouched from v4. The artwork bbox is
+      re-centred: vertical translate goes from 3.61 to 126.50 so the new
+      shorter shape sits with equal top and bottom margins (~248 px each),
+      while horizontal extents and translate (-2.98) are unchanged from
+      v4. Cone still occupies the upper portion of the bbox. Accent stays
+      red-orange <code>#EA580C</code>. Wordmark in Young Serif.
+    </p>
+
+    <!-- Big preview -->
+    <div class="block">
+      <div class="label">Mark / 256 + 1024</div>
+      <div class="preview-row">
+        <object data="concept_9.svg" type="image/svg+xml" class="preview-256"></object>
+        <object data="concept_9.svg" type="image/svg+xml" class="preview-1024"></object>
+      </div>
+    </div>
+
+    <!-- Springboard + App Store search -->
+    <div class="grid-2 block">
+      <div>
+        <div class="label">iOS Springboard</div>
+        <div class="springboard">
+          <div class="status"><span>9:41</span><span>5G</span></div>
+          <div class="app-row">
+            <div class="app"><div class="icon"><div class="tile mail">M</div></div><div class="name">Mail</div></div>
+            <div class="app"><div class="icon"><div class="tile maps">M</div></div><div class="name">Maps</div></div>
+            <div class="app"><div class="icon"><div class="tile weath">W</div></div><div class="name">Weather</div></div>
+            <div class="app"><div class="icon"><div class="tile notes">N</div></div><div class="name">Notes</div></div>
+
+            <div class="app"><div class="icon"><div class="tile cam">C</div></div><div class="name">Camera</div></div>
+            <div class="app"><div class="icon"><object data="concept_9.svg" type="image/svg+xml" style="width:100%;height:100%;display:block"></object></div><div class="name">FlightPath</div></div>
+            <div class="app"><div class="icon"><div class="tile wallet">W</div></div><div class="name">Wallet</div></div>
+            <div class="app"><div class="icon"><div class="tile music">M</div></div><div class="name">Music</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label">App Store search result</div>
+        <div class="appstore">
+          <div class="icon"><object data="concept_9.svg" type="image/svg+xml" style="width:100%;height:100%;display:block"></object></div>
+          <div>
+            <div class="meta-name">FlightPath</div>
+            <div class="meta-sub">PPL training app for student pilots</div>
+            <div class="stars">****  4.8</div>
+          </div>
+          <button class="get">GET</button>
+        </div>
+
+        <div style="height:32px"></div>
+
+        <div class="label">Splash screen</div>
+        <div class="splash" style="background: #F6F1E7;">
+          <object data="concept_9.svg" type="image/svg+xml" aria-label="Splash mock concept 9"></object>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wordmark on light + dark -->
+    <div class="block">
+      <div class="label">Wordmark / light + dark</div>
+      <div class="wordmark-grid">
+        <div class="wordmark-card light">
+          <object data="concept_9_wordmark.svg" type="image/svg+xml" style="width:100%;max-width:520px;display:block"></object>
+        </div>
+        <div class="wordmark-card dark">
+          <svg viewBox="0 0 1280 320" width="100%" style="max-width:520px;display:block">
+            <g transform="translate(0,0) scale(0.3125)">
+              <rect width="1024" height="1024" fill="#0F0F0F"/>
+              <!-- Mast + cross-bar + ground anchors (cream on dark) -->
+              <path fill="#F6F1E7" d="M 492 244 C 488 380, 488 600, 494 900 L 522 900 C 528 600, 528 380, 524 244 C 520 236, 496 236, 492 244 Z"/>
+              <path fill="#F6F1E7" d="M 444 224 C 472 216, 540 216, 568 224 C 568 232, 568 240, 568 248 C 540 256, 472 256, 444 248 C 440 240, 440 232, 444 224 Z"/>
+              <path fill="#F6F1E7" d="M 432 900 C 472 892, 516 900, 540 912 C 520 924, 484 928, 456 924 C 440 920, 428 912, 432 900 Z"/>
+              <path fill="#F6F1E7" d="M 596 900 C 564 900, 532 908, 516 920 C 540 924, 572 924, 596 920 C 612 916, 612 904, 596 900 Z"/>
+              <!-- Cone envelope (orange) -->
+              <path fill="#EA580C" d="M 608 408 C 668 408, 760 432, 836 460 C 884 476, 920 488, 940 484 C 944 488, 944 540, 940 544 C 920 540, 884 552, 836 568 C 760 596, 668 616, 608 616 C 600 612, 596 540, 596 512 C 596 484, 600 412, 608 408 Z"/>
+              <!-- Gap bands (dark cut-out for dark surface) -->
+              <path fill="#0F0F0F" d="M 668 414 C 680 416, 696 420, 708 424 L 708 600 C 696 604, 680 608, 668 610 L 668 414 Z"/>
+              <path fill="#0F0F0F" d="M 800 466 C 812 470, 824 474, 836 478 L 836 546 C 824 550, 812 554, 800 558 L 800 466 Z"/>
+              <!-- Cone rims (cream on dark) -->
+              <path fill="#F6F1E7" d="M 608 404 C 668 402, 760 426, 836 454 C 884 470, 920 484, 940 480 L 944 484 C 924 488, 884 478, 836 462 C 760 434, 668 410, 608 412 L 608 404 Z"/>
+              <path fill="#F6F1E7" d="M 608 620 C 668 618, 760 598, 836 570 C 884 554, 920 544, 940 540 L 944 544 C 924 548, 884 558, 836 574 C 760 602, 668 622, 608 624 L 608 620 Z"/>
+              <path fill="#F6F1E7" d="M 940 480 C 944 484, 944 540, 940 544 L 944 540 C 948 540, 948 484, 944 484 L 940 480 Z"/>
+              <path fill="#F6F1E7" d="M 608 404 C 600 432, 596 484, 596 512 C 596 540, 600 592, 608 620 L 604 620 C 594 592, 590 540, 590 512 C 590 484, 594 432, 604 404 L 608 404 Z"/>
+              <!-- Band dividers (cream on dark) -->
+              <path fill="#F6F1E7" d="M 668 414 C 666 472, 666 552, 668 610 L 660 610 C 658 552, 658 472, 660 414 C 662 410, 666 410, 668 414 Z"/>
+              <path fill="#F6F1E7" d="M 708 424 C 706 480, 706 544, 708 600 L 700 600 C 698 544, 698 480, 700 424 C 702 420, 706 420, 708 424 Z"/>
+              <path fill="#F6F1E7" d="M 800 466 C 798 504, 798 520, 800 558 L 792 558 C 790 520, 790 504, 792 466 C 794 462, 798 462, 800 466 Z"/>
+              <path fill="#F6F1E7" d="M 836 478 C 834 510, 834 514, 836 546 L 828 546 C 826 514, 826 510, 828 478 C 830 474, 834 474, 836 478 Z"/>
+              <!-- Suspension cords (cream on dark) -->
+              <path fill="#F6F1E7" d="M 503 246 C 540 300, 580 360, 606 410 L 610 410 C 584 360, 544 298, 506 244 L 503 246 Z"/>
+              <path fill="#F6F1E7" d="M 503 248 C 528 320, 560 412, 600 472 L 604 472 C 564 410, 532 318, 506 246 L 503 248 Z"/>
+              <path fill="#F6F1E7" d="M 504 248 C 524 360, 552 480, 600 552 L 604 552 C 556 480, 528 358, 507 246 L 504 248 Z"/>
+              <path fill="#F6F1E7" d="M 504 250 C 520 400, 552 540, 604 614 L 608 614 C 556 540, 524 398, 507 248 L 504 250 Z"/>
+              <!-- Pivot ink-bead (cream on dark) -->
+              <path fill="#F6F1E7" d="M 496 240 C 510 240, 520 246, 520 254 C 520 262, 510 268, 504 268 C 494 268, 486 262, 486 254 C 486 246, 490 240, 496 240 Z"/>
+            </g>
+            <text x="372" y="216"
+                  font-family="'Young Serif', serif"
+                  font-size="168" font-weight="400" letter-spacing="-2"
+                  fill="#F6F1E7">FlightPath</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favicon -->
+    <div class="block">
+      <div class="label">Favicon / pixel snapping at 16 and 32 px</div>
+      <div class="fav-grid">
+        <div class="fav-cell">
+          <div class="label">16 px (10x zoom)</div>
+          <object data="concept_9.svg" type="image/svg+xml" class="fav-16"></object>
+          <div style="margin-top:12px;font-size:13px;color:var(--muted)">actual: <object data="concept_9.svg" type="image/svg+xml" class="fav-actual"></object></div>
+        </div>
+        <div class="fav-cell">
+          <div class="label">32 px (5x zoom)</div>
+          <object data="concept_9.svg" type="image/svg+xml" class="fav-32"></object>
+          <div style="margin-top:12px;font-size:13px;color:var(--muted)">actual: <object data="concept_9.svg" type="image/svg+xml" class="fav-actual-32"></object></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mono -->
+    <div class="block">
+      <div class="label">Mono / black-on-white + white-on-black</div>
+      <div class="mono-grid">
+        <div class="mono-card white">
+          <svg viewBox="0 0 1024 1024">
+            <rect width="1024" height="1024" fill="#FFFFFF"/>
+            <g fill="#0F0F0F">
+              <!-- Mast + cross-bar + ground anchors -->
+              <path d="M 492 244 C 488 380, 488 600, 494 900 L 522 900 C 528 600, 528 380, 524 244 C 520 236, 496 236, 492 244 Z"/>
+              <path d="M 444 224 C 472 216, 540 216, 568 224 C 568 232, 568 240, 568 248 C 540 256, 472 256, 444 248 C 440 240, 440 232, 444 224 Z"/>
+              <path d="M 432 900 C 472 892, 516 900, 540 912 C 520 924, 484 928, 456 924 C 440 920, 428 912, 432 900 Z"/>
+              <path d="M 596 900 C 564 900, 532 908, 516 920 C 540 924, 572 924, 596 920 C 612 916, 612 904, 596 900 Z"/>
+              <!-- Cone envelope filled ink for mono -->
+              <path d="M 608 408 C 668 408, 760 432, 836 460 C 884 476, 920 488, 940 484 C 944 488, 944 540, 940 544 C 920 540, 884 552, 836 568 C 760 596, 668 616, 608 616 C 600 612, 596 540, 596 512 C 596 484, 600 412, 608 408 Z"/>
+              <!-- Cone rims -->
+              <path d="M 608 404 C 668 402, 760 426, 836 454 C 884 470, 920 484, 940 480 L 944 484 C 924 488, 884 478, 836 462 C 760 434, 668 410, 608 412 L 608 404 Z"/>
+              <path d="M 608 620 C 668 618, 760 598, 836 570 C 884 554, 920 544, 940 540 L 944 544 C 924 548, 884 558, 836 574 C 760 602, 668 622, 608 624 L 608 620 Z"/>
+              <path d="M 940 480 C 944 484, 944 540, 940 544 L 944 540 C 948 540, 948 484, 944 484 L 940 480 Z"/>
+              <path d="M 608 404 C 600 432, 596 484, 596 512 C 596 540, 600 592, 608 620 L 604 620 C 594 592, 590 540, 590 512 C 590 484, 594 432, 604 404 L 608 404 Z"/>
+              <!-- Band dividers -->
+              <path d="M 668 414 C 666 472, 666 552, 668 610 L 660 610 C 658 552, 658 472, 660 414 C 662 410, 666 410, 668 414 Z"/>
+              <path d="M 708 424 C 706 480, 706 544, 708 600 L 700 600 C 698 544, 698 480, 700 424 C 702 420, 706 420, 708 424 Z"/>
+              <path d="M 800 466 C 798 504, 798 520, 800 558 L 792 558 C 790 520, 790 504, 792 466 C 794 462, 798 462, 800 466 Z"/>
+              <path d="M 836 478 C 834 510, 834 514, 836 546 L 828 546 C 826 514, 826 510, 828 478 C 830 474, 834 474, 836 478 Z"/>
+              <!-- Suspension cords -->
+              <path d="M 503 246 C 540 300, 580 360, 606 410 L 610 410 C 584 360, 544 298, 506 244 L 503 246 Z"/>
+              <path d="M 503 248 C 528 320, 560 412, 600 472 L 604 472 C 564 410, 532 318, 506 246 L 503 248 Z"/>
+              <path d="M 504 248 C 524 360, 552 480, 600 552 L 604 552 C 556 480, 528 358, 507 246 L 504 248 Z"/>
+              <path d="M 504 250 C 520 400, 552 540, 604 614 L 608 614 C 556 540, 524 398, 507 248 L 504 250 Z"/>
+              <!-- Pivot ink-bead -->
+              <path d="M 496 240 C 510 240, 520 246, 520 254 C 520 262, 510 268, 504 268 C 494 268, 486 262, 486 254 C 486 246, 490 240, 496 240 Z"/>
+            </g>
+            <g fill="#FFFFFF">
+              <!-- Gap bands punched out (white) -->
+              <path d="M 668 414 C 680 416, 696 420, 708 424 L 708 600 C 696 604, 680 608, 668 610 L 668 414 Z"/>
+              <path d="M 800 466 C 812 470, 824 474, 836 478 L 836 546 C 824 550, 812 554, 800 558 L 800 466 Z"/>
+            </g>
+          </svg>
+        </div>
+        <div class="mono-card black">
+          <svg viewBox="0 0 1024 1024">
+            <rect width="1024" height="1024" fill="#0F0F0F"/>
+            <g fill="#F6F1E7">
+              <!-- Mast + cross-bar + ground anchors -->
+              <path d="M 492 244 C 488 380, 488 600, 494 900 L 522 900 C 528 600, 528 380, 524 244 C 520 236, 496 236, 492 244 Z"/>
+              <path d="M 444 224 C 472 216, 540 216, 568 224 C 568 232, 568 240, 568 248 C 540 256, 472 256, 444 248 C 440 240, 440 232, 444 224 Z"/>
+              <path d="M 432 900 C 472 892, 516 900, 540 912 C 520 924, 484 928, 456 924 C 440 920, 428 912, 432 900 Z"/>
+              <path d="M 596 900 C 564 900, 532 908, 516 920 C 540 924, 572 924, 596 920 C 612 916, 612 904, 596 900 Z"/>
+              <!-- Cone envelope filled cream for mono -->
+              <path d="M 608 408 C 668 408, 760 432, 836 460 C 884 476, 920 488, 940 484 C 944 488, 944 540, 940 544 C 920 540, 884 552, 836 568 C 760 596, 668 616, 608 616 C 600 612, 596 540, 596 512 C 596 484, 600 412, 608 408 Z"/>
+              <!-- Cone rims -->
+              <path d="M 608 404 C 668 402, 760 426, 836 454 C 884 470, 920 484, 940 480 L 944 484 C 924 488, 884 478, 836 462 C 760 434, 668 410, 608 412 L 608 404 Z"/>
+              <path d="M 608 620 C 668 618, 760 598, 836 570 C 884 554, 920 544, 940 540 L 944 544 C 924 548, 884 558, 836 574 C 760 602, 668 622, 608 624 L 608 620 Z"/>
+              <path d="M 940 480 C 944 484, 944 540, 940 544 L 944 540 C 948 540, 948 484, 944 484 L 940 480 Z"/>
+              <path d="M 608 404 C 600 432, 596 484, 596 512 C 596 540, 600 592, 608 620 L 604 620 C 594 592, 590 540, 590 512 C 590 484, 594 432, 604 404 L 608 404 Z"/>
+              <!-- Band dividers -->
+              <path d="M 668 414 C 666 472, 666 552, 668 610 L 660 610 C 658 552, 658 472, 660 414 C 662 410, 666 410, 668 414 Z"/>
+              <path d="M 708 424 C 706 480, 706 544, 708 600 L 700 600 C 698 544, 698 480, 700 424 C 702 420, 706 420, 708 424 Z"/>
+              <path d="M 800 466 C 798 504, 798 520, 800 558 L 792 558 C 790 520, 790 504, 792 466 C 794 462, 798 462, 800 466 Z"/>
+              <path d="M 836 478 C 834 510, 834 514, 836 546 L 828 546 C 826 514, 826 510, 828 478 C 830 474, 834 474, 836 478 Z"/>
+              <!-- Suspension cords -->
+              <path d="M 503 246 C 540 300, 580 360, 606 410 L 610 410 C 584 360, 544 298, 506 244 L 503 246 Z"/>
+              <path d="M 503 248 C 528 320, 560 412, 600 472 L 604 472 C 564 410, 532 318, 506 246 L 503 248 Z"/>
+              <path d="M 504 248 C 524 360, 552 480, 600 552 L 604 552 C 556 480, 528 358, 507 246 L 504 248 Z"/>
+              <path d="M 504 250 C 520 400, 552 540, 604 614 L 608 614 C 556 540, 524 398, 507 248 L 504 250 Z"/>
+              <!-- Pivot ink-bead -->
+              <path d="M 496 240 C 510 240, 520 246, 520 254 C 520 262, 510 268, 504 268 C 494 268, 486 262, 486 254 C 486 246, 490 240, 496 240 Z"/>
+            </g>
+            <g fill="#0F0F0F">
+              <!-- Gap bands punched out (dark) -->
+              <path d="M 668 414 C 680 416, 696 420, 708 424 L 708 600 C 696 604, 680 608, 668 610 L 668 414 Z"/>
+              <path d="M 800 466 C 812 470, 824 474, 836 478 L 836 546 C 824 550, 812 554, 800 558 L 800 466 Z"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Website header -->
+    <div class="block">
+      <div class="label">Website header / getflightpath.app</div>
+      <div class="site-header">
+        <div class="site-bar">
+          <object data="concept_9_wordmark.svg" type="image/svg+xml" style="width:240px;display:block"></object>
+          <div class="nav">
+            <a>Home</a><a>Features</a><a>Pricing</a><a>Download</a>
+          </div>
+          <button class="download">Download</button>
+        </div>
+        <div class="site-body">page body region - placeholder.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <hr class="section-rule">
+
+  <!-- ====================================================== -->
+  <!-- CONCEPT 10 - CONTROL YOKE                              -->
+  <!-- ====================================================== -->
+  <section class="concept">
+    <p class="kicker">Concept 10</p>
+    <p class="title">Control yoke</p>
+    <p class="rationale">
+      The W-shape of a Cessna / PA-28 control yoke, drawn loose. The most
+      pilot-personal object in the cabin: it's what your hands actually hold
+      for every minute of flight. Anyone who has flown a Warrior or a 172
+      reads this silhouette before they read any letter of the wordmark. The
+      tan ink-bead at the centre is the trim / PTT hub; smaller tan beads
+      mark the worn thumb-print spots on each horn where the leather grips
+      darken from use. Risks: yoke is sometimes confused with a steering
+      wheel at favicon scale, so the off-centre asymmetric horns and the
+      short shaft below are doing critical work. Wordmark in EB Garamond -
+      warm classical text serif, reads like a flight manual, intimate not
+      shouty. Accent: tan <code>#92400E</code> (leather grip).
+    </p>
+
+    <!-- Big preview -->
+    <div class="block">
+      <div class="label">Mark / 256 + 1024</div>
+      <div class="preview-row">
+        <object data="concept_10.svg" type="image/svg+xml" class="preview-256"></object>
+        <object data="concept_10.svg" type="image/svg+xml" class="preview-1024"></object>
+      </div>
+    </div>
+
+    <!-- Springboard + App Store search -->
+    <div class="grid-2 block">
+      <div>
+        <div class="label">iOS Springboard</div>
+        <div class="springboard">
+          <div class="status"><span>9:41</span><span>5G</span></div>
+          <div class="app-row">
+            <div class="app"><div class="icon"><div class="tile mail">M</div></div><div class="name">Mail</div></div>
+            <div class="app"><div class="icon"><div class="tile maps">M</div></div><div class="name">Maps</div></div>
+            <div class="app"><div class="icon"><div class="tile weath">W</div></div><div class="name">Weather</div></div>
+            <div class="app"><div class="icon"><div class="tile notes">N</div></div><div class="name">Notes</div></div>
+
+            <div class="app"><div class="icon"><div class="tile cam">C</div></div><div class="name">Camera</div></div>
+            <div class="app"><div class="icon"><object data="concept_10.svg" type="image/svg+xml" style="width:100%;height:100%;display:block"></object></div><div class="name">FlightPath</div></div>
+            <div class="app"><div class="icon"><div class="tile wallet">W</div></div><div class="name">Wallet</div></div>
+            <div class="app"><div class="icon"><div class="tile music">M</div></div><div class="name">Music</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label">App Store search result</div>
+        <div class="appstore">
+          <div class="icon"><object data="concept_10.svg" type="image/svg+xml" style="width:100%;height:100%;display:block"></object></div>
+          <div>
+            <div class="meta-name">FlightPath</div>
+            <div class="meta-sub">PPL training app for student pilots</div>
+            <div class="stars">****  4.8</div>
+          </div>
+          <button class="get">GET</button>
+        </div>
+
+        <div style="height:32px"></div>
+
+        <div class="label">Splash screen</div>
+        <div class="splash" style="background: #F6F1E7;">
+          <object data="concept_10.svg" type="image/svg+xml" aria-label="Splash mock concept 10"></object>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wordmark on light + dark -->
+    <div class="block">
+      <div class="label">Wordmark / light + dark</div>
+      <div class="wordmark-grid">
+        <div class="wordmark-card light">
+          <object data="concept_10_wordmark.svg" type="image/svg+xml" style="width:100%;max-width:520px;display:block"></object>
+        </div>
+        <div class="wordmark-card dark">
+          <svg viewBox="0 0 1280 320" width="100%" style="max-width:520px;display:block">
+            <g transform="translate(0,0) scale(0.3125)">
+              <rect width="1024" height="1024" fill="#0F0F0F"/>
+              <path fill="#F6F1E7" d="M 144 568 C 132 528, 152 488, 196 472 C 232 460, 268 472, 288 504 C 308 540, 320 580, 340 612 C 360 640, 388 656, 420 656 C 448 656, 472 644, 488 620 C 504 596, 512 568, 524 540 C 532 522, 544 516, 556 540 C 568 568, 576 596, 592 620 C 608 644, 632 656, 660 656 C 692 656, 720 640, 740 612 C 760 580, 772 540, 792 504 C 812 472, 848 460, 884 472 C 928 488, 948 528, 936 568 C 924 604, 884 624, 836 612 C 820 608, 808 604, 796 600 C 800 624, 796 644, 780 660 C 752 688, 700 696, 656 684 C 620 676, 596 656, 576 632 C 564 620, 552 612, 540 612 C 528 612, 516 620, 504 632 C 484 656, 460 676, 424 684 C 380 696, 328 688, 300 660 C 284 644, 280 624, 284 600 C 272 604, 260 608, 244 612 C 196 624, 156 604, 144 568 Z"/>
+              <path fill="#F6F1E7" d="M 516 632 C 524 700, 528 760, 532 820 L 552 820 C 556 760, 560 700, 568 632 C 560 624, 524 624, 516 632 Z"/>
+              <path fill="#F6F1E7" d="M 504 800 C 528 792, 556 792, 580 800 C 572 820, 556 836, 540 836 C 524 836, 512 820, 504 800 Z"/>
+              <path fill="#92400E" d="M 508 540 C 540 528, 568 540, 572 564 C 572 588, 548 600, 516 596 C 488 592, 476 580, 480 560 C 484 548, 494 540, 508 540 Z"/>
+              <path fill="#92400E" d="M 232 528 C 256 520, 276 528, 276 544 C 276 560, 256 568, 236 564 C 224 560, 220 552, 224 540 C 226 532, 228 528, 232 528 Z"/>
+              <path fill="#92400E" d="M 832 528 C 856 520, 876 528, 876 544 C 876 560, 856 568, 836 564 C 824 560, 820 552, 824 540 C 826 532, 828 528, 832 528 Z"/>
+            </g>
+            <text x="372" y="218"
+                  font-family="'EB Garamond', serif"
+                  font-size="180" font-weight="500" letter-spacing="-2"
+                  fill="#F6F1E7">FlightPath</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favicon -->
+    <div class="block">
+      <div class="label">Favicon / pixel snapping at 16 and 32 px</div>
+      <div class="fav-grid">
+        <div class="fav-cell">
+          <div class="label">16 px (10x zoom)</div>
+          <object data="concept_10.svg" type="image/svg+xml" class="fav-16"></object>
+          <div style="margin-top:12px;font-size:13px;color:var(--muted)">actual: <object data="concept_10.svg" type="image/svg+xml" class="fav-actual"></object></div>
+        </div>
+        <div class="fav-cell">
+          <div class="label">32 px (5x zoom)</div>
+          <object data="concept_10.svg" type="image/svg+xml" class="fav-32"></object>
+          <div style="margin-top:12px;font-size:13px;color:var(--muted)">actual: <object data="concept_10.svg" type="image/svg+xml" class="fav-actual-32"></object></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mono -->
+    <div class="block">
+      <div class="label">Mono / black-on-white + white-on-black</div>
+      <div class="mono-grid">
+        <div class="mono-card white">
+          <svg viewBox="0 0 1024 1024">
+            <rect width="1024" height="1024" fill="#FFFFFF"/>
+            <g fill="#0F0F0F">
+              <path d="M 144 568 C 132 528, 152 488, 196 472 C 232 460, 268 472, 288 504 C 308 540, 320 580, 340 612 C 360 640, 388 656, 420 656 C 448 656, 472 644, 488 620 C 504 596, 512 568, 524 540 C 532 522, 544 516, 556 540 C 568 568, 576 596, 592 620 C 608 644, 632 656, 660 656 C 692 656, 720 640, 740 612 C 760 580, 772 540, 792 504 C 812 472, 848 460, 884 472 C 928 488, 948 528, 936 568 C 924 604, 884 624, 836 612 C 820 608, 808 604, 796 600 C 800 624, 796 644, 780 660 C 752 688, 700 696, 656 684 C 620 676, 596 656, 576 632 C 564 620, 552 612, 540 612 C 528 612, 516 620, 504 632 C 484 656, 460 676, 424 684 C 380 696, 328 688, 300 660 C 284 644, 280 624, 284 600 C 272 604, 260 608, 244 612 C 196 624, 156 604, 144 568 Z"/>
+              <path d="M 516 632 C 524 700, 528 760, 532 820 L 552 820 C 556 760, 560 700, 568 632 C 560 624, 524 624, 516 632 Z"/>
+              <path d="M 504 800 C 528 792, 556 792, 580 800 C 572 820, 556 836, 540 836 C 524 836, 512 820, 504 800 Z"/>
+              <path d="M 508 540 C 540 528, 568 540, 572 564 C 572 588, 548 600, 516 596 C 488 592, 476 580, 480 560 C 484 548, 494 540, 508 540 Z"/>
+              <path d="M 232 528 C 256 520, 276 528, 276 544 C 276 560, 256 568, 236 564 C 224 560, 220 552, 224 540 C 226 532, 228 528, 232 528 Z"/>
+              <path d="M 832 528 C 856 520, 876 528, 876 544 C 876 560, 856 568, 836 564 C 824 560, 820 552, 824 540 C 826 532, 828 528, 832 528 Z"/>
+            </g>
+          </svg>
+        </div>
+        <div class="mono-card black">
+          <svg viewBox="0 0 1024 1024">
+            <rect width="1024" height="1024" fill="#0F0F0F"/>
+            <g fill="#F6F1E7">
+              <path d="M 144 568 C 132 528, 152 488, 196 472 C 232 460, 268 472, 288 504 C 308 540, 320 580, 340 612 C 360 640, 388 656, 420 656 C 448 656, 472 644, 488 620 C 504 596, 512 568, 524 540 C 532 522, 544 516, 556 540 C 568 568, 576 596, 592 620 C 608 644, 632 656, 660 656 C 692 656, 720 640, 740 612 C 760 580, 772 540, 792 504 C 812 472, 848 460, 884 472 C 928 488, 948 528, 936 568 C 924 604, 884 624, 836 612 C 820 608, 808 604, 796 600 C 800 624, 796 644, 780 660 C 752 688, 700 696, 656 684 C 620 676, 596 656, 576 632 C 564 620, 552 612, 540 612 C 528 612, 516 620, 504 632 C 484 656, 460 676, 424 684 C 380 696, 328 688, 300 660 C 284 644, 280 624, 284 600 C 272 604, 260 608, 244 612 C 196 624, 156 604, 144 568 Z"/>
+              <path d="M 516 632 C 524 700, 528 760, 532 820 L 552 820 C 556 760, 560 700, 568 632 C 560 624, 524 624, 516 632 Z"/>
+              <path d="M 504 800 C 528 792, 556 792, 580 800 C 572 820, 556 836, 540 836 C 524 836, 512 820, 504 800 Z"/>
+              <path d="M 508 540 C 540 528, 568 540, 572 564 C 572 588, 548 600, 516 596 C 488 592, 476 580, 480 560 C 484 548, 494 540, 508 540 Z"/>
+              <path d="M 232 528 C 256 520, 276 528, 276 544 C 276 560, 256 568, 236 564 C 224 560, 220 552, 224 540 C 226 532, 228 528, 232 528 Z"/>
+              <path d="M 832 528 C 856 520, 876 528, 876 544 C 876 560, 856 568, 836 564 C 824 560, 820 552, 824 540 C 826 532, 828 528, 832 528 Z"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Website header -->
+    <div class="block">
+      <div class="label">Website header / getflightpath.app</div>
+      <div class="site-header">
+        <div class="site-bar">
+          <object data="concept_10_wordmark.svg" type="image/svg+xml" style="width:240px;display:block"></object>
+          <div class="nav">
+            <a>Home</a><a>Features</a><a>Pricing</a><a>Download</a>
+          </div>
+          <button class="download">Download</button>
+        </div>
+        <div class="site-body">page body region - placeholder.</div>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+</body>
+</html>

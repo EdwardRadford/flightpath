@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <!-- Concept 1 wordmark - Runway 27 lockup -->
+  <!-- Mark (square) on the left, wordmark to the right. Space Grotesk Medium. -->
+  <!-- Single typeface throughout. Single accent (runway-marker yellow). -->
+
+  <!-- Mark (compact version of concept_1, 320x320, sized down on right) -->
+  <g transform="translate(0,0) scale(0.3125)">
+    <rect width="1024" height="1024" fill="#0F0F0F"/>
+    <g fill="#F2F2F2">
+      <rect x="96"  y="780" width="80" height="120"/>
+      <rect x="200" y="780" width="80" height="120"/>
+      <rect x="304" y="780" width="80" height="120"/>
+      <rect x="408" y="780" width="80" height="120"/>
+      <rect x="536" y="780" width="80" height="120"/>
+      <rect x="640" y="780" width="80" height="120"/>
+      <rect x="744" y="780" width="80" height="120"/>
+      <rect x="848" y="780" width="80" height="120"/>
+    </g>
+    <g fill="#F4C600">
+      <rect x="492" y="660" width="40" height="80"/>
+      <rect x="492" y="540" width="40" height="64"/>
+      <rect x="496" y="440" width="32" height="48"/>
+      <rect x="500" y="368" width="24" height="36"/>
+    </g>
+    <g fill="#F2F2F2">
+      <rect x="220" y="220" width="240" height="88"/>
+      <rect x="372" y="308" width="88"  height="184"/>
+      <rect x="220" y="448" width="240" height="88"/>
+      <rect x="220" y="536" width="88"  height="184"/>
+      <rect x="220" y="632" width="240" height="88"/>
+      <rect x="564" y="220" width="240" height="88"/>
+      <polygon points="744,308 804,308 660,720 600,720"/>
+    </g>
+  </g>
+
+  <!-- Wordmark - Space Grotesk, Medium, tight tracking -->
+  <text x="380" y="200"
+        font-family="'Space Grotesk', 'Space Grotesk Medium', sans-serif"
+        font-size="148"
+        font-weight="500"
+        letter-spacing="-4"
+        fill="#0F0F0F">FlightPath</text>
+</svg>

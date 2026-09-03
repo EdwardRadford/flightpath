@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Concept 2 - PA-28 plan view -->
+  <!-- The aircraft a UK PPL student actually flies. Top-down silhouette of a -->
+  <!-- Piper PA-28 Cherokee/Warrior - distinctive low-wing trapezoidal -->
+  <!-- "Hershey bar" planform, T-tail-ish stabiliser proportions, stubby nose. -->
+  <!-- Drawn with the precision of an ICAO chart symbol, not a cartoon plane. -->
+  <!-- Single accent: VFR chart blue #2563EB on flat white. -->
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+
+  <g fill="#2563EB">
+
+    <!-- Fuselage - stubby PA-28 nose, parallel-sided cabin, short tail cone -->
+    <!-- Drawn as one polygon so the silhouette stays one piece -->
+    <path d="M 488 184
+             Q 488 168 512 168
+             Q 536 168 536 184
+             L 536 312
+             L 552 320
+             L 552 568
+             L 536 576
+             L 536 760
+             L 552 768
+             L 552 808
+             L 472 808
+             L 472 768
+             L 488 760
+             L 488 576
+             L 472 568
+             L 472 320
+             L 488 312
+             Z"/>
+
+    <!-- Low wing - characteristic PA-28 trapezoidal "Hershey bar" planform -->
+    <!-- Slight taper, square wingtips, sits forward of mid-fuselage -->
+    <polygon points="
+      120,360
+      904,360
+      872,464
+      152,464
+    "/>
+
+    <!-- Horizontal stabiliser - stubby, close to the tail -->
+    <polygon points="
+      328,720
+      696,720
+      672,772
+      352,772
+    "/>
+
+    <!-- Vertical stabiliser - small triangular fin viewed from above -->
+    <polygon points="
+      496,772
+      528,772
+      520,820
+      504,820
+    "/>
+
+    <!-- Propeller arc hint - a single thin chord across the nose -->
+    <rect x="448" y="156" width="128" height="10"/>
+
+  </g>
+
+  <!-- Chart-symbol crosshair: thin tick marks at the four cardinal edges. -->
+  <!-- These reference VFR chart symbology (airfield ticks, compass marks). -->
+  <!-- Faint enough to disappear at favicon size, present at 1024px. -->
+  <g fill="#2563EB">
+    <rect x="508" y="40"   width="8" height="56"/>
+    <rect x="508" y="928"  width="8" height="56"/>
+    <rect x="40"  y="508"  width="56" height="8"/>
+    <rect x="928" y="508"  width="56" height="8"/>
+  </g>
+</svg>
