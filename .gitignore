@@ -97,6 +97,10 @@ app.*.map.json
 # Claude Code local config
 .claude/
 
+# Local working notes, not part of the published repo
+CLAUDE.md
+KNOWN_ISSUES.md
+
 # Exceptions — keep these even if caught by patterns above
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
