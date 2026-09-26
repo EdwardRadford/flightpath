@@ -7,8 +7,14 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 /// RevenueCat SDK keys, supplied at compile time via --dart-define so they
-/// are never committed to source control. See CLAUDE.md "Build flags" for
-/// the exact flags required when building or running the app.
+/// are never committed to source control. Build and run the app with:
+///
+///   flutter run --dart-define=REVENUECAT_IOS_KEY=appl_... \
+///               --dart-define=REVENUECAT_ANDROID_KEY=goog_...
+///
+/// Only the key for the target platform is read, so the other may be omitted.
+/// `tool/run-emulator.ps1` supplies both from `tool/.env.local`; see
+/// RUNNING.md for the local setup.
 const String _revenueCatApiKeyIos =
     String.fromEnvironment('REVENUECAT_IOS_KEY');
 const String _revenueCatApiKeyAndroid =
@@ -28,7 +34,7 @@ String _resolveRevenueCatKey() {
         Platform.isIOS ? 'REVENUECAT_IOS_KEY' : 'REVENUECAT_ANDROID_KEY';
     final message =
         'RevenueCat SDK key missing. Pass --dart-define=$flag=<key> when '
-        'running or building the app. See CLAUDE.md "Build flags".';
+        'running or building the app. See RUNNING.md for the local setup.';
     if (kDebugMode) {
       throw StateError(message);
     } else {
