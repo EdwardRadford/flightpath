@@ -107,6 +107,7 @@ KNOWN_ISSUES.md
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
 
-# Local env — never commit
+# Local env — never commit. The .example file documents the keys and is tracked.
 tool/.env.local
+!tool/.env.local.example
 serviceAccountKey.json

@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FlightPath - Android emulator (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--dart-define=REVENUECAT_ANDROID_KEY=goog_dev_placeholder",
+        "--dart-define=REVENUECAT_IOS_KEY=appl_dev_placeholder"
+      ]
+    },
+    {
+      "name": "FlightPath - Android emulator (profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "profile",
+      "toolArgs": [
+        "--dart-define=REVENUECAT_ANDROID_KEY=goog_dev_placeholder",
+        "--dart-define=REVENUECAT_IOS_KEY=appl_dev_placeholder"
+      ]
+    },
+    {
+      "name": "FlightPath - Android emulator (release)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "release",
+      "toolArgs": [
+        "--dart-define=REVENUECAT_ANDROID_KEY=goog_dev_placeholder",
+        "--dart-define=REVENUECAT_IOS_KEY=appl_dev_placeholder"
+      ]
+    }
+  ]
+}
